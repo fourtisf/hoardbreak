@@ -1,0 +1,27 @@
+{
+  "name": "hoardbreak",
+  "private": true,
+  "version": "0.3.0",
+  "description": "HOARDBREAK \u2014 a mobile-first extraction-heist roguelite. Rob the dragon. Don't wake it.",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @hoardbreak/web dev",
+    "build": "pnpm --filter @hoardbreak/web build",
+    "start": "pnpm --filter @hoardbreak/web start",
+    "test": "pnpm -r test",
+    "test:engine": "pnpm --filter @hoardbreak/engine test",
+    "typecheck": "pnpm -r typecheck",
+    "test:meta": "pnpm --filter @hoardbreak/shared test"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}
