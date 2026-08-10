@@ -12,7 +12,17 @@ import { z } from 'zod';
 export const zCrewKind = z.enum(['picklock', 'hexer', 'bruiser', 'emberkin', 'golem']);
 export const zItemKey = z.enum(['smoke', 'lull', 'trap']);
 export const zUpgradeKey = z.enum(['dmg', 'hp', 'inc']);
-export const zModId = z.enum(['dark', 'restless', 'garrison', 'gilded', 'quiet']);
+export const zModId = z.enum([
+  'dark',
+  'restless',
+  'garrison',
+  'gilded',
+  'quiet',
+  // v0.3 — three more nights
+  'hungry',
+  'plunder',
+  'silent',
+]);
 export const zDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'YYYY-MM-DD (UTC)');
 
 export const zEventCode = z.enum([
@@ -26,6 +36,8 @@ export const zEventCode = z.enum([
   'ITEM_USE',
   'WAKE_MILESTONE',
   'EXTRACT',
+  // v0.3 — which relic the crew took at the shrine
+  'RELIC',
 ]);
 
 /** `[t in ms, code, value]` */
@@ -46,10 +58,22 @@ export const zBoardRow = z.object({
   you: z.boolean().optional(),
 });
 
+/**
+ * v0.3: the board is keyed by depth as well as date, because a single global
+ * "biggest heist" board just ranks who is deepest — the hoard alone scales
+ * 800 + 420 × depth. Redis becomes `lb:{date}:{depth}` (amends handoff §8).
+ */
 export const zDailyResponse = z.object({
   date: zDate,
-  depths: z.array(z.object({ n: z.number().int().positive(), mod: zModId })),
-  board: z.object({ top: z.array(zBoardRow), me: zBoardRow.optional() }),
+  /** the deepest lair this wallet may enter — handoff §6's `depth ≤ unlocked` */
+  unlocked: z.number().int().positive(),
+  depths: z.array(
+    z.object({
+      n: z.number().int().positive(),
+      mod: zModId,
+      board: z.object({ top: z.array(zBoardRow), me: zBoardRow.optional() }),
+    }),
+  ),
 });
 
 /* ---------------- GET /me ---------------- */
@@ -62,6 +86,9 @@ export const zMeResponse = z.object({
   bestDepth: z.number().int().min(0),
   crew: z.array(zThief),
   lost: z.array(zThief),
+  /** v0.3 — the depth picker needs these */
+  selectedDepth: z.number().int().positive(),
+  bestByDepth: z.record(z.string(), z.number().int().min(0)),
   items: z.record(zItemKey, z.number().int().min(0)),
   upgrades: z.record(zUpgradeKey, z.number().int().min(0)),
 });
@@ -118,6 +145,8 @@ export const zInputFrame = z.object({
   mx: z.number().min(-1).max(1),
   my: z.number().min(-1).max(1),
   mm: z.number().min(0).max(1),
+  /** v0.3 — creeping */
+  cr: z.boolean().optional(),
   cmds: z
     .array(
       z.union([

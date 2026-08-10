@@ -40,6 +40,7 @@ export function spawnGuard(s: RunState, k: GuardKind, gx: number, gy: number, al
   const d = GD[k];
   const hp = d.hp * (1 + TUNING.GUARD_HP_PER_DEPTH * (s.depth - 1)) * (s.mod.gHp || 1);
   const g: Guard = {
+    gid: s.gidNext++,
     k,
     x: gx * T + T / 2,
     y: gy * T + T / 2,

@@ -20,23 +20,44 @@ export default function Board() {
   const meta = useMeta();
   const dates = useMemo(() => recentDates(DAYS_BACK), []);
   const [day, setDay] = useState(dates[0] as string);
+  const [depth, setDepth] = useState(1);
   const isToday = day === dates[0];
-  const rows = boardRows(day, isToday ? meta.todayBest : 0);
+  const rows = boardRows(day, depth, isToday ? (meta.todayBestByDepth[depth] ?? 0) : 0);
 
   return (
     <div id="camp">
       <h2>THE BOARD</h2>
       <div id="daily">
-        BIGGEST SINGLE HEIST — <b>{day}</b>
+        BIGGEST SINGLE HEIST — <b>{day}</b> · DEPTH <b>{depth}</b>
         <br />
         {isToday ? 'live · rolls over at UTC midnight' : 'archived'}
+      </div>
+
+      <div className="depthPick">
+        <span className="lbl">DEPTH</span>
+        <div className="depthRow">
+          {Array.from({ length: 8 }, (_, i) => i + 1).map((d) => {
+            const m = modFor(day, d);
+            return (
+              <button
+                key={d}
+                className={`dbtn${d === depth ? ' on' : ''}`}
+                onClick={() => setDepth(d)}
+                title={`${m.n} — ${m.d}`}
+              >
+                <b>{d}</b>
+                <span>{m.n}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="cols">
         <div className="col">
           <div className="panelBox" style={{ minWidth: 280 }}>
             <div className="lbl" style={{ marginBottom: 6 }}>
-              LEADERBOARD
+              LEADERBOARD — DEPTH {depth}
             </div>
             <div id="board">
               {rows.map((r, i) => (
@@ -75,11 +96,12 @@ export default function Board() {
               TONIGHT&apos;S LAIRS
             </div>
             <div className="manif">
-              {Array.from({ length: 6 }, (_, i) => i + 1).map((depth) => {
-                const m = modFor(day, depth);
+              {Array.from({ length: 8 }, (_, i) => i + 1).map((d) => {
+                const m = modFor(day, d);
                 return (
-                  <div key={depth}>
-                    Depth {depth} · <span className="lv">{m.n}</span>
+                  <div key={d}>
+                    Depth {d} · <span className="lv">{m.n}</span>
+                    {meta.bestByDepth[d] ? <span style={{ color: 'var(--dim)' }}> · you: {meta.bestByDepth[d]}g</span> : null}
                   </div>
                 );
               })}
@@ -107,8 +129,8 @@ export default function Board() {
       <div
         style={{ fontSize: 11, fontStyle: 'italic', color: 'var(--dim)', maxWidth: 520, textAlign: 'center' }}
       >
-        Phase 1 board — rivals are seeded from the day, your score is this session&apos;s best. Phase 2 wires this
-        to the real Redis board.
+        Phase 1 board — rivals are seeded from the day and depth, your score is this session&apos;s best. Phase 2
+        wires this to the real Redis board (`lb:&#123;date&#125;:&#123;depth&#125;`).
       </div>
     </div>
   );

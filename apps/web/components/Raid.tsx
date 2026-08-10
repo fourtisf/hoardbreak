@@ -6,6 +6,8 @@ import {
   H,
   ITEMS,
   ITEM_KEYS,
+  RELICS,
+  RELIC_KEYS,
   UD,
   W,
   createAudio,
@@ -23,9 +25,11 @@ import {
   type FeedLine,
   type InputController,
   type ItemKey,
+  type RelicKey,
   type RunState,
 } from '@hoardbreak/engine';
 import { applyRunResult, snapshotRunMeta } from '@hoardbreak/shared';
+import { abandonRun } from '@hoardbreak/engine';
 import { getMeta, markTutorialSeen, mutate, setLastRun, tutorialSeen } from '@/lib/store';
 import { toast } from '@/lib/toast';
 import SpriteCanvas from './SpriteCanvas';
@@ -88,8 +92,12 @@ export default function Raid() {
   const [feed, setFeed] = useState<FeedLine[]>([]);
   const [over, setOver] = useState<OverCard | null>(null);
   const [tut, setTut] = useState(() => !tutorialSeen());
+  const [menu, setMenu] = useState(false);
+  const [relics, setRelics] = useState<RelicKey[]>([]);
+  const [creep, setCreep] = useState(false);
+  const runRef = useRef<RunState | null>(null);
 
-  pausedRef.current = tut || over !== null;
+  pausedRef.current = tut || menu || over !== null;
 
   useEffect(() => {
     const canvas = cvRef.current;
@@ -114,6 +122,7 @@ export default function Raid() {
     });
     // a generated prisoner burns a thief id whether or not anyone frees them
     if (run.freshPrisonerTid !== null) meta.uid = Math.max(meta.uid, run.freshPrisonerTid);
+    runRef.current = run;
 
     const renderer = createRenderer(canvas);
     renderer.buildRockCache(run);
@@ -130,9 +139,15 @@ export default function Raid() {
     window.addEventListener('pointerdown', unlock, { once: true });
     window.addEventListener('keydown', unlock, { once: true });
 
+    const onEsc = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') setMenu((m) => !m);
+    };
+    window.addEventListener('keydown', onEsc);
+
     setT(hDepth.current, String(depth));
 
     let lastItems = '';
+    let lastRelics = 0;
     let applied = false;
 
     const drain = (s: RunState): void => {
@@ -147,6 +162,11 @@ export default function Raid() {
       if (sig !== lastItems) {
         lastItems = sig;
         setItems({ ...s.items });
+      }
+      const held = RELIC_KEYS.filter((k) => s.relics[k]);
+      if (held.length !== lastRelics) {
+        lastRelics = held.length;
+        setRelics(held);
       }
       if (s.over && s.result && !applied) {
         applied = true;
@@ -182,8 +202,16 @@ export default function Raid() {
       const b = extractBtn.current;
       if (b) {
         if (inz > 0 && !s.over) {
+          const left = s.units.length - inz;
           b.classList.remove('hidden');
-          setT(b, `⚑ EXTRACT (${inz}/${s.units.length} at exit)`);
+          // leaving people behind is permanent, so say so on the button itself
+          b.classList.toggle('warn', left > 0);
+          setT(
+            b,
+            left > 0
+              ? `⚑ EXTRACT — LEAVE ${left} BEHIND`
+              : `⚑ EXTRACT — ALL ${inz} CLEAR`,
+          );
         } else b.classList.add('hidden');
       }
       for (const u of s.units) {
@@ -210,8 +238,10 @@ export default function Raid() {
       loop.stop();
       input.dispose();
       inputRef.current = null;
+      runRef.current = null;
       window.removeEventListener('pointerdown', unlock);
       window.removeEventListener('keydown', unlock);
+      window.removeEventListener('keydown', onEsc);
     };
     // one run per mount — the raid page is entered fresh from the hideout
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -223,6 +253,19 @@ export default function Raid() {
 
   const doExtract = useCallback((): void => {
     inputRef.current?.push({ c: 'extract' });
+  }, []);
+
+  const toggleCreep = useCallback((): void => {
+    setCreep((on) => {
+      inputRef.current?.setCreep(!on);
+      return !on;
+    });
+  }, []);
+
+  const abandon = useCallback((): void => {
+    const run = runRef.current;
+    setMenu(false);
+    if (run && !run.over) abandonRun(run);
   }, []);
 
   const closeTutorial = useCallback((): void => {
@@ -258,6 +301,9 @@ export default function Raid() {
           <span id="helpBtn" onClick={() => setTut(true)}>
             <span className="helpLong">? how to heist</span>
             <span className="helpShort">?</span>
+          </span>
+          <span id="pauseBtn" onClick={() => setMenu(true)} title="Pause (Esc)">
+            ❙❙
           </span>
         </header>
 
@@ -318,6 +364,31 @@ export default function Raid() {
             ))}
           </div>
 
+          <button
+            id="creepBtn"
+            className={`creepBtn${creep ? ' on' : ''}`}
+            onClick={toggleCreep}
+            title="Slower, quieter, harder to spot. Hold Shift on a keyboard."
+          >
+            <span className="em">👣</span>
+            <span className="tn">{creep ? 'CREEPING' : 'CREEP'}</span>
+            <span className="key">SHIFT</span>
+          </button>
+
+          <div className="lbl">RELICS</div>
+          <div id="relicRow">
+            {relics.length === 0 ? (
+              <span className="relicNone">none yet — find a shrine</span>
+            ) : (
+              relics.map((k) => (
+                <span className="relic" key={k} title={`${RELICS[k].n} — ${RELICS[k].d}`}>
+                  <span className="em">{RELICS[k].em}</span>
+                  <span className="rt">{RELICS[k].n}</span>
+                </span>
+              ))
+            )}
+          </div>
+
           <div className="lbl">THE CREW</div>
           <div id="squadList" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {squad.map((u) => (
@@ -373,16 +444,39 @@ export default function Raid() {
               </div>
               <div className="ts">
                 <b>3 · STAY QUIET.</b> Noise fills <span className="re">WYRM WAKE</span>. At 50% one eye opens and
-                it breathes in its sleep. At 75% guards stir. At 100% — it hunts. Items help: <b>[1]</b> Smoke{' '}
+                it breathes in its sleep. At 75% guards stir. At 100% — it hunts. Hold <b>SHIFT</b> (or tap{' '}
+                <b>CREEP</b>) to move slow and quiet — guards notice you far later. Items help: <b>[1]</b> Smoke{' '}
                 <b>[2]</b> Lullaby <b>[3]</b> Bear Trap.
               </div>
               <div className="ts">
                 <b>4 · GET OUT.</b> Green arrow = time to run. Reach the EXIT tiles, press <b>EXTRACT / E</b>.
-                Survivors gain XP. The dead end up in dragon prisons — go get them back.
+                Anyone not standing on the green is <span className="re">left behind for good</span> — the button
+                tells you how many. Survivors gain XP. The dead end up in dragon prisons — go get them back.
               </div>
             </div>
             <button className="btn gold big" onClick={closeTutorial}>
               UNDERSTOOD — LET&apos;S ROB A DRAGON
+            </button>
+          </div>
+        </div>
+      )}
+
+      {menu && !over && (
+        <div id="overWrap">
+          <div className="ocard">
+            <h2 style={{ color: 'var(--em)' }}>THE CREW HOLDS STILL</h2>
+            <div className="ostats">
+              The wyrm is not counting while you think.
+              <br />
+              <span style={{ color: 'var(--dim)' }}>
+                Esc to close. Walking away costs you the loot <b>and the crew</b> — same as dying, just faster.
+              </span>
+            </div>
+            <button className="btn gold big" onClick={() => setMenu(false)}>
+              ▶ BACK TO THE HEIST
+            </button>
+            <button className="btn warn big" style={{ marginTop: 10 }} onClick={abandon}>
+              ✖ ABANDON THE RUN
             </button>
           </div>
         </div>

@@ -1,9 +1,16 @@
 /**
- * Game definitions — ported verbatim from HOARDBREAK_v0.2.html.
+ * Game definitions.
  *
- * Nothing in this file may be "improved". The prototype is the source of truth
- * for every number here (handoff §2, §10). If a value here ever disagrees with
- * the prototype, the prototype wins.
+ * Everything here was ported verbatim from HOARDBREAK_v0.2.html, and the
+ * prototype remains the source of truth for those numbers (handoff §2, §10) —
+ * do not "improve" them.
+ *
+ * Anything added after the port is marked `v0.3` with the reasoning inline.
+ * Those are deliberate, signed-off design changes, not drift: the daily
+ * modifier table, creep tuning, the shrine's relic choice and the crew spawn
+ * anchor. Lair *generation* is untouched by all of them — given the same
+ * modifier, this engine still produces byte-identical lairs to the prototype
+ * (see `test/parity.test.ts`).
  */
 
 /* ---------------- grid ---------------- */
@@ -130,19 +137,28 @@ export const GUARD_POOL: GuardKind[] = ['guard', 'guard', 'sentinel', 'warden', 
 
 export type RelicKey = 'cloak' | 'greed' | 'boots' | 'ward' | 'lock';
 
-export const RELICS: Record<RelicKey, { n: string; d: string }> = {
-  cloak: { n: 'Shadow Cloak', d: 'guards notice you far later' },
-  greed: { n: 'Greedy Gauntlets', d: 'piles & siphon pay +30%' },
-  boots: { n: 'Muffled Boots', d: 'all noise wakes the wyrm 20% less' },
-  ward: { n: 'Ember Ward', d: 'crew takes 35% less dragonfire' },
-  lock: { n: 'Lockbreaker', d: 'chests spring open instantly' },
+export const RELICS: Record<RelicKey, { n: string; d: string; em: string }> = {
+  cloak: { n: 'Shadow Cloak', d: 'guards notice you far later', em: '🌑' },
+  greed: { n: 'Greedy Gauntlets', d: 'piles & siphon pay +30%', em: '🧤' },
+  boots: { n: 'Muffled Boots', d: 'all noise wakes the wyrm 20% less', em: '👢' },
+  ward: { n: 'Ember Ward', d: 'crew takes 35% less dragonfire', em: '🛡' },
+  lock: { n: 'Lockbreaker', d: 'chests spring open instantly', em: '🗝' },
 };
 
 export const RELIC_KEYS = Object.keys(RELICS) as RelicKey[];
 
 /* ---------------- daily modifiers ---------------- */
 
-export type ModId = 'dark' | 'restless' | 'garrison' | 'gilded' | 'quiet';
+export type ModId =
+  | 'dark'
+  | 'restless'
+  | 'garrison'
+  | 'gilded'
+  | 'quiet'
+  /* v0.3 — three more nights, for daily variety */
+  | 'hungry'
+  | 'plunder'
+  | 'silent';
 
 export interface ModDef {
   id: ModId;
@@ -157,8 +173,10 @@ export interface ModDef {
   gHp?: number;
   chestMul?: number;
   pileMul?: number;
-  /** added to guard detection radius, tiles */
+  /** added to guard detection radius, tiles (negative shrinks it) */
   alertAdd?: number;
+  /** dragonfire damage multiplier */
+  breathMul?: number;
 }
 
 export const MODS: ModDef[] = [
@@ -167,6 +185,14 @@ export const MODS: ModDef[] = [
   { id: 'garrison', n: 'HEAVY GARRISON', d: 'more, tougher guards · richer chests', extraG: 2, gHp: 1.2, chestMul: 1.4 },
   { id: 'gilded', n: 'GILDED HALLS', d: 'gold everywhere · guards see farther', pileMul: 1.6, alertAdd: 1 },
   { id: 'quiet', n: 'A QUIET NIGHT', d: 'no complications. suspicious.' },
+  /* --- v0.3 additions ---------------------------------------------------
+   * The prototype shipped five nights, which a player sees all of inside a
+   * week. These three reuse the existing generator knobs, so they cost the
+   * lair generator nothing and widen the daily rotation by 60%.
+   */
+  { id: 'hungry', n: 'A HUNGRY WYRM', d: 'sleeps deeper · burns hotter', wakeMul: 0.85, breathMul: 1.45 },
+  { id: 'plunder', n: 'PLUNDER SEASON', d: 'the gold is locked in the vaults', chestMul: 1.8, pileMul: 0.6 },
+  { id: 'silent', n: 'SILENT HALLS', d: 'blind guards · a leaner hoard', alertAdd: -1.2, hoardMul: 0.8 },
 ];
 
 /* ---------------- items ---------------- */
@@ -303,6 +329,23 @@ export const TUNING = {
   TRAP_DRAGON_STUN: 2.5,
   TRAP_DRAGON_R: 20,      // px
 
+  /* creep (v0.3) — the answer to "stealth is a timer, not a mechanic".
+   * Creeping costs real time, and time is the wake meter, so it is a trade
+   * rather than a free win: the same route creeping is ~0.82× the passive
+   * noise, but takes 1.8× as long. What it really buys is not being seen.
+   * Deliberately does NOT reduce proximity, siphon or combat noise — the
+   * pressure to get in and out of the hoard fast has to survive. */
+  /** how much a unit prefers the target it is already fighting */
+  TARGET_STICKY: 2.5,
+
+  CREEP_SPEED_MUL: 0.55,
+  CREEP_WAKE_MUL: 0.45,
+  CREEP_DETECT_MUL: 0.6,
+
+  /* shrine relic choice (v0.3) */
+  RELIC_OFFER_R: 0.95,    // tiles — walk into the one you want
+  RELIC_OFFER_GAP: 1.15,  // tiles — how far the two offers sit from the shrine
+
   /* misc */
   CMD_MARKER_TIME: 1.4,
   BANNER_DEPTH: 2.8,
@@ -317,6 +360,18 @@ export const ENTRANCE = { x0: 2, y0: 15, x1: 6, y1: 19 } as const;
 export const HOARD_ROOM = { x0: 24, y0: 3, x1: 29, y1: 8 } as const;
 export const HOARD_PILE = { x0: 26, y0: 4, x1: 28, y1: 7 } as const;
 export const MID_ROOM_COUNT = 4;
+
+/**
+ * Where the crew stands when a raid opens.
+ *
+ * The prototype spawned at x = 3,4,5 — and the exit strip is x = 2,3, so two
+ * of the four starting thieves began *inside* the extraction zone and the
+ * EXTRACT button was already lit at "2/4 at exit". A new player pressing it
+ * lost half their crew permanently before they had done anything. Starting at
+ * x = 4 puts the whole squad outside the zone, so extracting is always a
+ * deliberate walk back rather than an accident.
+ */
+export const SPAWN = { x0: 4, y0: 16, cols: 3 } as const;
 
 /** Level from XP — capped at 5 (prototype `lvlOf`). */
 export const lvlOf = (t: { xp: number }): number => Math.min(TUNING.LEVEL_CAP, t.xp);

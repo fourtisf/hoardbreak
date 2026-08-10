@@ -9,7 +9,7 @@
  * a canvas.
  */
 
-import { GD, H, ROCK, T, TC, TR, TUNING, UD, W } from './defs.js';
+import { GD, H, RELICS, ROCK, T, TC, TR, TUNING, UD, W } from './defs.js';
 import { gi, inb, tileOf } from './grid.js';
 import { SPRITES, drawSprite } from './sprites.js';
 import { dist } from './util.js';
@@ -33,6 +33,13 @@ export function createRenderer(canvas: HTMLCanvasElement): Renderer {
   C.imageSmoothingEnabled = false;
   let rockCv: HTMLCanvasElement | null = null;
   let shake = 0;
+  // a11y: screen shake, the banner flash and the wake vignette are the three
+  // things in here that move for their own sake, so they are the three things
+  // that go when the OS asks for less motion
+  const calm =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function buildRockCache(s: RunState): void {
     if (!rockCv) {
@@ -320,6 +327,7 @@ export function createRenderer(canvas: HTMLCanvasElement): Renderer {
     // `shake` is a render-only field: the sim raises it, the renderer spends it.
     if (s.shake > 0) shake = s.shake;
     s.shake = 0;
+    if (calm) shake = 0;
     if (shake > 0) {
       C.translate((Math.random() * 2 - 1) * shake, (Math.random() * 2 - 1) * shake);
       shake = Math.max(0, shake - dt * 22);
@@ -417,6 +425,35 @@ export function createRenderer(canvas: HTMLCanvasElement): Renderer {
         C.arc(s2.x, s2.y - 6, 12, -1.57, -1.57 + 6.28 * Math.min(1, s2.prog / TUNING.SHRINE_TIME));
         C.stroke();
       }
+    }
+
+    /* the two relics the shrine laid out — walk into the one you want */
+    for (const o of s.relicOffers) {
+      const pulse = 0.65 + 0.35 * Math.sin(t * 4 + o.x);
+      C.fillStyle = '#1a1430';
+      C.fillRect(o.x - 9, o.y - 2, 18, 8);
+      C.globalAlpha = pulse;
+      C.fillStyle = '#c9a0f0';
+      C.beginPath();
+      C.moveTo(o.x, o.y - 16);
+      C.lineTo(o.x + 7, o.y - 5);
+      C.lineTo(o.x, o.y + 2);
+      C.lineTo(o.x - 7, o.y - 5);
+      C.closePath();
+      C.fill();
+      C.globalAlpha = 1;
+      C.strokeStyle = 'rgba(201,160,240,' + (0.3 + 0.25 * Math.sin(t * 4 + o.x)) + ')';
+      C.lineWidth = 1.5;
+      C.beginPath();
+      C.arc(o.x, o.y - 6, TUNING.RELIC_OFFER_R * T, 0, 7);
+      C.stroke();
+      C.font = 'bold 9px Consolas,monospace';
+      C.textAlign = 'center';
+      C.fillStyle = 'rgba(4,10,7,.85)';
+      C.fillText(RELICS[o.k].n, o.x + 1, o.y - 21);
+      C.fillStyle = '#e8d0ff';
+      C.fillText(RELICS[o.k].n, o.x, o.y - 22);
+      C.textAlign = 'left';
     }
 
     if (s.armory && s.revealed[tileOf(s.armory.x, s.armory.y)]) {
@@ -628,7 +665,8 @@ export function createRenderer(canvas: HTMLCanvasElement): Renderer {
     /* wake tension vignette */
     if (s.wake >= TUNING.HEARTBEAT_WAKE && !s.dragon.awake) {
       const vv = (s.wake - TUNING.HEARTBEAT_WAKE) / 30;
-      C.fillStyle = 'rgba(255,60,60,' + (0.05 + 0.05 * vv + 0.03 * Math.sin(t * 4)) + ')';
+      const pulse = calm ? 0 : 0.03 * Math.sin(t * 4);
+      C.fillStyle = 'rgba(255,60,60,' + (0.05 + 0.05 * vv + pulse) + ')';
       C.fillRect(0, 0, W, H);
     }
 
@@ -643,14 +681,25 @@ export function createRenderer(canvas: HTMLCanvasElement): Renderer {
       C.fillStyle = '#ff9aa6';
       C.fillText('☠ IT HUNTS — get your crew to the green exit and EXTRACT', 10, 16);
     } else {
-      C.fillStyle = '#8affc0';
-      C.fillText('🗝 ' + s.mod.n + ' · WAKE ' + Math.floor(s.wake) + '% · greed feeds the beast', 10, 16);
+      C.fillStyle = s.creep ? '#8fd4ff' : '#8affc0';
+      C.fillText(
+        (s.creep ? '👣 CREEPING · ' : '🗝 ') +
+          s.mod.n +
+          ' · WAKE ' +
+          Math.floor(s.wake) +
+          '% · ' +
+          (s.creep ? 'slow feet, quiet feet' : 'greed feeds the beast'),
+        10,
+        16,
+      );
     }
 
     if (s.banner) {
       const al = Math.min(1, s.banner.l / 0.4);
-      C.fillStyle = 'rgba(255,70,80,' + 0.12 * (s.banner.l / s.banner.l0) + ')';
-      C.fillRect(0, 0, W, H);
+      if (!calm) {
+        C.fillStyle = 'rgba(255,70,80,' + 0.12 * (s.banner.l / s.banner.l0) + ')';
+        C.fillRect(0, 0, W, H);
+      }
       C.textAlign = 'center';
       C.font = '44px "Pirata One",Georgia,serif';
       C.fillStyle = 'rgba(6,10,8,' + 0.9 * al + ')';

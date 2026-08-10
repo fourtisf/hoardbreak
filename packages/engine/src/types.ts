@@ -55,6 +55,8 @@ export interface Unit extends Walker {
   cd: number;
   slam: number;
   steer: boolean;
+  /** gid of whoever this thief is currently swinging at, for target stickiness */
+  tgt: number | null;
   /** cosmetic bob phase */
   id: number;
   rescued?: boolean;
@@ -62,6 +64,8 @@ export interface Unit extends Walker {
 }
 
 export interface Guard extends Walker {
+  /** stable within a run — units remember who they were fighting */
+  gid: number;
   k: GuardKind;
   hp: number;
   max: number;
@@ -138,6 +142,20 @@ export interface Trap {
   x: number;
   y: number;
   armed: boolean;
+}
+
+/**
+ * A relic laid out at the shrine for the taking (v0.3).
+ *
+ * The prototype granted one relic at random, which meant a run had no build
+ * decision in it at all. The shrine now lays out two and you walk into the one
+ * you want — diegetic, no modal, no pause, and it reuses the same "stand near
+ * the thing" interaction language as chests, armouries and prisons.
+ */
+export interface RelicOffer {
+  k: RelicKey;
+  x: number;
+  y: number;
 }
 
 /* ---------------- presentation ---------------- */
@@ -219,7 +237,9 @@ export type EventCode =
   | 'RESCUE'
   | 'ITEM_USE'
   | 'WAKE_MILESTONE'
-  | 'EXTRACT';
+  | 'EXTRACT'
+  /** v0.3 — which relic was taken; value is the index into RELIC_KEYS */
+  | 'RELIC';
 
 /** `[t in ms, code, value]` — compact on purpose, it ships with every run. */
 export type RunEvent = [number, EventCode, number];
@@ -238,6 +258,8 @@ export interface InputFrame {
   my: number;
   /** magnitude 0..1 */
   mm: number;
+  /** creeping: slower, quieter, harder to spot (v0.3) */
+  creep?: boolean;
   commands?: RunCommand[];
 }
 
@@ -300,6 +322,8 @@ export interface RunState {
   prison: Prison | null;
   shrine: Shrine | null;
   armory: Armory | null;
+  /** relics the shrine has laid out but nobody has picked up yet (v0.3) */
+  relicOffers: RelicOffer[];
   hoard: Hoard;
   dragon: Dragon;
 
@@ -320,6 +344,10 @@ export interface RunState {
   itemsUsed: Record<ItemKey, number>;
   cmd: { x: number; y: number } | null;
   cmdT: number;
+  /** whether the crew is creeping this tick (v0.3) */
+  creep: boolean;
+  /** next guard id to hand out */
+  gidNext: number;
 
   /* presentation */
   fx: Fx[];

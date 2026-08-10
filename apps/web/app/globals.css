@@ -128,6 +128,73 @@ opacity:0;transition:.25s;pointer-events:none;font-style:italic;white-space:nowr
 #toast.show{opacity:1}
 @media (prefers-reduced-motion:reduce){#toast{transition:none}}
 
+/* ===========================================================================
+ * v0.3 additions — the depth picker, the relic row, creep, pause and the
+ * accessibility pass. Everything above this line is the prototype's own
+ * stylesheet, unchanged.
+ * ======================================================================== */
+
+/* --- depth picker (hideout + board) --- */
+.depthPick{display:flex;flex-direction:column;align-items:center;gap:6px;max-width:760px}
+.depthRow{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.dbtn{background:#0f1d15;border:1px solid var(--line2);border-radius:10px;
+  padding:5px 9px 6px;min-width:74px;display:flex;flex-direction:column;align-items:center;gap:1px;
+  color:var(--bone);cursor:pointer}
+.dbtn:hover{border-color:var(--em)}
+.dbtn b{font-family:'Pirata One',serif;font-size:16px;color:var(--gold);line-height:1}
+.dbtn span{font-family:Consolas,monospace;font-size:8px;letter-spacing:.04em;color:var(--dim);white-space:nowrap}
+.dbtn.on{border-color:var(--gold);background:#241f0e;box-shadow:0 0 12px rgba(255,215,94,.2)}
+.dbtn.on span{color:var(--goldhi)}
+.depthNote{font-size:10px;font-style:italic;color:var(--dim);text-align:center;max-width:460px}
+
+/* --- the guild fronts you a body when you have nothing left --- */
+.stranded{display:flex;align-items:center;gap:12px;background:#241010;border:1px solid #6b2424;
+  border-radius:12px;padding:9px 13px;margin-bottom:6px}
+.stranded .un{font-family:'Pirata One',serif;font-size:14px;color:var(--red)}
+.stranded .ud{font-size:9px;color:var(--dim);font-style:italic}
+.stranded .btn{padding:5px 12px;font-size:12px;white-space:nowrap}
+
+/* --- relics you are actually carrying, visible for the whole run --- */
+#relicRow{display:flex;flex-wrap:wrap;gap:4px;min-height:20px}
+.relicNone{font-size:9.5px;font-style:italic;color:var(--dim)}
+.relic{display:flex;align-items:center;gap:4px;background:#171033;border:1px solid #3a2a52;
+  border-radius:7px;padding:2px 7px 3px;cursor:help}
+.relic .em{font-size:11px}
+.relic .rt{font-family:'Pirata One',serif;font-size:10px;color:var(--purp);white-space:nowrap}
+
+/* --- creep toggle --- */
+.creepBtn{width:100%;position:relative;display:flex;align-items:center;justify-content:center;gap:7px;
+  background:#0f1d15;border:1px solid var(--line2);border-radius:8px;padding:6px 4px;
+  color:var(--bone);cursor:pointer}
+.creepBtn:hover{border-color:var(--em)}
+.creepBtn .tn{font-family:'Pirata One',serif;font-size:12px;letter-spacing:.06em}
+.creepBtn .key{position:absolute;right:7px;font-family:Consolas,monospace;font-size:8px;color:var(--dim)}
+.creepBtn.on{border-color:var(--blue);background:#0e1c26;color:var(--blue);
+  box-shadow:0 0 12px rgba(143,212,255,.22)}
+.creepBtn.on .key{color:var(--blue)}
+
+/* --- leaving crew behind is permanent: make the button say so --- */
+.btn.warn{color:var(--red);border-color:#6b2430;background:#2a1014}
+.btn.warn:hover{border-color:var(--red);color:#ff9aa6;box-shadow:0 0 16px rgba(255,90,110,.3)}
+
+/* --- pause --- */
+#pauseBtn{font-family:Consolas,monospace;font-size:11px;background:#12251b;
+  border:1px solid var(--line2);border-radius:20px;padding:4px 11px;color:var(--em);cursor:pointer}
+#pauseBtn:hover{border-color:var(--em)}
+
+/* --- a11y ---------------------------------------------------------------
+ * `--dim` was #5f7a6c on #070b09 — about 4.2:1, under the 4.5:1 floor for
+ * the small italic text it is mostly used for. Nudged up; the palette still
+ * reads the same.
+ */
+:root{--dim:#7d9c8c}
+
+@media (prefers-reduced-motion:reduce){
+  /* the canvas handles its own shake and flashes; this covers the chrome */
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
+    transition-duration:.001ms!important;scroll-behavior:auto!important}
+}
+
 /* ---------------------------------------------------------------------------
  * Mobile (handoff §11): below 480px the side panel becomes a bottom sheet and
  * the joystick gets more room. Nothing here touches the canvas — it stays as
@@ -172,6 +239,14 @@ header{min-width:0;overflow:hidden}
   .rc{width:96px}
   .panelBox{min-width:0;width:calc(100vw - 32px);max-width:340px}
   .stats{gap:12px;font-size:12px}
+  .dbtn{min-width:62px;padding:4px 7px 5px}
+  .dbtn b{font-size:14px}
+  .dbtn span{font-size:7px}
+  .stranded{width:calc(100vw - 32px);max-width:340px}
+  #pauseBtn{font-size:11px;padding:3px 9px}
+  .creepBtn{padding:8px 4px}
+  .creepBtn .tn{font-size:13px}
+  .relic .rt{font-size:9px}
 }
 
 /* the joystick is a touch affordance — hide it where there is no touch */

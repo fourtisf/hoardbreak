@@ -21,6 +21,7 @@ export {
   snapshotJSON,
   drainOutput,
   endRun,
+  abandonRun,
   useItem,
   addWake,
   extractReady,

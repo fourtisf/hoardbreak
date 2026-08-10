@@ -14,6 +14,7 @@ import { describe, expect, it } from 'vitest';
 import {
   MODS,
   RELIC_KEYS,
+  abandonRun,
   SIM_DT,
   T,
   TUNING,
@@ -25,19 +26,21 @@ import {
   dailySeed,
   extractReady,
   gi,
+  inZone,
   maxLootFor,
   modFor,
+  tileOf,
   snapshotJSON,
   step,
   unitDmgMul,
   useItem,
-  type Guard,
+  type CrewKind,
   type InputFrame,
   type RunCommand,
   type RunState,
   type Unit,
 } from '../src/headless.js';
-import { DATE, hashState, mkMeta, mkRun, place, placePx, solo, thief } from './helpers.js';
+import { DATE, hashState, mkGuard, mkMeta, mkRun, place, placePx, solo, thief } from './helpers.js';
 
 const idle: InputFrame = { mx: 0, my: 0, mm: 0 };
 
@@ -266,26 +269,7 @@ describe('08 · smoke bomb', () => {
     const u = s.units[0] as Unit;
     place(u, 10, 10);
     s.guards.length = 0;
-    const g: Guard = {
-      k: 'guard',
-      x: u.x + T,
-      y: u.y,
-      px: u.x + T,
-      py: u.y,
-      hp: 85,
-      max: 85,
-      alert: true,
-      cd: 0,
-      path: null,
-      pi: 0,
-      ptile: -1,
-      face: 1,
-      hex: 0,
-      burn: 0,
-      stun: 0,
-      id: 1,
-    };
-    s.guards.push(g);
+    const g = mkGuard(s, 'guard', u.x + T, u.y, { hp: 85, max: 85, alert: true });
 
     expect(useItem(s, 'smoke')).toBe(true);
     expect(g.alert).toBe(false);
@@ -348,26 +332,7 @@ describe('10 · bear trap', () => {
 
     const trap = s.traps[0]!;
     place(u, 2, 17); // the crew walks on; only the trap should touch this guard
-    const g: Guard = {
-      k: 'warden',
-      x: trap.x,
-      y: trap.y,
-      px: trap.x,
-      py: trap.y,
-      hp: 400,
-      max: 400,
-      alert: false,
-      cd: 0,
-      path: null,
-      pi: 0,
-      ptile: -1,
-      face: 1,
-      hex: 0,
-      burn: 0,
-      stun: 0,
-      id: 2,
-    };
-    s.guards.push(g);
+    const g = mkGuard(s, 'warden', trap.x, trap.y);
     step(s, idle);
     expect(g.hp).toBe(400 - TUNING.TRAP_GUARD_DMG);
     expect(g.stun).toBeGreaterThan(TUNING.TRAP_GUARD_STUN - SIM_DT - 1e-9);
@@ -527,25 +492,7 @@ describe('14 · wake multipliers', () => {
     const g = mkRun({ mod: 'quiet' });
     solo(g);
     const before = g.wake;
-    g.guards.push({
-      k: 'guard',
-      x: 10 * T,
-      y: 10 * T,
-      px: 10 * T,
-      py: 10 * T,
-      hp: 0,
-      max: 85,
-      alert: false,
-      cd: 0,
-      path: null,
-      pi: 0,
-      ptile: -1,
-      face: 1,
-      hex: 0,
-      burn: 0,
-      stun: 0,
-      id: 3,
-    });
+    mkGuard(g, 'guard', 10 * T, 10 * T, { hp: 0, max: 85 });
     step(g, idle);
     // a dead guard is +10 gold and +6 wake (plus the 0.9/s passive tick)
     expect(g.loot).toBe(TUNING.GUARD_BOUNTY);
@@ -728,7 +675,7 @@ describe('18 · wyrmslayer', () => {
  * ============================================================ */
 
 describe('19 · shrines and armouries', () => {
-  it('a shrine grants an unowned relic; once you own them all it pays 200 g', () => {
+  it('a shrine lays out two relics and you walk into the one you want', () => {
     const s = mkRun();
     const u = solo(s);
     const sh = s.shrine!;
@@ -737,11 +684,34 @@ describe('19 · shrines and armouries', () => {
     advance(s, 1.1);
     expect(sh.done).toBe(false);
     advance(s, 0.2);
+
     expect(sh.done).toBe(true);
-    expect(Object.keys(s.relics)).toHaveLength(1);
-    expect(RELIC_KEYS).toContain(Object.keys(s.relics)[0]);
+    expect(s.relicOffers).toHaveLength(2);
+    expect(s.relicOffers[0]!.k).not.toBe(s.relicOffers[1]!.k);
+    for (const o of s.relicOffers) expect(RELIC_KEYS).toContain(o.k);
+    // channelling the shrine is the noise; taking the relic is free
     expect(s.wake - wake).toBeGreaterThan(TUNING.WAKE_SHRINE);
     expect(s.events.some((e) => e[1] === 'SHRINE')).toBe(true);
+    // standing on the shrine itself does not decide for you
+    expect(Object.keys(s.relics)).toHaveLength(0);
+
+    const wanted = s.relicOffers[1]!;
+    placePx(u, wanted.x, wanted.y);
+    step(s, idle);
+    expect(s.relics[wanted.k]).toBe(1);
+    expect(Object.keys(s.relics)).toHaveLength(1); // the other one crumbled
+    expect(s.relicOffers).toHaveLength(0);
+    expect(s.events.some((e) => e[1] === 'RELIC' && e[2] === RELIC_KEYS.indexOf(wanted.k))).toBe(true);
+  });
+
+  it('hands the last relic straight over — a choice of one is not a choice', () => {
+    const nearly = mkRun();
+    const n = solo(nearly);
+    for (const k of RELIC_KEYS.slice(0, 4)) nearly.relics[k] = 1;
+    placePx(n, nearly.shrine!.x, nearly.shrine!.y);
+    advance(nearly, 1.4);
+    expect(nearly.relicOffers).toHaveLength(0);
+    expect(nearly.relics[RELIC_KEYS[4] as (typeof RELIC_KEYS)[number]]).toBe(1);
 
     const rich = mkRun();
     const r = solo(rich);
@@ -749,6 +719,7 @@ describe('19 · shrines and armouries', () => {
     placePx(r, rich.shrine!.x, rich.shrine!.y);
     advance(rich, 1.4);
     expect(rich.shrine!.done).toBe(true);
+    expect(rich.relicOffers).toHaveLength(0);
     expect(rich.loot).toBe(TUNING.SHRINE_OVERFLOW);
   });
 
@@ -797,26 +768,8 @@ describe('20 · the wyrm feeds', () => {
     s.revealed.fill(1);
     const u = solo(s, 'picklock');
     s.guards.length = 0;
-    const g: Guard = {
-      k: 'high',
-      x: u.x + 26, // outside the Picklock's 0.85-tile reach, inside the 1.3-tile burst
-      y: u.y,
-      px: u.x + 26,
-      py: u.y,
-      hp: 600,
-      max: 600,
-      alert: true,
-      cd: 999,
-      path: null,
-      pi: 0,
-      ptile: -1,
-      face: 1,
-      hex: 0,
-      burn: 0,
-      stun: 99,
-      id: 4,
-    };
-    s.guards.push(g);
+    // outside the Picklock's 0.85-tile reach, inside the 1.3-tile death burst
+    const g = mkGuard(s, 'high', u.x + 26, u.y, { hp: 600, max: 600, alert: true, cd: 999, stun: 99 });
     u.hp = 0;
     step(s, idle);
     expect(600 - g.hp).toBeCloseTo(UD.picklock.burst as number, 6);
@@ -847,5 +800,220 @@ describe('snapshot contract', () => {
     expect(snap.g).toHaveLength(s.guards.length);
     expect(snap.g[0]).toHaveLength(3);
     expect(Number.isInteger(snap.p[0]![2])).toBe(true);
+  });
+});
+
+/* ============================================================ *
+ * v0.3 design changes — the deliberate divergences from the
+ * prototype, each pinned so it cannot regress or drift back.
+ * ============================================================ */
+
+describe('v0.3 · nobody spawns inside the extraction zone', () => {
+  it('the crew starts outside the green tiles, so EXTRACT is always a choice', () => {
+    const s = mkRun({ meta: { crew: Array.from({ length: 9 }, (_, i) => thief(i + 1, 'picklock')) } });
+    expect(s.units).toHaveLength(9);
+    expect(extractReady(s)).toBe(0);
+    for (const u of s.units) {
+      expect(inZone(s, u)).toBe(false);
+      // still inside the entrance room, still on floor
+      expect(s.grid[tileOf(u.x, u.y)]).toBe(1);
+    }
+  });
+
+  it('walking two tiles left still reaches the exit', () => {
+    const s = mkRun();
+    s.guards.length = 0;
+    for (const u of s.units) place(u, 2, 17);
+    expect(extractReady(s)).toBe(s.units.length);
+  });
+});
+
+describe('v0.3 · creep makes stealth a mechanic, not a timer', () => {
+  const creeping = { mx: 0, my: 0, mm: 0, creep: true };
+
+  it('halves the pace and cuts passive noise by more than half', () => {
+    const loud = mkRun({ mod: 'quiet' });
+    solo(loud);
+    advance(loud, 2);
+
+    const quiet = mkRun({ mod: 'quiet' });
+    solo(quiet);
+    advance(quiet, 2, creeping);
+
+    expect(quiet.wake).toBeLessThan(loud.wake);
+    expect(quiet.wake / loud.wake).toBeCloseTo(TUNING.CREEP_WAKE_MUL, 2);
+  });
+
+  it('shrinks the radius a guard notices you from', () => {
+    const mk = (creep: boolean): RunState => {
+      const s = mkRun({ mod: 'quiet' });
+      s.revealed.fill(1);
+      const u = solo(s);
+      place(u, 12, 12);
+      // just outside creeping range, comfortably inside walking range
+      mkGuard(s, 'guard', u.x + TUNING.DETECT_R * T * 0.8, u.y, { hp: 85, max: 85 });
+      advance(s, 0.2, creep ? creeping : idle);
+      return s;
+    };
+    expect(mk(false).guards[0]!.alert).toBe(true);
+    expect(mk(true).guards[0]!.alert).toBe(false);
+  });
+
+  it('costs real time — the trade is pace for silence', () => {
+    const dash = mkRun({ mod: 'quiet' });
+    const sneak = mkRun({ mod: 'quiet' });
+    for (const s of [dash, sneak]) {
+      s.guards.length = 0;
+      s.units.length = 1;
+      place(s.units[0] as Unit, 3, 17); // the entrance room, so there is floor to run on
+    }
+    const run = { mx: 1, my: 0, mm: 1 };
+    advance(dash, 0.4, run);
+    advance(sneak, 0.4, { ...run, creep: true });
+    const moved = (s: RunState): number => (s.units[0] as Unit).x - (3 * T + T / 2);
+    expect(moved(sneak) / moved(dash)).toBeCloseTo(TUNING.CREEP_SPEED_MUL, 2);
+  });
+
+  it('does not quiet the hoard — siphoning is as loud as it ever was', () => {
+    const mk = (creep: boolean): number => {
+      const s = mkRun({ mod: 'quiet' });
+      const u = solo(s);
+      place(u, 27, 5);
+      const before = s.wake;
+      advance(s, 1, creep ? creeping : idle);
+      return s.wake - before;
+    };
+    // the only difference is the passive 0.9/s underneath; the siphon's 18/s
+    // and the dragon-proximity 2.2/s are untouched
+    expect(mk(true)).toBeGreaterThan(mk(false) * 0.9);
+  });
+});
+
+describe('v0.3 · classes pick their targets differently', () => {
+  /** One thief of the class under test, in the entrance room (always carved). */
+  const lone = (kind: CrewKind): RunState => {
+    const s = mkRun({ mod: 'quiet', meta: { crew: [thief(1, kind)] } });
+    s.revealed.fill(1);
+    const u = solo(s);
+    place(u, 5, 17);
+    return s;
+  };
+  const at = (s: RunState, k: Parameters<typeof mkGuard>[1], dx: number, over = {}) =>
+    mkGuard(s, k, (s.units[0] as Unit).x + dx, (s.units[0] as Unit).y, { alert: true, ...over });
+
+  it('the Hexer curses the biggest thing in reach, not the closest', () => {
+    const s = lone('hexer'); // 3.4-tile reach — both are comfortably inside it
+    const runt = at(s, 'guard', 30, { hp: 85, max: 85 });
+    const brute = at(s, 'high', 70, { hp: 520, max: 520 });
+    advance(s, 0.3);
+    expect(brute.hex).toBeGreaterThan(0);
+    expect(runt.hex).toBe(0);
+    expect(brute.hp).toBeLessThan(520);
+    expect(runt.hp).toBe(85);
+  });
+
+  it('the Emberkin spreads fire instead of stacking it', () => {
+    const s = lone('emberkin'); // 2.9-tile reach
+    const alight = at(s, 'guard', 25, { burn: 3 });
+    const fresh = at(s, 'guard', 55);
+    advance(s, 0.3);
+    expect(fresh.burn).toBeGreaterThan(0);
+    expect(fresh.hp).toBeLessThan(alight.hp);
+  });
+
+  it('the Bruiser body-blocks the hardest hitter', () => {
+    const s = lone('bruiser'); // 0.9-tile reach — keep both inside it
+    const soft = at(s, 'acolyte', 12); //  5 dps
+    const heavy = at(s, 'high', 19); // 22 dps
+    advance(s, 0.5);
+    expect(heavy.hp).toBeLessThan(soft.hp);
+    expect(soft.hp).toBe(400);
+  });
+
+  it('a Picklock still just swings at whatever is nearest', () => {
+    const s = lone('picklock'); // 0.85-tile reach
+    const near = at(s, 'guard', 14);
+    const far = at(s, 'high', 19);
+    advance(s, 0.4);
+    expect(near.hp).toBeLessThan(far.hp);
+  });
+
+  it('once a thief commits to a target it stops flip-flopping', () => {
+    const s = lone('hexer');
+    const a = at(s, 'high', 40, { hp: 520, max: 520 });
+    const b = at(s, 'high', 45, { hp: 520, max: 520 });
+    advance(s, 1);
+    // one of them is being killed; the other is untouched
+    const hit = [a, b].filter((g) => g.hp < 520);
+    expect(hit).toHaveLength(1);
+  });
+});
+
+describe('v0.3 · the daily rotation is wider', () => {
+  it('eight nights, all reachable, none of them duplicates', () => {
+    expect(MODS).toHaveLength(8);
+    expect(new Set(MODS.map((m) => m.id)).size).toBe(8);
+    const seen = new Set<string>();
+    for (let d = 1; d <= 400; d++) seen.add(modFor(DATE, d).id);
+    expect(seen.size).toBe(8);
+  });
+
+  it('A HUNGRY WYRM sleeps deeper but burns hotter', () => {
+    const s = mkRun({ mod: 'hungry' });
+    const u = solo(s, 'hexer');
+    u.hp = 1000;
+    s.stage = 1;
+    s.dragon.scd = 0.001;
+    step(s, idle);
+    placePx(u, s.tele[0]!.x, s.tele[0]!.y);
+    advance(s, 0.65);
+    expect(1000 - u.hp).toBeCloseTo(TUNING.SLEEP_BREATH_DMG * 1.45, 6);
+
+    const calm = mkRun({ mod: 'hungry' });
+    addWake(calm, 10);
+    expect(calm.wake).toBeCloseTo(8.5, 9);
+  });
+
+  it('SILENT HALLS shrinks the detection radius without going negative', () => {
+    const s = mkRun({ mod: 'silent' });
+    s.revealed.fill(1);
+    const u = solo(s);
+    place(u, 12, 12);
+    mkGuard(s, 'guard', u.x + TUNING.DETECT_R * T * 0.95, u.y, { hp: 85, max: 85 });
+    advance(s, 0.2);
+    expect(s.guards[0]!.alert).toBe(false);
+    expect(s.hoard.pool0).toBeLessThan(mkRun({ mod: 'quiet' }).hoard.pool0);
+  });
+});
+
+describe('v0.3 · abandoning a run costs what dying costs', () => {
+  it('the loot stays in the mountain and the crew stays with it', () => {
+    const s = mkRun();
+    s.guards.length = 0;
+    s.loot = 3000;
+    // even standing on the exit tiles, walking away is not extracting
+    for (const u of s.units) place(u, 2, 17);
+    expect(extractReady(s)).toBe(4);
+
+    abandonRun(s);
+
+    expect(s.over).toBe(true);
+    const r = s.result!;
+    expect(r.success).toBe(false);
+    expect(r.loot).toBe(3000); // reported, never banked
+    expect(r.survivorsTids).toEqual([]);
+    expect(r.crewLostTids.sort()).toEqual([1, 2, 3, 4]);
+    expect(r.crewLost).toBe(4);
+  });
+
+  it('is a no-op once the run is already over', () => {
+    const s = mkRun();
+    s.guards.length = 0;
+    for (const u of s.units) place(u, 2, 17);
+    step(s, { ...idle, commands: [{ c: 'extract' }] });
+    const banked = s.result!;
+    abandonRun(s);
+    expect(s.result).toBe(banked);
+    expect(s.result!.success).toBe(true);
   });
 });

@@ -1,7 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   CREW_CAP,
   CREW_KINDS,
@@ -18,7 +19,17 @@ import {
   type ItemKey,
   type UpgradeKey,
 } from '@hoardbreak/engine';
-import { boardRows, buyItem, buyUpgrade, recruit } from '@hoardbreak/shared';
+import {
+  boardRows,
+  buyItem,
+  buyUpgrade,
+  conscript,
+  needsConscript,
+  recruit,
+  rollDay,
+  selectDepth,
+  unlockedDepth,
+} from '@hoardbreak/shared';
 import { getMeta, mutate, useLastRun, useMeta } from '@/lib/store';
 import { toast } from '@/lib/toast';
 import SpriteCanvas from './SpriteCanvas';
@@ -31,7 +42,15 @@ export default function Hideout() {
   const lastRun = useLastRun();
   const date = useMemo(() => todayUTC(), []);
   const mod = modFor(date, meta.depth);
-  const rows = boardRows(date, meta.todayBest);
+  const unlocked = unlockedDepth(meta);
+  const rows = boardRows(date, meta.depth, meta.todayBestByDepth[meta.depth] ?? 0);
+  const bestHere = meta.bestByDepth[meta.depth] ?? 0;
+  const stranded = needsConscript(meta);
+
+  // a session that outlives UTC midnight has to roll its own day over
+  useEffect(() => {
+    mutate((m) => rollDay(m, date));
+  }, [date]);
 
   const doRecruit = (k: CrewKind): void => {
     const r = mutate((m) => recruit(m, k));
@@ -56,6 +75,15 @@ export default function Hideout() {
     router.push('/raid');
   };
 
+  const pickDepth = (d: number): void => {
+    mutate((m) => selectDepth(m, d));
+  };
+
+  const takeConscript = (): void => {
+    const r = mutate((m) => conscript(m));
+    toast(r.msg);
+  };
+
   return (
     <>
       <div id="camp">
@@ -65,6 +93,36 @@ export default function Hideout() {
           DAILY HEIST — <b>{date}</b> · same lairs for every player
           <br />
           Depth {meta.depth} tonight: <b>{mod.n}</b> — {mod.d}
+          {bestHere > 0 && (
+            <>
+              <br />
+              <span style={{ color: 'var(--dim)' }}>your best here: {fmt(bestHere)}g</span>
+            </>
+          )}
+        </div>
+
+        <div className="depthPick">
+          <span className="lbl">CHOOSE TONIGHT&apos;S LAIR</span>
+          <div className="depthRow">
+            {Array.from({ length: unlocked }, (_, i) => i + 1).map((d) => {
+              const m = modFor(date, d);
+              return (
+                <button
+                  key={d}
+                  className={`dbtn${d === meta.depth ? ' on' : ''}`}
+                  onClick={() => pickDepth(d)}
+                  title={`${m.n} — ${m.d}`}
+                >
+                  <b>{d}</b>
+                  <span>{m.n}</span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="depthNote">
+            Everyone who picks the same depth tonight raids the same lair — that is what the board ranks.
+            {unlocked === 1 && ' Clear depth 1 to unlock deeper lairs.'}
+          </div>
         </div>
 
         <div className="stats">
@@ -87,6 +145,17 @@ export default function Hideout() {
 
         <div className="cols">
           <div className="col">
+            {stranded && (
+              <div className="stranded">
+                <div>
+                  <div className="un">No crew, no coin.</div>
+                  <div className="ud">The guild will front you a body — once.</div>
+                </div>
+                <button className="btn" onClick={takeConscript}>
+                  CALL IN A FAVOUR
+                </button>
+              </div>
+            )}
             <div className="lbl">RECRUIT — each class has a unique skill</div>
             <div className="roster" id="roster">
               {CREW_KINDS.map((k) => {
@@ -124,7 +193,14 @@ export default function Hideout() {
                   ))
                 )}
                 {meta.lost.length > 0 && (
-                  <div style={{ color: 'var(--red)' }}>Imprisoned: {meta.lost.map((t) => t.name).join(', ')}</div>
+                  <>
+                    <div style={{ color: 'var(--red)' }}>
+                      Imprisoned: {meta.lost.map((t) => t.name).join(', ')}
+                    </div>
+                    <div style={{ color: 'var(--gold)' }}>
+                      Tonight&apos;s prison holds <b>{meta.lost[0]!.name}</b>
+                    </div>
+                  </>
                 )}
               </div>
             </div>
@@ -176,7 +252,7 @@ export default function Hideout() {
 
             <div className="panelBox">
               <div className="lbl" style={{ marginBottom: 6 }}>
-                TODAY&apos;S BOARD — biggest single heist
+                TODAY&apos;S BOARD — DEPTH {meta.depth}
               </div>
               <div id="board">
                 {rows.map((r, i) => (
@@ -211,6 +287,9 @@ export default function Hideout() {
         >
           {lastRun ?? ''}
         </div>
+        <Link href="/board" className="ul" style={{ textDecoration: 'none' }}>
+          view every depth &amp; the past week →
+        </Link>
       </div>
       <Toast />
     </>

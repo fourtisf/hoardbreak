@@ -22,6 +22,7 @@ import {
   RELICS,
   RELIC_KEYS,
   SIM_DT,
+  SPAWN,
   T,
   TC,
   TR,
@@ -29,7 +30,6 @@ import {
   UD,
   W,
   lvlOf,
-  type GuardKind,
   type ItemKey,
   type ModDef,
   type RelicKey,
@@ -48,6 +48,7 @@ import type {
   RunCommand,
   RunMeta,
   RunOutput,
+  RelicOffer,
   RunSnapshot,
   RunState,
   SoundCue,
@@ -110,7 +111,16 @@ function wakeDragon(s: RunState): void {
 
 /* ================= relics ================= */
 
-function grantRelic(s: RunState): void {
+/**
+ * The shrine's payoff (v0.3).
+ *
+ * The prototype rolled one relic and handed it over, so a run contained no
+ * build decision. The shrine now lays two out on either side of itself and the
+ * crew walks into the one they want — the loser vanishes. Everything else is
+ * unchanged: the overflow case still pays 200 g, and the relic pool and their
+ * effects are the prototype's.
+ */
+function offerRelics(s: RunState): void {
   const left = RELIC_KEYS.filter((k) => !s.relics[k]);
   if (!left.length) {
     s.loot += TUNING.SHRINE_OVERFLOW;
@@ -119,15 +129,50 @@ function grantRelic(s: RunState): void {
     }
     return;
   }
-  const k = left[s.rngSim.int(0, left.length - 1)] as RelicKey;
-  s.relics[k] = 1;
+  const sh = s.shrine;
+  if (!sh) return;
+
+  // one relic left is not a choice — hand it over rather than stage a fake one
+  if (left.length === 1) {
+    takeRelic(s, { k: left[0] as RelicKey, x: sh.x, y: sh.y });
+    return;
+  }
+
+  // draw without replacement so the two offers are never the same relic
+  const picks: RelicKey[] = [];
+  const pool = left.slice();
+  while (picks.length < 2 && pool.length) {
+    picks.push(pool.splice(s.rngSim.int(0, pool.length - 1), 1)[0] as RelicKey);
+  }
+
+  const gap = TUNING.RELIC_OFFER_GAP * T;
+  picks.forEach((k, i) => {
+    s.relicOffers.push({ k, x: sh.x + (i === 0 ? -gap : gap), y: sh.y });
+  });
+
   s.banner = {
-    t1: 'RELIC',
-    t2: `${RELICS[k].n} — ${RELICS[k].d}`,
+    t1: 'THE SHRINE OPENS',
+    t2: 'take one — the other crumbles',
     l: TUNING.BANNER_RELIC,
     l0: TUNING.BANNER_RELIC,
   };
-  feed(s, `◆ ${RELICS[k].n}`, 'w');
+  feed(s, 'Two relics, one hand. Choose.', 'w');
+  snd(s, 660, 0.12, 'triangle', 0.07);
+}
+
+/** Somebody walked into an offered relic — they take it, the rest crumble. */
+function takeRelic(s: RunState, o: RelicOffer): void {
+  s.relics[o.k] = 1;
+  s.relicOffers.length = 0;
+  emit(s, 'RELIC', RELIC_KEYS.indexOf(o.k));
+  s.banner = {
+    t1: 'RELIC',
+    t2: `${RELICS[o.k].n} — ${RELICS[o.k].d}`,
+    l: TUNING.BANNER_RELIC,
+    l0: TUNING.BANNER_RELIC,
+  };
+  feed(s, `◆ ${RELICS[o.k].n}`, 'w');
+  s.fx.push({ k: 'burst', x: o.x, y: o.y, l: 0.4, l0: 0.4 });
   snd(s, 660, 0.12, 'triangle', 0.07);
   snd(s, 880, 0.16, 'triangle', 0.06, undefined, 130);
 }
@@ -219,8 +264,44 @@ function follow(s: RunState, o: Walker, tx: number, ty: number, spd: number, dt:
   return false;
 }
 
+/** Crew movement multiplier for this tick — creeping halves the pace. */
+function crewSpeed(s: RunState): number {
+  return s.creep ? TUNING.CREEP_SPEED_MUL : 1;
+}
+
 export function unitDmgMul(s: RunState, u: Unit): number {
   return (1 + TUNING.UP_DMG_PER_LEVEL * s.meta.up.dmg) * (1 + TUNING.XP_STAT_PER_LEVEL * u.lv) * (1 + s.runDmg);
+}
+
+/**
+ * Who a thief goes for, by class (v0.3).
+ *
+ * In the prototype every class swung at whatever was nearest, so a five-class
+ * roster read as five stat blocks. This expresses each class's fantasy through
+ * target selection alone — no new abilities, no new buttons, no new UI, and the
+ * bias is small enough that "nearest" still usually wins.
+ */
+function targetBias(u: Unit, g: Guard): number {
+  // Sticking to a target matters more than any class preference: without it a
+  // unit ping-pongs between two guards every tick and kills neither.
+  const sticky = u.tgt !== null && g.gid === u.tgt ? TUNING.TARGET_STICKY : 0;
+  switch (u.k) {
+    // the hex is a damage amp — it belongs on the biggest thing in the room,
+    // and refreshing it on the same target is free, so no penalty for re-hexing
+    case 'hexer':
+      return sticky + g.max / 200;
+    // ignite is damage over time: stacking it on one body wastes it, so nudge
+    // the Emberkin toward whoever is not already alight
+    case 'emberkin':
+      return sticky + (g.burn > 0 ? -TUNING.TARGET_STICKY - 1 : 0);
+    // the bruiser is a body: he goes where the hardest hits are coming from
+    case 'bruiser':
+      return sticky + GD[g.k].dps / 4;
+    // the picklock wants to be anywhere else, and the golem's slam already
+    // finds crowds on its own
+    default:
+      return sticky;
+  }
 }
 
 function unitStep(s: RunState, u: Unit, dt: number): void {
@@ -255,14 +336,20 @@ function unitStep(s: RunState, u: Unit, dt: number): void {
 
   let tgt: Guard | null = null;
   let td = 1e9;
+  let bestScore = -Infinity;
   for (const g of s.guards) {
     if (!s.revealed[tileOf(g.x, g.y)]) continue;
     const dd = dist(u.x, u.y, g.x, g.y);
-    if (dd < TUNING.UNIT_TARGET_R * T && dd < td) {
+    if (dd >= TUNING.UNIT_TARGET_R * T) continue;
+    // nearest still wins by default; class bias only breaks ties within reach
+    const score = targetBias(u, g) - dd / T;
+    if (score > bestScore) {
+      bestScore = score;
       td = dd;
       tgt = g;
     }
   }
+  u.tgt = tgt ? tgt.gid : null;
 
   let hitDragon = false;
   if (!tgt && s.dragon.awake) {
@@ -304,7 +391,7 @@ function unitStep(s: RunState, u: Unit, dt: number): void {
       return;
     }
     if (u === s.units[0] && u.steer) return;
-    follow(s, u, clamp((tgt.x / T) | 0, 0, TC - 1), clamp((tgt.y / T) | 0, 0, TR - 1), d.spd, dt);
+    follow(s, u, clamp((tgt.x / T) | 0, 0, TC - 1), clamp((tgt.y / T) | 0, 0, TR - 1), d.spd * crewSpeed(s), dt);
     return;
   }
 
@@ -339,15 +426,16 @@ function unitStep(s: RunState, u: Unit, dt: number): void {
   }
 
   const leader = s.units[0] as Unit;
+  const sm = crewSpeed(s);
   if (u === leader) {
     if (!u.steer && s.cmd) {
-      const done = follow(s, u, s.cmd.x, s.cmd.y, d.spd, dt);
+      const done = follow(s, u, s.cmd.x, s.cmd.y, d.spd * sm, dt);
       if (done) u.path = null;
     }
     return;
   }
   if (s.cmd) {
-    const done = follow(s, u, s.cmd.x, s.cmd.y, d.spd, dt);
+    const done = follow(s, u, s.cmd.x, s.cmd.y, d.spd * sm, dt);
     if (done) u.path = null;
     return;
   }
@@ -357,7 +445,7 @@ function unitStep(s: RunState, u: Unit, dt: number): void {
       u,
       clamp((leader.x / T) | 0, 0, TC - 1),
       clamp((leader.y / T) | 0, 0, TR - 1),
-      d.spd * TUNING.FOLLOW_SPEED_MUL,
+      d.spd * TUNING.FOLLOW_SPEED_MUL * sm,
       dt,
     );
   }
@@ -392,7 +480,11 @@ function guardStep(s: RunState, g: Guard, dt: number): void {
 
   if (!g.alert) {
     if (s.smokeT > 0) return;
-    const aR = (TUNING.DETECT_R + (s.mod.alertAdd || 0)) * T * (s.relics.cloak ? TUNING.CLOAK_MUL : 1);
+    const aR =
+      Math.max(0, TUNING.DETECT_R + (s.mod.alertAdd || 0)) *
+      T *
+      (s.relics.cloak ? TUNING.CLOAK_MUL : 1) *
+      (s.creep ? TUNING.CREEP_DETECT_MUL : 1);
     for (const u of s.units) {
       if (dist(g.x, g.y, u.x, u.y) < aR && s.revealed[tileOf(g.x, g.y)]) {
         g.alert = true;
@@ -502,7 +594,7 @@ function sleepBreath(s: RunState): void {
     t: TUNING.SLEEP_BREATH_TELE,
     x: tx,
     y: ty,
-    dmg: TUNING.SLEEP_BREATH_DMG,
+    dmg: TUNING.SLEEP_BREATH_DMG * (s.mod.breathMul || 1),
     shake: 4,
     snd: { f: 45, d: 0.3, type: 'sawtooth', v: 0.09, slide: 20 },
   });
@@ -519,7 +611,9 @@ function dragonStep(s: RunState, dt: number): void {
   }
 
   if (!D.awake) {
-    addWake(s, TUNING.WAKE_PASSIVE * dt);
+    // creeping only quiets your own footsteps — proximity, siphon and combat
+    // noise are untouched, so the hoard stays as dangerous as it ever was
+    addWake(s, TUNING.WAKE_PASSIVE * dt * (s.creep ? TUNING.CREEP_WAKE_MUL : 1));
     if (s.wake >= TUNING.STAGE1_WAKE && s.stage < 1) {
       s.stage = 1;
       emit(s, 'WAKE_MILESTONE', 50);
@@ -599,7 +693,7 @@ function dragonStep(s: RunState, dt: number): void {
       t: TUNING.AWAKE_BREATH_TELE,
       x: tx,
       y: ty,
-      dmg: TUNING.AWAKE_BREATH_DMG,
+      dmg: TUNING.AWAKE_BREATH_DMG * (s.mod.breathMul || 1),
       shake: 6,
       snd: { f: 45, d: 0.4, type: 'sawtooth', v: 0.11, slide: 20 },
     });
@@ -655,6 +749,29 @@ export function extractReady(s: RunState): number {
   let n = 0;
   for (const u of s.units) if (inZone(s, u)) n++;
   return n;
+}
+
+/**
+ * Give up and run for it (v0.3).
+ *
+ * A doomed run otherwise wastes two real minutes waiting to die, so the player
+ * needs a way out — but it cannot be free. A failed run only ever costs you the
+ * thieves who actually fell, so "abandon" with the crew alive would have been a
+ * free scouting trip: walk in, learn today's lair, quit, walk back in and run it
+ * perfectly. The daily only means something if everyone gets one shot at it.
+ *
+ * So abandoning is exactly a wipe: the loot stays in the mountain and the crew
+ * does not come out. What it buys you is the two minutes, not the consequences.
+ */
+export function abandonRun(s: RunState): void {
+  if (s.over) return;
+  for (const u of s.units) {
+    if (!u.rescued) loseThief(s, u);
+    else s.crewLost++;
+    feed(s, `${u.name} never came back out of the dark.`, 'e');
+  }
+  s.units.length = 0;
+  endRun(s, false);
 }
 
 export function endRun(s: RunState, success: boolean, slain = false): void {
@@ -720,6 +837,7 @@ function update(s: RunState, dt: number, input: InputFrame): void {
   runTimers(s, dt);
   if (s.over) return;
 
+  s.creep = input.creep === true;
   s.smokeT = Math.max(0, s.smokeT - dt);
 
   if (s.units.length) {
@@ -727,7 +845,7 @@ function update(s: RunState, dt: number, input: InputFrame): void {
     if (input.mm > TUNING.STEER_DEADZONE) {
       s.cmd = null;
       L.steer = true;
-      const sp = UD[L.k].spd * TUNING.LEADER_SPEED_MUL * dt * input.mm;
+      const sp = UD[L.k].spd * TUNING.LEADER_SPEED_MUL * crewSpeed(s) * dt * input.mm;
       const nx = L.x + input.mx * sp;
       const ny = L.y + input.my * sp;
       if (!blockedPx(s.grid, nx, ny)) {
@@ -798,11 +916,23 @@ function update(s: RunState, dt: number, input: InputFrame): void {
       if (s.shrine.prog >= TUNING.SHRINE_TIME) {
         s.shrine.done = true;
         const before = s.loot;
-        grantRelic(s);
+        offerRelics(s);
         emit(s, 'SHRINE', s.loot - before);
         addWake(s, TUNING.WAKE_SHRINE);
       }
     } else s.shrine.prog = Math.max(0, s.shrine.prog - dt * TUNING.CHANNEL_DECAY);
+  }
+
+  /* pick one of the shrine's relics up — the other crumbles */
+  if (s.relicOffers.length) {
+    outer: for (const o of s.relicOffers) {
+      for (const u of s.units) {
+        if (dist(u.x, u.y, o.x, o.y) < TUNING.RELIC_OFFER_R * T) {
+          takeRelic(s, o);
+          break outer;
+        }
+      }
+    }
   }
 
   if (s.armory && !s.armory.done) {
@@ -852,6 +982,7 @@ function update(s: RunState, dt: number, input: InputFrame): void {
           face: 1,
           slam: 0,
           steer: false,
+          tgt: null,
           id: s.rngSim.range(0, 99),
         });
         s.out.squadDirty = true;
@@ -1021,6 +1152,7 @@ export function createRun(opts: CreateRunOptions): RunState {
     prison: null,
     shrine: null,
     armory: null,
+    relicOffers: [],
     // replaced by genLair
     hoard: { x0: 0, y0: 0, x1: 0, y1: 0, pool: 0, pool0: 1 },
     dragon: { x: 0, y: 0, px: 0, py: 0, hp: 1, max: 1, awake: false, cd: 0, scd: 0, stunT: 0 },
@@ -1040,6 +1172,8 @@ export function createRun(opts: CreateRunOptions): RunState {
     itemsUsed: { smoke: 0, lull: 0, trap: 0 },
     cmd: null,
     cmdT: 0,
+    creep: false,
+    gidNext: 1,
     fx: [],
     tele: [],
     banner: null,
@@ -1067,10 +1201,10 @@ export function createRun(opts: CreateRunOptions): RunState {
       name: th.name,
       k: th.kind,
       lv,
-      x: (3 + (i % 3)) * T + T / 2,
-      y: (16 + ((i / 3) | 0)) * T + T / 2,
-      px: (3 + (i % 3)) * T + T / 2,
-      py: (16 + ((i / 3) | 0)) * T + T / 2,
+      x: (SPAWN.x0 + (i % SPAWN.cols)) * T + T / 2,
+      y: (SPAWN.y0 + ((i / SPAWN.cols) | 0)) * T + T / 2,
+      px: (SPAWN.x0 + (i % SPAWN.cols)) * T + T / 2,
+      py: (SPAWN.y0 + ((i / SPAWN.cols) | 0)) * T + T / 2,
       hp,
       max: hp,
       cd: 0,
@@ -1080,6 +1214,7 @@ export function createRun(opts: CreateRunOptions): RunState {
       face: 1,
       slam: 0,
       steer: false,
+      tgt: null,
       id: s.rngSim.range(0, 99),
     });
   });

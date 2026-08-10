@@ -23,6 +23,9 @@ export interface InputController {
   read(): InputFrame;
   /** Queue a command from UI chrome (item buttons, EXTRACT button). */
   push(cmd: RunCommand): void;
+  /** Latch creep on/off — the mobile toggle. Shift overrides it while held. */
+  setCreep(on: boolean): void;
+  isCreeping(): boolean;
   dispose(): void;
 }
 
@@ -35,6 +38,8 @@ export function createInput(opts: InputOptions): InputController {
   const keys: Record<string, boolean> = {};
   const stick = { active: false, id: -1, bx: 0, by: 0, dx: 0, dy: 0 };
   let queue: RunCommand[] = [];
+  // creep is held on desktop (Shift) and latched on touch (the CREEP button)
+  let creepLatched = false;
 
   const push = (cmd: RunCommand): void => {
     queue.push(cmd);
@@ -68,8 +73,13 @@ export function createInput(opts: InputOptions): InputController {
   const onKeyUp = (e: KeyboardEvent): void => {
     keys[e.key.toLowerCase()] = false;
   };
+  // a Shift held down when the window loses focus would otherwise stick
+  const onBlur = (): void => {
+    for (const k of Object.keys(keys)) keys[k] = false;
+  };
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);
+  window.addEventListener('blur', onBlur);
 
   /* ---- virtual joystick ---- */
   const stEl = opts.stick ?? null;
@@ -136,19 +146,26 @@ export function createInput(opts: InputOptions): InputController {
     return m > 0 ? { x: x / m, y: y / m, m: Math.min(1, m) } : { x: 0, y: 0, m: 0 };
   }
 
+  const creeping = (): boolean => creepLatched || keys['shift'] === true;
+
   return {
     read(): InputFrame {
       const mv = enabled() ? moveVec() : { x: 0, y: 0, m: 0 };
       const commands = queue;
       queue = [];
-      return { mx: mv.x, my: mv.y, mm: mv.m, commands };
+      return { mx: mv.x, my: mv.y, mm: mv.m, creep: creeping(), commands };
     },
     push,
+    setCreep(on: boolean): void {
+      creepLatched = on;
+    },
+    isCreeping: creeping,
     dispose(): void {
       canvas.removeEventListener('contextmenu', onContextMenu);
       canvas.removeEventListener('pointerdown', onCanvasDown);
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', onBlur);
       if (stEl) {
         stEl.removeEventListener('pointerdown', onStickDown);
         stEl.removeEventListener('pointermove', onStickMove);

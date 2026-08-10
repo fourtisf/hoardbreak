@@ -22,12 +22,18 @@ import {
 } from '@hoardbreak/engine/headless';
 import {
   applyRunResult,
+  boardRows,
   buyItem,
   buyUpgrade,
   commitRunStart,
+  conscript,
   createMeta,
   lootTokens,
+  needsConscript,
   recruit,
+  rollDay,
+  selectDepth,
+  unlockedDepth,
 } from '../src/index.js';
 
 const DATE = '2026-03-14';
@@ -307,5 +313,109 @@ describe('end to end', () => {
     expect(m.crew.every((t) => t.xp === 1)).toBe(true);
     expect(payout.tok).toBeGreaterThan(0);
     expect(m.todayBest).toBe(run.result!.loot);
+  });
+});
+
+/* ============================================================ *
+ * v0.3 — depth choice, per-depth boards and the safety net
+ * ============================================================ */
+
+describe('v0.3 · choosing tonight’s depth', () => {
+  it('starts locked to depth 1 and unlocks one deeper per clear', () => {
+    const m = createMeta();
+    expect(unlockedDepth(m)).toBe(1);
+    expect(selectDepth(m, 5)).toBe(1); // cannot skip ahead
+
+    applyRunResult(m, result({ loot: 900, survivorsTids: [1, 2, 3, 4] }));
+    expect(m.best).toBe(1);
+    expect(unlockedDepth(m)).toBe(2);
+    expect(m.depth).toBe(2);
+  });
+
+  it('lets you drop back down to a depth you have already cleared', () => {
+    const m = createMeta();
+    m.best = 6;
+    expect(unlockedDepth(m)).toBe(7);
+    expect(selectDepth(m, 3)).toBe(3);
+    expect(selectDepth(m, 0)).toBe(1);
+    expect(selectDepth(m, 99)).toBe(7);
+  });
+
+  it('replaying an easier depth does not fling you back to the deep end', () => {
+    const m = createMeta();
+    m.best = 6;
+    selectDepth(m, 2);
+    applyRunResult(m, result({ loot: 500, survivorsTids: [1] }));
+    expect(m.best).toBe(6); // no progress lost
+    expect(m.depth).toBe(3); // one step on from where you actually played
+  });
+
+  it('tracks a personal best per depth, today and all time', () => {
+    const m = createMeta('2026-03-14');
+    m.best = 3;
+    selectDepth(m, 2);
+    applyRunResult(m, result({ loot: 1500, survivorsTids: [1] }));
+    selectDepth(m, 2);
+    applyRunResult(m, result({ loot: 900, survivorsTids: [1] }));
+    expect(m.bestByDepth[2]).toBe(1500);
+    expect(m.todayBestByDepth[2]).toBe(1500);
+    expect(m.todayBest).toBe(1500);
+  });
+
+  it('wipes the today-scoped counters at UTC midnight, keeping all-time bests', () => {
+    const m = createMeta('2026-03-14');
+    m.best = 2;
+    applyRunResult(m, result({ loot: 2000, survivorsTids: [1] }));
+    expect(m.todayBest).toBe(2000);
+
+    expect(rollDay(m, '2026-03-14')).toBe(false);
+    expect(rollDay(m, '2026-03-15')).toBe(true);
+    expect(m.todayBest).toBe(0);
+    expect(m.todayBestByDepth).toEqual({});
+    expect(m.bestByDepth[1]).toBe(2000); // all-time survives the rollover
+    expect(m.gold).toBe(300 + 2000);
+  });
+});
+
+describe('v0.3 · the board ranks within a depth', () => {
+  it('is deterministic per day and depth, and deeper boards score higher', () => {
+    const a = boardRows('2026-03-14', 3, 0);
+    expect(boardRows('2026-03-14', 3, 0)).toEqual(a);
+    expect(boardRows('2026-03-14', 4, 0)).not.toEqual(a);
+
+    const shallow = boardRows('2026-03-14', 1, 0).filter((r) => !r.you);
+    const deep = boardRows('2026-03-14', 6, 0).filter((r) => !r.you);
+    const top = (rows: typeof shallow): number => Math.max(...rows.map((r) => r.s));
+    expect(top(deep)).toBeGreaterThan(top(shallow));
+  });
+
+  it('puts you on the board and sorts you into place', () => {
+    const rows = boardRows('2026-03-14', 1, 999999);
+    expect(rows[0]!.you).toBe(true);
+    expect(rows).toHaveLength(5);
+  });
+});
+
+describe('v0.3 · no dead saves', () => {
+  it('a wiped crew with no gold can always get a body back, free', () => {
+    const m = createMeta();
+    m.crew.length = 0;
+    m.gold = 12;
+    expect(needsConscript(m)).toBe(true);
+
+    const r = conscript(m);
+    expect(r.ok).toBe(true);
+    expect(m.crew).toHaveLength(1);
+    expect(m.gold).toBe(12); // free, as promised
+    expect(needsConscript(m)).toBe(false);
+  });
+
+  it('cannot be farmed — you have to have lost everyone first', () => {
+    const m = createMeta();
+    expect(conscript(m).ok).toBe(false);
+    expect(m.crew).toHaveLength(4);
+    m.gold = 5000;
+    m.crew.length = 0;
+    expect(needsConscript(m)).toBe(false); // rich enough to hire properly
   });
 });

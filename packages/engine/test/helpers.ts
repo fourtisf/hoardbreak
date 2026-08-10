@@ -10,6 +10,8 @@ import {
   type ModId,
   type RunMeta,
   type RunState,
+  type Guard,
+  type GuardKind,
   type RunThief,
   type Unit,
 } from '../src/headless.js';
@@ -77,7 +79,9 @@ export function placePx(u: Unit, x: number, y: number): void {
 export function solo(s: RunState, kind?: CrewKind): Unit {
   if (kind) {
     const u = s.units.find((x) => x.k === kind);
-    if (u) s.units = [u];
+    // a silent fallback here means a test quietly checks the wrong class
+    if (!u) throw new Error(`solo(): no ${kind} in the crew — build the run with one`);
+    s.units = [u];
   }
   s.units.length = 1;
   s.guards.length = 0;
@@ -109,4 +113,35 @@ export function hashState(s: RunState): string {
     draws: [s.rngGen.draws, s.rngSim.draws],
     events: s.events.length,
   });
+}
+
+/**
+ * A guard dropped straight onto the board, bypassing the generator.
+ * Behavioural checks want a guard at a known spot with known stats, not
+ * whatever the seed happened to place there.
+ */
+export function mkGuard(s: RunState, k: GuardKind, x: number, y: number, over: Partial<Guard> = {}): Guard {
+  const g: Guard = {
+    gid: s.gidNext++,
+    k,
+    x,
+    y,
+    px: x,
+    py: y,
+    hp: 400,
+    max: 400,
+    alert: false,
+    cd: 0,
+    path: null,
+    pi: 0,
+    ptile: -1,
+    face: 1,
+    hex: 0,
+    burn: 0,
+    stun: 0,
+    id: 1,
+    ...over,
+  };
+  s.guards.push(g);
+  return g;
 }
