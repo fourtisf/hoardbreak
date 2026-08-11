@@ -274,3 +274,69 @@ header{min-width:0;overflow:hidden}
   #stick{opacity:.5}
   #stick:hover{opacity:1}
 }
+
+/* ── desktop ──────────────────────────────────────────────────────────
+ * Everything above is sized for a phone held close to the face. On a
+ * monitor that reads as a postage stamp marooned in black, so from 1000px
+ * the hideout stops being a centred column that wraps and becomes a real
+ * two-column board: recruits take the space, the panels sit in a fixed
+ * rail beside them, and the type scales up to match the viewing distance.
+ */
+@media (min-width: 1000px){
+  #camp{padding:34px 32px 44px;gap:18px}
+  #camp h2{font-size:42px}
+  #daily{font-size:13.5px;padding:9px 22px;border-radius:10px}
+  .stats{gap:34px;font-size:15px}
+  .stats b{font-size:21px}
+  .lsub{max-width:600px;font-size:14px}
+
+  /* a grid, not a wrapping flex row — the rail keeps its width and the
+     recruit column absorbs whatever is left */
+  .cols{display:grid;grid-template-columns:minmax(0,1fr) 372px;
+    gap:30px;align-items:start;max-width:1280px;width:100%}
+  .col{align-items:stretch;gap:12px}
+  .col .lbl{text-align:center}
+
+  .roster{max-width:none;gap:16px}
+  .rc{width:158px;padding:14px 12px 12px;gap:5px;border-radius:14px}
+  .rc canvas{width:88px;height:96px}
+  .rc .rn{font-size:17px}
+  .rc .rs{font-size:11px;min-height:30px}
+  .rc .cnt{font-size:18px;top:7px;right:12px}
+  .rc .btn{font-size:14px;padding:7px 16px;margin-top:5px}
+
+  .panelBox{min-width:0;width:100%;padding:14px 18px;border-radius:14px}
+  .manif{font-size:13px;max-height:none}
+  .upg,.itemRow{padding:10px 14px;margin-bottom:9px;border-radius:12px}
+  .un{font-size:15px}
+  .ud{font-size:11px}
+  .uc{font-size:14px}
+
+  .depthPick{max-width:900px;gap:9px}
+  .dbtn{min-width:86px;padding:8px 12px 9px}
+  .dbtn b{font-size:20px}
+  .dbtn span{font-size:9px}
+  .depthNote{font-size:12px;max-width:620px}
+
+  .stranded{padding:12px 18px}
+
+  /* the raid HUD earns a wider rail too — the feed is the whole story */
+  #app{grid-template-columns:minmax(0,1fr) 310px}
+  #feed{font-size:12px}
+}
+
+/* ── the access gate ────────────────────────────────────────────────── */
+#gate{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:16px;padding:26px 20px;
+  background:radial-gradient(120% 90% at 50% 30%,#101f16,#060a08 70%);text-align:center}
+#gate h1{font-family:'Pirata One',serif;font-size:clamp(30px,7vw,46px);color:var(--gold);
+  letter-spacing:.04em;line-height:1;text-shadow:0 0 34px rgba(255,215,94,.3)}
+#gate p{color:var(--dim);font-style:italic;font-size:13.5px;max-width:400px;line-height:1.6}
+#gate form{display:flex;flex-direction:column;gap:11px;align-items:center;width:100%;max-width:290px}
+#gate input{width:100%;background:#0d1a12;border:1px solid var(--line2);border-radius:10px;
+  padding:12px 14px;color:var(--bone);font-family:Consolas,monospace;font-size:19px;
+  letter-spacing:.42em;text-align:center;text-indent:.42em}
+#gate input:focus{outline:2px solid var(--em);outline-offset:2px;border-color:var(--em)}
+#gate .err{color:var(--red);font-size:12px;font-style:italic;min-height:17px}
+#gate .btn{width:100%;padding:11px;font-size:15px}
+#gate .sig{color:var(--line2);font-family:Consolas,monospace;font-size:10px;letter-spacing:.22em}

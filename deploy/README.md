@@ -153,6 +153,23 @@ systemctl status certbot.timer             # renewal is automatic
 
 ---
 
+## The invitation gate
+
+Every route sits behind a code screen. The default word is `1998`. To change it,
+set the variable **before building** — it is baked into the client bundle at
+build time, not read at runtime:
+
+```bash
+cd /srv/dragonjob
+echo 'NEXT_PUBLIC_ACCESS_CODE=yourword' > apps/web/.env.production.local
+pnpm build && pm2 reload dragonjob
+```
+
+This is a doorman, not a lock. The code ships in the JavaScript the browser
+downloads, so anyone who opens devtools can read it, and anyone who sets one
+localStorage key walks past it. It keeps a closed beta closed and nothing more —
+never put anything behind it that would actually hurt to lose.
+
 ## Updating later
 
 ```bash

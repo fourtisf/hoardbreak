@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import Gate from '@/components/Gate';
 
 export const metadata: Metadata = {
   title: "THE DRAGON JOB — Rob the dragon. Don't wake it.",
@@ -22,7 +23,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Pirata+One&display=swap" rel="stylesheet" />
       </head>
-      <body>{children}</body>
+      <body>
+        <Gate>{children}</Gate>
+      </body>
     </html>
   );
 }
