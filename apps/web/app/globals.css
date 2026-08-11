@@ -177,6 +177,21 @@ opacity:0;transition:.25s;pointer-events:none;font-style:italic;white-space:nowr
 .btn.warn{color:var(--red);border-color:#6b2430;background:#2a1014}
 .btn.warn:hover{border-color:var(--red);color:#ff9aa6;box-shadow:0 0 16px rgba(255,90,110,.3)}
 
+/* --- hoard progress bar: the 60% $LOOT bonus was invisible mid-run --- */
+.wbar.gold i{background:linear-gradient(90deg,#a8862a,#ffd75e,#fff0b8)}
+
+/* a disabled RAID button still has to read as a sentence, not a dead control */
+.btn:disabled{opacity:.45;cursor:default;color:var(--dim);border-color:var(--line2);
+  background:#12140e;box-shadow:none}
+.btn:disabled:hover{border-color:var(--line2);color:var(--dim);box-shadow:none}
+
+/* --- hideout footer --- */
+.footRow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+.footRow .saved{color:var(--em)}
+.linkish{background:none;border:none;padding:0;font:inherit;color:var(--dim);
+  text-decoration:underline;cursor:pointer}
+.linkish:hover{color:var(--red)}
+
 /* --- pause --- */
 #pauseBtn{font-family:Consolas,monospace;font-size:11px;background:#12251b;
   border:1px solid var(--line2);border-radius:20px;padding:4px 11px;color:var(--em);cursor:pointer}

@@ -34,6 +34,8 @@ import {
   rollDay,
   selectDepth,
   unlockedDepth,
+  verdictFor,
+  VERDICTS,
 } from '../src/index.js';
 
 const DATE = '2026-03-14';
@@ -48,12 +50,14 @@ function result(p: Partial<RunResult> = {}): RunResult {
     stolenPct: 0,
     guardsSlain: 0,
     crewLost: 0,
+    wake: 0,
     durationMs: 60000,
     crewLostTids: [],
     survivorsTids: [],
     rescuedTid: null,
     rescue: null,
     itemsUsed: { smoke: 0, lull: 0, trap: 0 },
+    everSpotted: false,
     crewOps: [],
     events: [],
     ...p,
@@ -417,5 +421,30 @@ describe('v0.3 · no dead saves', () => {
     m.gold = 5000;
     m.crew.length = 0;
     expect(needsConscript(m)).toBe(false); // rich enough to hire properly
+  });
+});
+
+describe('v0.3 · a run gets a verdict, not just a win/lose', () => {
+  const r = (p: Partial<RunResult>): RunResult => result({ everSpotted: true, wake: 40, ...p });
+
+  it('names how the run was played, most impressive first', () => {
+    expect(verdictFor(r({ success: false })).id).toBe('FED');
+    expect(verdictFor(r({ slain: true, everSpotted: false })).id).toBe('SLAYER');
+    expect(verdictFor(r({ everSpotted: false, loot: 900 })).id).toBe('GHOST');
+    expect(verdictFor(r({ wake: 94, loot: 900 })).id).toBe('WHISKER');
+    expect(verdictFor(r({ stolenPct: 95, loot: 900 })).id).toBe('STRIPPED');
+    expect(verdictFor(r({ loot: 0 })).id).toBe('EMPTY');
+    expect(verdictFor(r({ loot: 900 })).id).toBe('CLEAN');
+  });
+
+  it('a failed run is never dressed up as a good one', () => {
+    expect(verdictFor(r({ success: false, everSpotted: false, loot: 5000, wake: 10 })).id).toBe('FED');
+  });
+
+  it('every verdict has copy, and only the plain ones skip the subtitle', () => {
+    for (const v of Object.values(VERDICTS)) {
+      expect(v.title.length).toBeGreaterThan(0);
+      if (v.id !== 'FED' && v.id !== 'CLEAN') expect(v.sub.length).toBeGreaterThan(0);
+    }
   });
 });

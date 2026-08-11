@@ -30,7 +30,7 @@ import {
   selectDepth,
   unlockedDepth,
 } from '@hoardbreak/shared';
-import { getMeta, mutate, useLastRun, useMeta } from '@/lib/store';
+import { getMeta, mutate, resetMeta, useLastRun, useMeta } from '@/lib/store';
 import { toast } from '@/lib/toast';
 import SpriteCanvas from './SpriteCanvas';
 import Toast from './Toast';
@@ -82,6 +82,12 @@ export default function Hideout() {
   const takeConscript = (): void => {
     const r = mutate((m) => conscript(m));
     toast(r.msg);
+  };
+
+  const startOver = (): void => {
+    if (!window.confirm('Burn the hideout and start again? Your crew, gold and depths all go.')) return;
+    resetMeta();
+    toast('A new hideout, a new crew. Try to keep this one.');
   };
 
   return (
@@ -267,12 +273,11 @@ export default function Hideout() {
           </div>
         </div>
 
-        <button
-          id="btnRaid"
-          className={`btn gold big${meta.crew.length === 0 ? ' dim' : ''}`}
-          onClick={raid}
-        >
-          ⚔ RAID THE LAIR — DEPTH {meta.depth}
+        {/* a mute disabled button tells a new player nothing about why */}
+        <button id="btnRaid" className="btn gold big" onClick={raid} disabled={meta.crew.length === 0}>
+          {meta.crew.length === 0
+            ? '⚔ HIRE SOMEONE FIRST — THE LAIR WON’T ROB ITSELF'
+            : `⚔ RAID THE LAIR — DEPTH ${meta.depth}`}
         </button>
 
         <div
@@ -287,9 +292,19 @@ export default function Hideout() {
         >
           {lastRun ?? ''}
         </div>
-        <Link href="/board" className="ul" style={{ textDecoration: 'none' }}>
-          view every depth &amp; the past week →
-        </Link>
+        <div className="footRow">
+          <Link href="/board" className="ul" style={{ textDecoration: 'none' }}>
+            view every depth &amp; the past week →
+          </Link>
+          <span className="ul">·</span>
+          <span className="ul saved" title="Your hideout is saved in this browser">
+            ✓ saved on this device
+          </span>
+          <span className="ul">·</span>
+          <button className="ul linkish" onClick={startOver}>
+            start over
+          </button>
+        </div>
       </div>
       <Toast />
     </>

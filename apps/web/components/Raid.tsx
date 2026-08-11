@@ -28,8 +28,8 @@ import {
   type RelicKey,
   type RunState,
 } from '@hoardbreak/engine';
-import { applyRunResult, snapshotRunMeta } from '@hoardbreak/shared';
-import { abandonRun } from '@hoardbreak/engine';
+import { applyRunResult, snapshotRunMeta, verdictFor } from '@hoardbreak/shared';
+import { abandonRun, snapshotJSON } from '@hoardbreak/engine';
 import { getMeta, markTutorialSeen, mutate, setLastRun, tutorialSeen } from '@/lib/store';
 import { toast } from '@/lib/toast';
 import SpriteCanvas from './SpriteCanvas';
@@ -44,6 +44,7 @@ interface SquadRow {
 
 interface OverCard {
   title: string;
+  subtitle: string;
   success: boolean;
   loot: number;
   stolenPct: number;
@@ -57,6 +58,32 @@ interface OverCard {
 const setT = (el: HTMLElement | null, v: string): void => {
   if (el && el.textContent !== v) el.textContent = v;
 };
+
+/**
+ * The hint bar under the canvas, rewritten every frame.
+ *
+ * The prototype showed one static control reminder forever. A player who has
+ * never seen the game does not need to be told about hotkeys — they need to be
+ * told what to do *next*. First match wins, most urgent first.
+ */
+function coachFor(s: RunState, inZoneCount: number): string {
+  if (s.dragon.awake) return '☠ IT HUNTS — get everyone onto the green tiles and press E';
+  if (s.relicOffers.length) return '◆ Two relics — walk into the one you want, the other crumbles';
+  if (inZoneCount > 0 && inZoneCount === s.units.length && (s.wake >= 55 || s.hoard.pool < s.hoard.pool0 * 0.5))
+    return '⚑ Everyone is on the green — press E to bank it';
+  if (s.wake >= 75) return '⚠ It stirs, and guards are waking. Take what you have and go.';
+  if (s.guards.some((g) => g.alert)) return '! Spotted — the crew fights on its own · [1] Smoke to break away';
+  if (s.units.some((u) => {
+    const gx = (u.x / 24) | 0;
+    const gy = (u.y / 24) | 0;
+    return gx >= s.hoard.x0 && gx <= s.hoard.x1 && gy >= s.hoard.y0 && gy <= s.hoard.y1;
+  }))
+    return '💰 Siphoning — every second on the gold is noise';
+  if (s.prison && !s.prison.done && s.revealed[((s.prison.y / 24) | 0) * 32 + ((s.prison.x / 24) | 0)])
+    return `🗝 ${s.prison.thief.name} is in that cage — stand close to cut them loose`;
+  if (s.hoard.pool < s.hoard.pool0 * 0.55) return '↩ Over half the hoard is yours — the arrow turns green when it is time to run';
+  return '🕹 Follow the golden arrow · hold SHIFT to creep — slower, but they will not see you';
+}
 
 const wakeHintFor = (s: RunState): string =>
   s.dragon.awake
@@ -81,6 +108,9 @@ export default function Raid() {
   const wakeFill = useRef<HTMLElement>(null);
   const wakeHint = useRef<HTMLDivElement>(null);
   const sLoot = useRef<HTMLElement>(null);
+  const hintBar = useRef<HTMLDivElement>(null);
+  const stolenPct = useRef<HTMLElement>(null);
+  const stolenFill = useRef<HTMLElement>(null);
   const extractBtn = useRef<HTMLButtonElement>(null);
   const hpBars = useRef(new Map<number, HTMLElement>());
 
@@ -148,6 +178,7 @@ export default function Raid() {
 
     let lastItems = '';
     let lastRelics = 0;
+    let toldAboutPrisons = false;
     let applied = false;
 
     const drain = (s: RunState): void => {
@@ -155,6 +186,11 @@ export default function Raid() {
       if (out.sounds.length) audio.playAll(out.sounds);
       if (out.feed.length) setFeed((f) => [...f, ...out.feed].slice(-6));
       for (const m of out.toasts) toast(m);
+      // the first death reads as permanent unless somebody says otherwise
+      if (!toldAboutPrisons && out.feed.some((f) => f.msg.includes('falls in the dark'))) {
+        toldAboutPrisons = true;
+        toast('The fallen are not gone — dragon prisons hold them. Go back for them.');
+      }
       if (out.squadDirty) {
         setSquad(s.units.map((u) => ({ tid: u.tid, name: u.name, kind: u.k, lv: u.lv })));
       }
@@ -173,8 +209,10 @@ export default function Raid() {
         const r = s.result;
         const payout = mutate((m) => applyRunResult(m, r));
         if (payout.notes.length) setFeed((f) => [...f, ...payout.notes].slice(-6));
+        const verdict = verdictFor(r);
         setOver({
-          title: r.slain ? 'WYRMSLAYER' : r.success ? 'CLEAN GETAWAY' : 'THE WYRM FEEDS',
+          title: verdict.title,
+          subtitle: verdict.sub,
           success: r.success,
           loot: r.loot,
           stolenPct: r.stolenPct,
@@ -199,6 +237,12 @@ export default function Raid() {
       setT(wakeHint.current, wakeHintFor(s));
 
       const inz = extractReady(s);
+      setT(hintBar.current, coachFor(s, inz));
+
+      const stolen = Math.round(100 * (1 - s.hoard.pool / s.hoard.pool0));
+      setT(stolenPct.current, `${stolen}%`);
+      if (stolenFill.current) stolenFill.current.style.width = `${stolen}%`;
+
       const b = extractBtn.current;
       if (b) {
         if (inz > 0 && !s.over) {
@@ -220,6 +264,25 @@ export default function Raid() {
       }
     };
 
+    /* The prototype's QA handle (handoff §4). Development only — it exposes
+       the whole run state, which would be a cheat surface in production. */
+    if (process.env.NODE_ENV !== 'production') {
+      (window as unknown as { HB?: unknown }).HB = {
+        get M() {
+          return getMeta();
+        },
+        get R() {
+          return run;
+        },
+        useItem: (k: ItemKey) => inputRef.current?.push({ c: 'item', k }),
+        setWake: (n: number) => {
+          run.wake = n;
+        },
+        forceEnd: (ok: boolean) => (ok ? void inputRef.current?.push({ c: 'extract' }) : abandonRun(run)),
+        snapshot: () => snapshotJSON(run),
+      };
+    }
+
     drain(run); // the opening banner, whisper and drum hit
 
     const loop = createLoop({
@@ -239,6 +302,7 @@ export default function Raid() {
       input.dispose();
       inputRef.current = null;
       runRef.current = null;
+      if (process.env.NODE_ENV !== 'production') delete (window as unknown as { HB?: unknown }).HB;
       window.removeEventListener('pointerdown', unlock);
       window.removeEventListener('keydown', unlock);
       window.removeEventListener('keydown', onEsc);
@@ -314,7 +378,7 @@ export default function Raid() {
               <div id="knob" ref={knobRef} />
             </div>
           </div>
-          <div id="hintBar">
+          <div id="hintBar" ref={hintBar}>
             🕹 Drag the stick or WASD to steer · items on hotkeys 1·2·3 · E = extract at the green tiles
           </div>
         </main>
@@ -345,6 +409,21 @@ export default function Raid() {
               0
             </b>
             <span style={{ color: 'var(--dim)', fontSize: 11 }}>this run</span>
+          </div>
+
+          <div className="wakeBox">
+            <div className="row">
+              <span className="lbl">HOARD STOLEN</span>
+              <b id="stolenPct" ref={stolenPct}>
+                0%
+              </b>
+            </div>
+            <div className="wbar gold">
+              <i id="stolenFill" ref={stolenFill} />
+            </div>
+            <div style={{ fontSize: 9.5, color: 'var(--dim)', fontStyle: 'italic', marginTop: 5 }}>
+              60% or more pays double $LOOT for this depth.
+            </div>
           </div>
 
           <div id="itemBar">
@@ -486,6 +565,11 @@ export default function Raid() {
         <div id="overWrap">
           <div className="ocard">
             <h2 style={{ color: over.success ? 'var(--gold)' : 'var(--red)' }}>{over.title}</h2>
+            {over.subtitle && (
+              <div style={{ fontSize: 12, fontStyle: 'italic', color: 'var(--dim)', marginTop: 4 }}>
+                {over.subtitle}
+              </div>
+            )}
             <div className="ostats">
               {over.success ? (
                 <>

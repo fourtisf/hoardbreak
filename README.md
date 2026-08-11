@@ -220,6 +220,37 @@ This does change which modifier a given date rolls, which is why
 wake vignette, and `--dim` was lifted from a 4.2:1 contrast ratio to clear the
 4.5:1 floor.
 
+### 11 · Onboarding and friendliness
+
+A cluster of small things that decide whether a first-time player has a good
+five minutes:
+
+- **Your hideout is saved** (localStorage, versioned, merged over defaults so an
+  old or corrupt save degrades into a playable one rather than a white screen).
+  Losing your named crew to an accidental refresh was the least friendly thing
+  in the build. `start over` wipes it deliberately.
+- **The hint bar coaches.** It used to repeat the controls forever; it now tells
+  you the next thing to do — follow the arrow, you have been spotted, you are
+  siphoning and it is loud, someone is in that cage, time to leave.
+- **Hoard progress is visible.** The 60% threshold doubles your `$LOOT` for the
+  depth and used to be invisible until the run was over.
+- **Runs get a verdict, not just win/lose** — GHOST (never spotted), BY A
+  WHISKER (out above 90% wake), THE HOARD IS YOURS, WYRMSLAYER, EMPTY-HANDED.
+  `verdictFor()` lives in `@hoardbreak/shared` because Phase 3's OG share card
+  needs the same string server-side.
+- **The first thief you lose comes with a note** that dragon prisons hold the
+  fallen, so a permanent-looking loss reads as a rescue hook.
+- **A disabled RAID button says why**: "HIRE SOMEONE FIRST — THE LAIR WON'T ROB
+  ITSELF" instead of a mute greyed-out control.
+- The tutorial now shows once per *player*, not once per session.
+
+### 12 · The `window.HB` QA handle
+
+Handoff §4 asks for the prototype's debug handle behind
+`NODE_ENV !== 'production'`, and the port had missed it. `window.HB` exposes
+`M`, `R`, `snapshot()`, `setWake()`, `useItem()` and `forceEnd()` in dev builds
+only — it is a cheat surface, so it is stripped from production.
+
 ### Still open — ALFA's call (§14)
 
 Week-2 retention needs a meta-progression arc, and that is a product decision,

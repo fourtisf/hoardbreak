@@ -283,6 +283,8 @@ export interface RunResult {
   stolenPct: number;
   guardsSlain: number;
   crewLost: number;
+  /** how awake the wyrm was when the run ended, 0–100 */
+  wake: number;
   durationMs: number;
   /** crew that did not come home (deaths + left behind at extraction) */
   crewLostTids: number[];
@@ -291,6 +293,8 @@ export interface RunResult {
   rescuedTid: number | null;
   rescue: { thief: RunThief; fromQueue: boolean; extracted: boolean } | null;
   itemsUsed: Record<ItemKey, number>;
+  /** nobody ever raised the alarm */
+  everSpotted: boolean;
   crewOps: CrewOp[];
   events: RunEvent[];
 }
@@ -346,6 +350,8 @@ export interface RunState {
   cmdT: number;
   /** whether the crew is creeping this tick (v0.3) */
   creep: boolean;
+  /** true the moment any guard first notices the crew — a clean run is a GHOST */
+  everSpotted: boolean;
   /** next guard id to hand out */
   gidNext: number;
 

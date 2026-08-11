@@ -488,6 +488,7 @@ function guardStep(s: RunState, g: Guard, dt: number): void {
     for (const u of s.units) {
       if (dist(g.x, g.y, u.x, u.y) < aR && s.revealed[tileOf(g.x, g.y)]) {
         g.alert = true;
+        s.everSpotted = true;
         addWake(s, TUNING.WAKE_GUARD_ALERT);
         s.fx.push({ k: 'txt', x: g.x, y: g.y - 18, txt: '!', c: '#ff5a6e', l: 0.8, l0: 0.8 });
         snd(s, 500, 0.07, 'square', 0.05);
@@ -811,12 +812,14 @@ export function endRun(s: RunState, success: boolean, slain = false): void {
     stolenPct,
     guardsSlain: s.guardsSlain,
     crewLost: s.crewLost,
+    wake: Math.round(s.wake),
     durationMs: Math.round(s.t * 1000),
     crewLostTids: s.crewOps.filter((o) => o.op === 'lose').map((o) => o.tid),
     survivorsTids,
     rescuedTid,
     rescue: s.rescue,
     itemsUsed: { ...s.itemsUsed },
+    everSpotted: s.everSpotted,
     crewOps: s.crewOps.slice(),
     events: s.events.slice(),
   };
@@ -1173,6 +1176,7 @@ export function createRun(opts: CreateRunOptions): RunState {
     cmd: null,
     cmdT: 0,
     creep: false,
+    everSpotted: false,
     gidNext: 1,
     fx: [],
     tele: [],
