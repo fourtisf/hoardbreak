@@ -3,11 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
+  GD,
   H,
   ITEMS,
   ITEM_KEYS,
   RELICS,
   RELIC_KEYS,
+  T,
   UD,
   W,
   createAudio,
@@ -60,6 +62,24 @@ const setT = (el: HTMLElement | null, v: string): void => {
 };
 
 /**
+ * Is anyone actually swinging right now?
+ *
+ * `u.tgt` alone is not enough — a unit keeps a target while it is still walking
+ * over to it, so trusting it would announce a fight that has not started. The
+ * blow only lands once the guard is inside the class's reach, which is exactly
+ * the condition sim.ts uses before it deals damage.
+ */
+function swingingAt(s: RunState): { name: string; foe: string } | null {
+  for (const u of s.units) {
+    if (u.tgt === null) continue;
+    const g = s.guards.find((q) => q.gid === u.tgt);
+    if (!g) continue;
+    if (Math.hypot(u.x - g.x, u.y - g.y) <= UD[u.k].range * T) return { name: u.name, foe: GD[g.k].n };
+  }
+  return null;
+}
+
+/**
  * The hint bar under the canvas, rewritten every frame.
  *
  * The prototype showed one static control reminder forever. A player who has
@@ -69,6 +89,13 @@ const setT = (el: HTMLElement | null, v: string): void => {
 function coachFor(s: RunState, inZoneCount: number): string {
   if (s.dragon.awake) return '☠ IT HUNTS — get everyone onto the green tiles and press E';
   if (s.relicOffers.length) return '◆ Two relics — walk into the one you want, the other crumbles';
+  // an actual fight outranks a mere sighting: this is the moment a new player
+  // asks "why isn't my crew attacking?", and the answer is that they already are
+  const swing = swingingAt(s);
+  if (swing) {
+    const a = /^[aeiou]/i.test(swing.foe) ? 'an' : 'a';
+    return `⚔ ${swing.name} is fighting ${a} ${swing.foe} — the crew swings on its own, there is no attack button`;
+  }
   if (inZoneCount > 0 && inZoneCount === s.units.length && (s.wake >= 55 || s.hoard.pool < s.hoard.pool0 * 0.5))
     return '⚑ Everyone is on the green — press E to bank it';
   if (s.wake >= 75) return '⚠ It stirs, and guards are waking. Take what you have and go.';
@@ -527,18 +554,23 @@ export default function Raid() {
               </div>
               <div className="ts">
                 <b>2 · MOVE.</b> Steer with the <b>joystick / WASD</b> — your lead thief (gold ▼) drives, the crew
-                follows — and <b>everyone fights automatically</b> when guards come near. Or click to send them.
-                Rooms hide chests, shrines with <span className="au">relics</span>, armories… and sometimes a{' '}
-                <b>prison</b> holding a fallen friend. Stand close to interact.
+                follows. Or click a tile to send them. Rooms hide chests, shrines with{' '}
+                <span className="au">relics</span>, armories… and sometimes a <b>prison</b> holding a fallen
+                friend. Stand close to interact.
               </div>
               <div className="ts">
-                <b>3 · STAY QUIET.</b> Noise fills <span className="re">WYRM WAKE</span>. At 50% one eye opens and
+                <b>3 · THERE IS NO ATTACK BUTTON.</b> Your crew <span className="au">fights on its own</span> the
+                moment a guard is in reach — you will see the damage numbers pop. Your job is <em>where</em> they
+                stand, not when they swing. Walk away and they stop.
+              </div>
+              <div className="ts">
+                <b>4 · STAY QUIET.</b> Noise fills <span className="re">WYRM WAKE</span>. At 50% one eye opens and
                 it breathes in its sleep. At 75% guards stir. At 100% — it hunts. Hold <b>SHIFT</b> (or tap{' '}
                 <b>CREEP</b>) to move slow and quiet — guards notice you far later. Items help: <b>[1]</b> Smoke{' '}
                 <b>[2]</b> Lullaby <b>[3]</b> Bear Trap.
               </div>
               <div className="ts">
-                <b>4 · GET OUT.</b> Green arrow = time to run. Reach the EXIT tiles, press <b>EXTRACT / E</b>.
+                <b>5 · GET OUT.</b> Green arrow = time to run. Reach the EXIT tiles, press <b>EXTRACT / E</b>.
                 Anyone not standing on the green is <span className="re">left behind for good</span> — the button
                 tells you how many. Survivors gain XP. The dead end up in dragon prisons — go get them back.
               </div>
