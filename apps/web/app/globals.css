@@ -404,11 +404,14 @@ header{min-width:0;overflow:hidden}
 #gate h1{font-family:'Pirata One',serif;font-size:clamp(30px,7vw,46px);color:var(--gold);
   letter-spacing:.04em;line-height:1;text-shadow:0 0 34px rgba(255,215,94,.3)}
 #gate p{color:var(--dim);font-style:italic;font-size:13.5px;max-width:400px;line-height:1.6}
-#gate form{display:flex;flex-direction:column;gap:11px;align-items:center;width:100%;max-width:290px}
+#gate form{display:flex;flex-direction:column;gap:8px;align-items:center;width:100%;max-width:290px}
 #gate input{width:100%;background:#0d1a12;border:1px solid var(--line2);border-radius:10px;
   padding:12px 14px;color:var(--bone);font-family:Consolas,monospace;font-size:19px;
   letter-spacing:.42em;text-align:center;text-indent:.42em}
 #gate input:focus{outline:2px solid var(--em);outline-offset:2px;border-color:var(--em)}
 #gate .err{color:var(--red);font-size:12px;font-style:italic;min-height:17px}
+/* the name is prose, not a passcode — no monospace tracking on it */
+#gate .gateName{font-family:Georgia,serif;font-size:16px;letter-spacing:.02em;text-indent:0}
+#gate .gateName::placeholder{color:var(--dim);font-style:italic;letter-spacing:0}
 #gate .btn{width:100%;padding:11px;font-size:15px}
 #gate .sig{color:var(--line2);font-family:Consolas,monospace;font-size:10px;letter-spacing:.22em}

@@ -46,7 +46,7 @@ export default function Hideout() {
   const date = useMemo(() => todayUTC(), []);
   const mod = modFor(date, meta.depth);
   const unlocked = unlockedDepth(meta);
-  const rows = boardRows(date, meta.depth, meta.todayBestByDepth[meta.depth] ?? 0);
+  const rows = boardRows(date, meta.depth, meta.todayBestByDepth[meta.depth] ?? 0, meta.name);
   const bestHere = meta.bestByDepth[meta.depth] ?? 0;
   const stranded = needsConscript(meta);
   const ready = slayerReadiness(meta, meta.depth);

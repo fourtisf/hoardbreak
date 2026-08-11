@@ -80,3 +80,21 @@ export function importSave(code: string): ImportResult {
   // merged over defaults so a code written by an older build still opens
   return { ok: true, meta: { ...createMeta(), ...(parsed as Meta) } };
 }
+
+/** Longest name the board will render without wrapping. */
+export const NAME_MAX = 16;
+
+/**
+ * Clean a typed name into something a leaderboard can print.
+ *
+ * A name is going next to other people's names, so one that can smuggle a
+ * newline into the board is a name that breaks it. Control characters become a
+ * space rather than vanishing — deleting the newline out of a pasted "Sable\nGrim"
+ * would silently jam the words together into something the player never typed.
+ */
+export const cleanName = (raw: string): string =>
+  raw
+    .replace(/[\u0000-\u001f\u007f]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, NAME_MAX);

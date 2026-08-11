@@ -28,6 +28,14 @@ import {
 } from '@dragonjob/engine/headless';
 
 export interface Meta {
+  /**
+   * What the board calls this player.
+   *
+   * Empty until they are asked at the door. It lives in Meta rather than beside
+   * it so a save code carries the name with the hideout — restoring on another
+   * machine should not make you a stranger again.
+   */
+  name: string;
   gold: number;
   /** $LOOT balance (Phase 3 moves this to the ledger) */
   tok: number;
@@ -102,6 +110,7 @@ export function newThief(meta: Meta, kind: CrewKind): RunThief {
 /** A brand new hideout: 300 gold and four names you will get attached to. */
 export function createMeta(day = ''): Meta {
   const meta: Meta = {
+    name: '',
     gold: 300,
     tok: 0,
     depth: 1,

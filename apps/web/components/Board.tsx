@@ -22,7 +22,7 @@ export default function Board() {
   const [day, setDay] = useState(dates[0] as string);
   const [depth, setDepth] = useState(1);
   const isToday = day === dates[0];
-  const rows = boardRows(day, depth, isToday ? (meta.todayBestByDepth[depth] ?? 0) : 0);
+  const rows = boardRows(day, depth, isToday ? (meta.todayBestByDepth[depth] ?? 0) : 0, meta.name);
 
   return (
     <div id="camp">

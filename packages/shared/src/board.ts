@@ -30,11 +30,11 @@ const RIVALS = ['0xR4T…', 'wickmaxi', 'sable.sol', 'GrimGoldman'];
  * Phase 2 keys the Redis ZSET `lb:{date}:{depth}` instead of `lb:{date}`
  * (an amendment to handoff §8 — flagged in the README).
  */
-export function boardRows(date: string, depth: number, myBest: number): BoardRow[] {
+export function boardRows(date: string, depth: number, myBest: number, myName = ''): BoardRow[] {
   const rng = mulberry32(hashStr(`${date}:board:${depth}`));
   const scale = 1 + 0.38 * (depth - 1);
   const rows: BoardRow[] = RIVALS.map((n) => ({ n, s: Math.round((600 + rng() * 3400) * scale) }));
-  rows.push({ n: 'you', s: myBest, you: true });
+  rows.push({ n: myName.trim() || 'you', s: myBest, you: true });
   rows.sort((a, b) => b.s - a.s);
   return rows;
 }
