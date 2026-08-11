@@ -32,7 +32,7 @@ text-shadow:0 0 30px rgba(255,215,94,.35);line-height:1}
 .lsub{color:var(--dim);font-size:12.5px;font-style:italic;max-width:470px;text-align:center;line-height:1.55}
 
 #camp{position:fixed;inset:0;z-index:50;background:linear-gradient(#0a130d,#070b09);display:flex;flex-direction:column;
-align-items:center;gap:12px;padding:22px 18px;overflow:auto}
+align-items:center;gap:12px;padding:22px 18px 0;overflow:auto}
 #camp h2{font-family:'Pirata One',serif;font-size:28px;color:var(--em);letter-spacing:.05em}
 #daily{font-family:Consolas,monospace;font-size:11.5px;color:var(--gold);background:#171307;border:1px solid #4a3d18;
 border-radius:8px;padding:6px 14px;text-align:center;line-height:1.6}
@@ -252,8 +252,11 @@ header{min-width:0;overflow:hidden}
   .ocard{min-width:0;width:calc(100vw - 32px);padding:20px 18px}
   .ocard h2{font-size:23px}
   .ocard.tut .tsteps{font-size:12px;gap:8px}
-  #camp{padding:16px 12px}
+  #camp{padding:16px 12px 0}
   #camp h2{font-size:23px}
+  .markL{width:74px;height:74px}
+  .markS{width:32px;height:32px}
+  .campHead{gap:10px}
   .cols{gap:12px}
   .roster{gap:7px;max-width:100%}
   .rc{width:96px}
@@ -283,7 +286,7 @@ header{min-width:0;overflow:hidden}
  * rail beside them, and the type scales up to match the viewing distance.
  */
 @media (min-width: 1000px){
-  #camp{padding:34px 32px 44px;gap:18px}
+  #camp{padding:34px 32px 0;gap:18px}
   #camp h2{font-size:42px}
   #daily{font-size:13.5px;padding:9px 22px;border-radius:10px}
   .stats{gap:34px;font-size:15px}
@@ -292,13 +295,17 @@ header{min-width:0;overflow:hidden}
 
   /* a grid, not a wrapping flex row — the rail keeps its width and the
      recruit column absorbs whatever is left */
-  .cols{display:grid;grid-template-columns:minmax(0,1fr) 372px;
-    gap:30px;align-items:start;max-width:1280px;width:100%}
+  .cols{display:grid;grid-template-columns:minmax(0,1fr) 340px;
+    gap:26px;align-items:start;max-width:1280px;width:100%}
   .col{align-items:stretch;gap:12px}
   .col .lbl{text-align:center}
 
-  .roster{max-width:none;gap:16px}
-  .rc{width:158px;padding:14px 12px 12px;gap:5px;border-radius:14px}
+  /* Five classes, one row, at every desktop width. A fixed card width plus
+     flex-wrap breaks the moment the column is a few pixels short — it drops
+     one card onto a line of its own and the whole board looks broken. A
+     five-track grid lets the cards give instead. */
+  .roster{max-width:none;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
+  .rc{width:auto;min-width:0;padding:14px 12px 12px;gap:5px;border-radius:14px}
   .rc canvas{width:88px;height:96px}
   .rc .rn{font-size:17px}
   .rc .rs{font-size:11px;min-height:30px}
@@ -319,11 +326,37 @@ header{min-width:0;overflow:hidden}
   .depthNote{font-size:12px;max-width:620px}
 
   .stranded{padding:12px 18px}
+  .raidBar{padding:22px 0 26px}
+  #btnRaid{font-size:22px;padding:14px 38px}
+  .markL{width:132px;height:132px}
+  .markS{width:60px;height:60px}
+  .campHead{gap:18px}
 
   /* the raid HUD earns a wider rail too — the feed is the whole story */
   #app{grid-template-columns:minmax(0,1fr) 310px}
   #feed{font-size:12px}
 }
+
+/* ── the mark ─────────────────────────────────────────────────────────
+ * The seal, as a background rather than an <img>: it is decorative, it must
+ * not shift layout while it loads, and it never needs alt text.
+ */
+.mark{background:url('/brand/dragonjob-seal.svg') center/contain no-repeat;
+  flex:0 0 auto;display:block;filter:drop-shadow(0 5px 18px rgba(0,0,0,.55))}
+.markL{width:104px;height:104px}
+.markS{width:46px;height:46px}
+.campHead{display:flex;align-items:center;gap:14px}
+
+/* ── the raid bar ─────────────────────────────────────────────────────
+ * The only thing a player opened the hideout to do. It is last in the
+ * document but pinned to the bottom of the scroller, so it stays one click
+ * away instead of being buried under the shop on a tall screen.
+ */
+.raidBar{position:sticky;bottom:0;z-index:5;width:100%;
+  display:flex;flex-direction:column;align-items:center;
+  padding:14px 0 calc(10px + env(safe-area-inset-bottom));margin-top:4px;
+  background:linear-gradient(rgba(7,11,9,0),#070b09 34%)}
+.raidBar #btnRaid{max-width:100%}
 
 /* ── the access gate ────────────────────────────────────────────────── */
 #gate{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;

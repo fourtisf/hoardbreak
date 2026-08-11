@@ -93,7 +93,10 @@ export default function Hideout() {
   return (
     <>
       <div id="camp">
-        <h2>THE HIDEOUT</h2>
+        <div className="campHead">
+          <span className="mark markS" aria-hidden="true" />
+          <h2>THE HIDEOUT</h2>
+        </div>
 
         <div id="daily">
           DAILY HEIST — <b>{date}</b> · same lairs for every player
@@ -181,9 +184,9 @@ export default function Hideout() {
                 );
               })}
             </div>
-          </div>
 
-          <div className="col">
+            {/* who you have sits under who you can hire — same question, and it
+                keeps the recruit column from bottoming out into dead space */}
             <div className="panelBox">
               <div className="lbl" style={{ marginBottom: 6 }}>
                 CREW MANIFEST
@@ -210,7 +213,9 @@ export default function Hideout() {
                 )}
               </div>
             </div>
+          </div>
 
+          <div className="col">
             <div className="panelBox">
               <div className="lbl" style={{ marginBottom: 6 }}>
                 BLACK MARKET
@@ -273,13 +278,6 @@ export default function Hideout() {
           </div>
         </div>
 
-        {/* a mute disabled button tells a new player nothing about why */}
-        <button id="btnRaid" className="btn gold big" onClick={raid} disabled={meta.crew.length === 0}>
-          {meta.crew.length === 0
-            ? '⚔ HIRE SOMEONE FIRST — THE LAIR WON’T ROB ITSELF'
-            : `⚔ RAID THE LAIR — DEPTH ${meta.depth}`}
-        </button>
-
         <div
           id="lastRun"
           style={{
@@ -303,6 +301,19 @@ export default function Hideout() {
           <span className="ul">·</span>
           <button className="ul linkish" onClick={startOver}>
             start over
+          </button>
+        </div>
+
+        {/* The one thing a player came here to do. It is the last element in the
+            document but sticks to the bottom of the scroller, so on a screen
+            where the hideout is taller than the viewport it is still one click
+            away instead of buried under the shop. */}
+        <div className="raidBar">
+          {/* a mute disabled button tells a new player nothing about why */}
+          <button id="btnRaid" className="btn gold big" onClick={raid} disabled={meta.crew.length === 0}>
+            {meta.crew.length === 0
+              ? '⚔ HIRE SOMEONE FIRST — THE LAIR WON’T ROB ITSELF'
+              : `⚔ RAID THE LAIR — DEPTH ${meta.depth}`}
           </button>
         </div>
       </div>
