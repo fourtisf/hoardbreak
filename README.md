@@ -1,4 +1,4 @@
-# QUIET GOLD
+# THE DRAGON JOB
 
 *Rob the dragon. Don't wake it.*
 
@@ -10,15 +10,19 @@ This repository is the production build of `HOARDBREAK_v0.2.html`, following
 `HOARDBREAK_HANDOFF.md`. Both files sit in the repo root and remain the source
 of truth for game feel: **the prototype wins any disagreement.**
 
-> **The game shipped as QUIET GOLD, not HOARDBREAK** (handoff §14.2, brand lock).
-> `hoard` and `horde` are the most-confused pair in English, and `hoard` is an
-> uncommon word for anyone whose first language is not English — the old name
-> leaked search traffic and told a large part of the audience nothing. The
-> tagline lost *"Be the exit liquidity"* along with it: that framing points at a
-> crypto audience, and the product is aimed wider. `$LOOT` itself is unchanged —
+> **The game shipped as THE DRAGON JOB, not HOARDBREAK** (handoff §14.2, brand
+> lock). `hoard` and `horde` are the most-confused pair in English, and `hoard`
+> is an uncommon word for anyone whose first language is not English — the old
+> name leaked search traffic and told a large part of the audience nothing.
+> `The Dragon Job` takes the heist-film framing instead: it says the genre out
+> loud, every word is basic English, and it cannot be misspelled.
+>
+> The tagline lost *"Be the exit liquidity"* with it — that framing aims at a
+> crypto audience and the product is aimed wider. `$LOOT` itself is unchanged;
 > it is handoff §9 and Phase 3, not a naming decision.
 >
-> Renamed: every package (`@quietgold/*`), all player-facing copy, the save key.
+> Renamed: every package (`@dragonjob/*`), all player-facing copy, the save key.
+> The QA handle is `window.DJ`, with `window.HB` kept as the alias §4 names.
 > **Not** renamed: the two prototype artifacts above (historical deliverables the
 > parity fixture depends on), the GitHub repo, and the checkout directory —
 > those are ALFA's to change.
@@ -69,10 +73,10 @@ HOARDBREAK_v0.2.html   the prototype — source of truth
 HOARDBREAK_HANDOFF.md  the spec
 ```
 
-`@quietgold/engine` has two entry points:
+`@dragonjob/engine` has two entry points:
 
-- `@quietgold/engine` — everything, including the canvas renderer, input and audio
-- `@quietgold/engine/headless` — the simulation only; this is what the Fastify
+- `@dragonjob/engine` — everything, including the canvas renderer, input and audio
+- `@dragonjob/engine/headless` — the simulation only; this is what the Fastify
   API and the Phase 4 replay worker will import
 
 ### Engine modules (handoff §4)
@@ -249,7 +253,7 @@ five minutes:
   depth and used to be invisible until the run was over.
 - **Runs get a verdict, not just win/lose** — GHOST (never spotted), BY A
   WHISKER (out above 90% wake), THE HOARD IS YOURS, WYRMSLAYER, EMPTY-HANDED.
-  `verdictFor()` lives in `@quietgold/shared` because Phase 3's OG share card
+  `verdictFor()` lives in `@dragonjob/shared` because Phase 3's OG share card
   needs the same string server-side.
 - **The first thief you lose comes with a note** that dragon prisons hold the
   fallen, so a permanent-looking loss reads as a rescue hook.

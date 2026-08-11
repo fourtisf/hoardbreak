@@ -14,10 +14,10 @@ importers:
 
   apps/web:
     dependencies:
-      '@quietgold/engine':
+      '@dragonjob/engine':
         specifier: workspace:*
         version: link:../../packages/engine
-      '@quietgold/shared':
+      '@dragonjob/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       next:
@@ -57,7 +57,7 @@ importers:
 
   packages/shared:
     dependencies:
-      '@quietgold/engine':
+      '@dragonjob/engine':
         specifier: workspace:*
         version: link:../engine
       zod:

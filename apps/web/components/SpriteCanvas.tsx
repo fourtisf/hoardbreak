@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { SPRITES, drawSprite } from '@quietgold/engine';
+import { SPRITES, drawSprite } from '@dragonjob/engine';
 
 /** Draws one of the engine's char-grid sprites, centred and pixel-crisp. */
 export default function SpriteCanvas({

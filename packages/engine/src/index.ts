@@ -1,10 +1,10 @@
 /**
- * @quietgold/engine — the framework-free QUIET GOLD game engine.
+ * @dragonjob/engine — the framework-free THE DRAGON JOB game engine.
  *
  * Ported from `HOARDBREAK_v0.2.html` per the production handoff. This entry
  * point is the browser one: it adds the canvas renderer, input and audio to the
  * headless simulation. Node consumers should import
- * `@quietgold/engine/headless` instead.
+ * `@dragonjob/engine/headless` instead.
  */
 
 export * from './headless.js';

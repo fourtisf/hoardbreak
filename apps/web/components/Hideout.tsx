@@ -18,7 +18,7 @@ import {
   type CrewKind,
   type ItemKey,
   type UpgradeKey,
-} from '@quietgold/engine';
+} from '@dragonjob/engine';
 import {
   boardRows,
   buyItem,
@@ -29,7 +29,7 @@ import {
   rollDay,
   selectDepth,
   unlockedDepth,
-} from '@quietgold/shared';
+} from '@dragonjob/shared';
 import { getMeta, mutate, resetMeta, useLastRun, useMeta } from '@/lib/store';
 import { toast } from '@/lib/toast';
 import SpriteCanvas from './SpriteCanvas';

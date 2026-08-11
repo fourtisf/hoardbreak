@@ -27,9 +27,9 @@ import {
   type ItemKey,
   type RelicKey,
   type RunState,
-} from '@quietgold/engine';
-import { applyRunResult, snapshotRunMeta, verdictFor } from '@quietgold/shared';
-import { abandonRun, snapshotJSON } from '@quietgold/engine';
+} from '@dragonjob/engine';
+import { applyRunResult, snapshotRunMeta, verdictFor } from '@dragonjob/shared';
+import { abandonRun, snapshotJSON } from '@dragonjob/engine';
 import { getMeta, markTutorialSeen, mutate, setLastRun, tutorialSeen } from '@/lib/store';
 import { toast } from '@/lib/toast';
 import SpriteCanvas from './SpriteCanvas';
@@ -281,8 +281,8 @@ export default function Raid() {
         forceEnd: (ok: boolean) => (ok ? void inputRef.current?.push({ c: 'extract' }) : abandonRun(run)),
         snapshot: () => snapshotJSON(run),
       };
-      const w = window as unknown as { QG?: unknown; HB?: unknown };
-      w.QG = handle;
+      const w = window as unknown as { DJ?: unknown; HB?: unknown };
+      w.DJ = handle;
       w.HB = handle; // the name the handoff (§4) tells QA to reach for
     }
 
@@ -306,8 +306,8 @@ export default function Raid() {
       inputRef.current = null;
       runRef.current = null;
       if (process.env.NODE_ENV !== 'production') {
-        const w = window as unknown as { QG?: unknown; HB?: unknown };
-        delete w.QG;
+        const w = window as unknown as { DJ?: unknown; HB?: unknown };
+        delete w.DJ;
         delete w.HB;
       }
       window.removeEventListener('pointerdown', unlock);
@@ -349,7 +349,10 @@ export default function Raid() {
     <>
       <div id="app">
         <header>
-          <div className="brand">QUIET GOLD</div>
+          <div className="brand">
+            <span className="brandLong">THE DRAGON JOB</span>
+            <span className="brandShort">DRAGON JOB</span>
+          </div>
           <div className="hstat">
             <span className="lbl">DEPTH</span>
             <b id="hDepth" ref={hDepth}>

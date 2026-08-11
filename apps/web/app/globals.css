@@ -222,6 +222,9 @@ opacity:0;transition:.25s;pointer-events:none;font-style:italic;white-space:nowr
 #app{grid-template-columns:minmax(0,1fr) 248px}
 header{min-width:0;overflow:hidden}
 #helpBtn .helpShort{display:none}
+/* the brand must never wrap — a two-line logo blows the 44px header row open */
+.brand{white-space:nowrap}
+.brand .brandShort{display:none}
 
 @media (max-width: 480px){
   #app{grid-template-columns:minmax(0,1fr);grid-template-rows:44px 1fr auto;
@@ -234,6 +237,8 @@ header{min-width:0;overflow:hidden}
   #helpBtn{font-size:12px;padding:3px 10px;white-space:nowrap}
   #helpBtn .helpLong{display:none}
   #helpBtn .helpShort{display:inline}
+  .brand .brandLong{display:none}
+  .brand .brandShort{display:inline}
   #side{border-left:none;border-top:1px solid var(--line);
     max-height:40vh;padding:8px 10px calc(8px + env(safe-area-inset-bottom));
     border-radius:14px 14px 0 0;box-shadow:0 -8px 24px rgba(0,0,0,.5)}

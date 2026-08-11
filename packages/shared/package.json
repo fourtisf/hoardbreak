@@ -1,9 +1,9 @@
 {
-  "name": "@quietgold/shared",
+  "name": "@dragonjob/shared",
   "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "QUIET GOLD meta state, economy rules and API contracts (zod).",
+  "description": "THE DRAGON JOB meta state, economy rules and API contracts (zod).",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
@@ -17,7 +17,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@quietgold/engine": "workspace:*",
+    "@dragonjob/engine": "workspace:*",
     "zod": "4.4.3"
   },
   "devDependencies": {

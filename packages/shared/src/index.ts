@@ -1,7 +1,7 @@
 /**
- * @quietgold/shared — meta state, economy rules and API contracts.
+ * @dragonjob/shared — meta state, economy rules and API contracts.
  *
- * Depends on `@quietgold/engine` for game data (crew stats, item prices, the
+ * Depends on `@dragonjob/engine` for game data (crew stats, item prices, the
  * PRNG) so there is exactly one definition of every number in the product.
  */
 

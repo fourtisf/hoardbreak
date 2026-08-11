@@ -19,7 +19,7 @@ import {
   type RunResult,
   type RunThief,
   type Unit,
-} from '@quietgold/engine/headless';
+} from '@dragonjob/engine/headless';
 import {
   applyRunResult,
   boardRows,

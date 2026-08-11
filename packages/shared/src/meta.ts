@@ -25,7 +25,7 @@ import {
   type RunResult,
   type RunThief,
   type UpgradeKey,
-} from '@quietgold/engine/headless';
+} from '@dragonjob/engine/headless';
 
 export interface Meta {
   gold: number;

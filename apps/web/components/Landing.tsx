@@ -65,7 +65,7 @@ export default function Landing() {
   return (
     <div id="landing">
       <canvas id="lcv" ref={cvRef} />
-      <h1>QUIET GOLD</h1>
+      <h1>THE DRAGON JOB</h1>
       <div className="tag">
         Rob the dragon. <b>Don&apos;t wake it.</b>
       </div>

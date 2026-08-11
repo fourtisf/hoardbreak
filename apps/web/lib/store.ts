@@ -9,9 +9,9 @@
  */
 
 import { useSyncExternalStore } from 'react';
-import { createMeta, type Meta } from '@quietgold/shared';
+import { createMeta, type Meta } from '@dragonjob/shared';
 
-const KEY = 'quietgold.hideout';
+const KEY = 'dragonjob.hideout';
 /** Bump when the saved shape changes in a way old saves cannot satisfy. */
 const SAVE_VERSION = 3;
 

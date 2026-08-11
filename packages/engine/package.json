@@ -1,9 +1,9 @@
 {
-  "name": "@quietgold/engine",
+  "name": "@dragonjob/engine",
   "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "Framework-free QUIET GOLD game engine \u2014 lair generation, fixed-timestep simulation, canvas renderer.",
+  "description": "Framework-free THE DRAGON JOB game engine \u2014 lair generation, fixed-timestep simulation, canvas renderer.",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {

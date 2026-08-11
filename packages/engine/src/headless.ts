@@ -1,9 +1,9 @@
 /**
  * Headless entry point — everything that runs without a browser.
  *
- * `@quietgold/engine/headless` is what the Fastify API and the Phase 4 replay
+ * `@dragonjob/engine/headless` is what the Fastify API and the Phase 4 replay
  * worker import: same simulation, no canvas, no `window`. The default entry
- * (`@quietgold/engine`) re-exports all of this plus the browser surfaces.
+ * (`@dragonjob/engine`) re-exports all of this plus the browser surfaces.
  */
 
 export * from './defs.js';

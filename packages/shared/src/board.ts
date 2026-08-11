@@ -7,7 +7,7 @@
  * already what that endpoint will return.
  */
 
-import { hashStr, mulberry32 } from '@quietgold/engine/headless';
+import { hashStr, mulberry32 } from '@dragonjob/engine/headless';
 
 export interface BoardRow {
   /** wallet or handle */

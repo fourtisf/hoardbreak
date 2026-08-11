@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   // the workspace packages ship TypeScript source, not a build artifact
-  transpilePackages: ['@quietgold/engine', '@quietgold/shared'],
+  transpilePackages: ['@dragonjob/engine', '@dragonjob/shared'],
   webpack: (config) => {
     // Those packages use standards-correct ESM specifiers (`./defs.js`) that
     // resolve to `.ts` on disk — the same trick the Fastify API will need when

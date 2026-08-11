@@ -2,10 +2,10 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: "QUIET GOLD — Rob the dragon. Don't wake it.",
+  title: "THE DRAGON JOB — Rob the dragon. Don't wake it.",
   description:
     'A mobile-first extraction-heist roguelite. One lair a day, the same for every player on earth. Loot it and get out before the wyrm wakes.',
-  applicationName: 'QUIET GOLD',
+  applicationName: 'THE DRAGON JOB',
 };
 
 export const viewport: Viewport = {
