@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { NAME_MAX, cleanName } from '@dragonjob/shared';
 import { getMeta, mutate } from '@/lib/store';
+import LairCanvas from './LairCanvas';
 
 /**
  * Invitation gate.
@@ -75,18 +76,19 @@ export default function Gate({ children }: { children: React.ReactNode }): JSX.E
   const err = !wrong
     ? ''
     : needName && !cleanName(name)
-      ? 'Give a name first — the board has to call you something.'
-      : 'Not the word. The door stays shut.';
+      ? 'Enter a name first — the board has to call you something.'
+      : 'Wrong invite code. Check it and try again.';
 
   return (
     <div id="gate">
+      <LairCanvas id="gcv" />
       <h1>The Door Is Shut</h1>
-      <p>This job is invitation only. If someone sent you, they gave you the word.</p>
+      <p>This job is invitation only. Enter your invite code to get in.</p>
       <form onSubmit={knock}>
         {needName && (
           <>
             <label className="sig" htmlFor="gateName">
-              WHAT THEY CALL YOU
+              YOUR NAME
             </label>
             <input
               id="gateName"
@@ -96,7 +98,7 @@ export default function Gate({ children }: { children: React.ReactNode }): JSX.E
               autoComplete="off"
               spellCheck={false}
               maxLength={NAME_MAX}
-              placeholder="a name for the board"
+              placeholder="shown on the board"
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
@@ -106,7 +108,7 @@ export default function Gate({ children }: { children: React.ReactNode }): JSX.E
           </>
         )}
         <label className="sig" htmlFor="gateCode">
-          THE WORD
+          INVITE CODE
         </label>
         <input
           id="gateCode"
@@ -118,6 +120,7 @@ export default function Gate({ children }: { children: React.ReactNode }): JSX.E
           maxLength={24}
           aria-invalid={wrong}
           aria-describedby="gateErr"
+          placeholder="ask whoever sent you"
           value={value}
           onChange={(e) => {
             setValue(e.target.value);
@@ -128,7 +131,7 @@ export default function Gate({ children }: { children: React.ReactNode }): JSX.E
           {err}
         </div>
         <button className="btn" type="submit">
-          KNOCK
+          ENTER
         </button>
       </form>
       <span className="sig">THEDRAGONJOB.COM</span>

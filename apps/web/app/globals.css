@@ -399,8 +399,14 @@ header{min-width:0;overflow:hidden}
 
 /* ── the access gate ────────────────────────────────────────────────── */
 #gate{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:16px;padding:26px 20px;
+  align-items:center;justify-content:center;gap:16px;padding:26px 20px;overflow:auto;
   background:radial-gradient(120% 90% at 50% 30%,#101f16,#060a08 70%);text-align:center}
+/* the door stands on the same lair the landing page does — a visitor should be
+   looking at the game before they are let into it */
+#gcv{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#gate::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:1;
+  background:radial-gradient(660px 500px at 50% 45%,rgba(4,8,6,.86) 0%,rgba(4,8,6,.6) 50%,rgba(4,8,6,.93) 100%)}
+#gate>*:not(#gcv){position:relative;z-index:2}
 #gate h1{font-family:'Pirata One',serif;font-size:clamp(30px,7vw,46px);color:var(--gold);
   letter-spacing:.04em;line-height:1;text-shadow:0 0 34px rgba(255,215,94,.3)}
 #gate p{color:var(--dim);font-style:italic;font-size:13.5px;max-width:400px;line-height:1.6}
@@ -409,6 +415,7 @@ header{min-width:0;overflow:hidden}
   padding:12px 14px;color:var(--bone);font-family:Consolas,monospace;font-size:19px;
   letter-spacing:.42em;text-align:center;text-indent:.42em}
 #gate input:focus{outline:2px solid var(--em);outline-offset:2px;border-color:var(--em)}
+#gate input::placeholder{color:var(--dim);font-style:italic;letter-spacing:.04em;text-indent:0;font-size:13px}
 #gate .err{color:var(--red);font-size:12px;font-style:italic;min-height:17px}
 /* the name is prose, not a passcode — no monospace tracking on it */
 #gate .gateName{font-family:Georgia,serif;font-size:16px;letter-spacing:.02em;text-indent:0}
