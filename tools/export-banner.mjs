@@ -18,22 +18,22 @@ html,body{width:1500px;height:500px;overflow:hidden;background:#050a07}
 #bg{position:absolute;inset:0;width:1500px;height:500px;display:block}
 #veil{position:absolute;inset:0;
   background:
-    radial-gradient(42% 130% at 33% 52%, rgba(255,215,94,.17), transparent 72%),
+    radial-gradient(42% 130% at 30% 52%, rgba(255,215,94,.17), transparent 72%),
     linear-gradient(180deg, rgba(5,10,7,.5), rgba(5,10,7,.06) 32%, rgba(5,10,7,.1) 64%, rgba(5,10,7,.72)),
     radial-gradient(125% 155% at 50% 50%, rgba(5,10,7,.12) 0%, rgba(5,10,7,.7) 70%, rgba(5,10,7,.94) 100%);
 }
-#lock{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:44px;
+#lock{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:40px;
   font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
-#lock svg{width:244px;height:244px;flex:0 0 auto;
+#lock svg{width:216px;height:216px;flex:0 0 auto;
   filter:drop-shadow(0 14px 40px rgba(0,0,0,.72)) drop-shadow(0 0 26px rgba(255,215,94,.16))}
 .txt{display:flex;flex-direction:column;gap:0}
-h1{font-size:68px;font-weight:700;line-height:.99;letter-spacing:.115em;color:#f6ead0;
+h1{font-size:60px;font-weight:700;line-height:1;letter-spacing:.105em;white-space:nowrap;color:#f6ead0;
   text-shadow:0 3px 22px rgba(0,0,0,.85)}
-.rule{height:1px;width:100%;margin:20px 0 15px;
+.rule{height:1px;width:100%;margin:18px 0 14px;
   background:linear-gradient(90deg,#c08f2c,rgba(192,143,44,.12))}
-.tag{font-size:19px;letter-spacing:.235em;color:#8fb3a1;text-transform:uppercase;
+.tag{font-size:18px;letter-spacing:.235em;color:#8fb3a1;text-transform:uppercase;
   text-shadow:0 2px 12px rgba(0,0,0,.8)}
-.dom{font-size:16px;letter-spacing:.3em;color:#ffd75e;margin-top:20px;text-transform:lowercase;
+.dom{font-size:15px;letter-spacing:.3em;color:#ffd75e;margin-top:17px;text-transform:lowercase;
   text-shadow:0 2px 12px rgba(0,0,0,.8)}
 </style>
 <canvas id="bg" width="1500" height="500"></canvas>
@@ -41,7 +41,7 @@ h1{font-size:68px;font-weight:700;line-height:.99;letter-spacing:.115em;color:#f
 <div id="lock">
   <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">${inner(key)}</svg>
   <div class="txt">
-    <h1>THE<br/>DRAGON JOB</h1>
+    <h1>THE DRAGON JOB</h1>
     <div class="rule"></div>
     <div class="tag">One lair · one crew · one shot a day</div>
     <div class="dom">thedragonjob.com</div>
@@ -106,6 +106,15 @@ for (const key of ['seal', 'signet', 'eclipse']) {
   p.on('pageerror', (e) => console.log('ERR', key, String(e)));
   await p.setContent(page(key));
   await p.waitForTimeout(400);
+  if (key === 'seal') {
+    const r = await p.evaluate(() => {
+      const l = document.getElementById('lock').getBoundingClientRect();
+      const svg = document.querySelector('#lock svg').getBoundingClientRect();
+      const t = document.querySelector('.txt').getBoundingClientRect();
+      return { left: Math.round(svg.left), right: Math.round(t.right), width: Math.round(t.right - svg.left), viewport: Math.round(l.width) };
+    });
+    console.log('lockup', r, r.left >= 250 && r.right <= 1250 ? 'INSIDE safe band' : 'OUTSIDE safe band');
+  }
   await p.screenshot({ path: `${BRAND}/dragonjob-x-header-${key}-1500x500.png` });
   await p.close();
   console.log('header', key);
