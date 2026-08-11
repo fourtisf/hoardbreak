@@ -25,6 +25,10 @@ font-family:'Pirata One',serif;font-size:17px;letter-spacing:.06em;border-radius
 #landing{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
 background:radial-gradient(900px 620px at 50% 30%,#122a1c 0%,#08110b 55%,#040806 100%);overflow:auto;padding:24px}
 #lcv{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+/* the lair is drawn on #lcv; this sits between it and the copy so the stone
+   reads as depth rather than as noise behind the title */
+#landing::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:1;
+  background:radial-gradient(780px 560px at 50% 42%,rgba(4,8,6,.78) 0%,rgba(4,8,6,.5) 48%,rgba(4,8,6,.9) 100%)}
 #landing>*:not(#lcv){position:relative;z-index:2}
 #landing h1{font-family:'Pirata One',serif;font-size:clamp(40px,9vh,70px);color:var(--gold);
 text-shadow:0 0 30px rgba(255,215,94,.35);line-height:1}

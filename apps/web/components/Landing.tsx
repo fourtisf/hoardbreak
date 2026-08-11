@@ -2,6 +2,75 @@
 
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import {
+  H,
+  T,
+  W,
+  createRun,
+  dailySeed,
+  modFor,
+  paintLair,
+  todayUTC,
+  type RunMeta,
+} from '@dragonjob/engine';
+
+/** Enough of a crew to satisfy the generator; nobody plays this run. */
+const SHOWCASE_META: RunMeta = {
+  depth: 1,
+  uid: 4,
+  crew: [
+    { tid: 1, name: 'Rats', kind: 'picklock', xp: 0 },
+    { tid: 2, name: 'Wick', kind: 'picklock', xp: 0 },
+    { tid: 3, name: 'Sable', kind: 'hexer', xp: 0 },
+    { tid: 4, name: 'Fen', kind: 'bruiser', xp: 0 },
+  ],
+  lost: [],
+  items: { smoke: 0, lull: 0, trap: 0 },
+  up: { dmg: 0, hp: 0, inc: 0 },
+};
+
+/**
+ * Draw tonight's actual lair, once, into an offscreen canvas.
+ *
+ * Not a texture and not a mock-up: this is the depth-1 lair the visitor will
+ * raid if they press the button, generated from the same daily seed the game
+ * uses, painted by the same tile pass the renderer uses. It is the strongest
+ * thing the page can say about itself, and it costs one generation.
+ */
+function buildLairLayer(): HTMLCanvasElement | null {
+  try {
+    const date = todayUTC();
+    const depth = 1;
+    const run = createRun({
+      seed: dailySeed(date, depth),
+      depth,
+      mod: modFor(date, depth),
+      meta: SHOWCASE_META,
+      date,
+    });
+    const off = document.createElement('canvas');
+    off.width = W;
+    off.height = H;
+    const g = off.getContext('2d');
+    if (!g) return null;
+    paintLair(g, run);
+    // the hoard, glowing up through the dark — the one warm thing down there
+    g.globalCompositeOperation = 'lighter';
+    for (const p of run.piles) {
+      const rg = g.createRadialGradient(p.x, p.y, 0, p.x, p.y, T * 2.4);
+      rg.addColorStop(0, 'rgba(255,215,94,.55)');
+      rg.addColorStop(1, 'rgba(255,215,94,0)');
+      g.fillStyle = rg;
+      g.beginPath();
+      g.arc(p.x, p.y, T * 2.4, 0, Math.PI * 2);
+      g.fill();
+    }
+    g.globalCompositeOperation = 'source-over';
+    return off;
+  } catch {
+    return null; // decoration must never take the page down
+  }
+}
 
 /**
  * The landing page, ported from the prototype — copy included. The drifting
@@ -17,6 +86,12 @@ export default function Landing() {
     if (!cv) return;
     const L = cv.getContext('2d');
     if (!L) return;
+
+    const lair = buildLairLayer();
+    // the same bargain render.ts makes: the drift exists for its own sake, so
+    // it is the first thing to go when the OS asks for less motion
+    const calm =
+      typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const size = (): void => {
       cv.width = window.innerWidth;
@@ -42,6 +117,21 @@ export default function Landing() {
       last = now;
       const t = now / 1000;
       L.clearRect(0, 0, cv.width, cv.height);
+
+      if (lair) {
+        // cover the viewport, drifting a few pixels so the stone is not a
+        // frozen wallpaper, then bury it under the dark so the title still wins
+        L.imageSmoothingEnabled = false;
+        const sc = Math.max(cv.width / lair.width, cv.height / lair.height) * 1.06;
+        const dw = lair.width * sc;
+        const dh = lair.height * sc;
+        const dx = (cv.width - dw) / 2 + (calm ? 0 : Math.sin(t * 0.06) * 18);
+        const dy = (cv.height - dh) / 2 + (calm ? 0 : Math.cos(t * 0.05) * 12);
+        L.globalAlpha = 0.62;
+        L.drawImage(lair, dx, dy, dw, dh);
+        L.globalAlpha = 1;
+      }
+
       for (const p of motes) {
         p.y -= p.v * dt;
         if (p.y < -4) {

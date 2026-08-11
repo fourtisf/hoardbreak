@@ -11,6 +11,6 @@ export * from './headless.js';
 
 export { createLoop, type Loop, type LoopOptions } from './loop.js';
 export { SPRITES, drawSprite, assertSprites, type Sprite, type SpriteTarget } from './sprites.js';
-export { createRenderer, type Renderer } from './render.js';
+export { createRenderer, paintLair, type Renderer } from './render.js';
 export { createInput, type InputController, type InputOptions } from './input.js';
 export { createAudio, type Audio } from './audio.js';

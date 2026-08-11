@@ -28,6 +28,52 @@ export interface Renderer {
   readonly canvas: HTMLCanvasElement;
 }
 
+/**
+ * Paint a lair's static tile layer — rock, floor, moss and the edge trim where
+ * the two meet.
+ *
+ * Exported because the landing page draws the same lair behind its title, and a
+ * second hand-written copy of this pass would drift from the game's own look the
+ * first time either side is touched. `buildRockCache` is its only other caller.
+ */
+export function paintLair(g: Ctx, s: RunState): void {
+  g.imageSmoothingEnabled = false;
+  const sr = (v: number): number => Math.abs(Math.sin(v) * 43758.5453) % 1;
+  for (let y = 0; y < TR; y++) {
+    for (let x = 0; x < TC; x++) {
+      const c = s.grid[gi(x, y)];
+      const px = x * T;
+      const py = y * T;
+      const sd = x * 7.13 + y * 3.7;
+      if (c === ROCK) {
+        g.fillStyle = sr(sd) > 0.5 ? '#16291f' : '#122219';
+        g.fillRect(px, py, T, T);
+        g.fillStyle = '#0b1710';
+        g.fillRect(px, py + T - 3, T, 3);
+        g.fillStyle = '#234a34';
+        g.fillRect(px, py, T, 2);
+      } else {
+        g.fillStyle = '#101a12';
+        g.fillRect(px, py, T, T);
+        if ((x + y) % 2) {
+          g.fillStyle = 'rgba(0,0,0,.16)';
+          g.fillRect(px, py, T, T);
+        }
+        if (sr(sd * 7) > 0.82) {
+          g.fillStyle = '#2ab070';
+          g.fillRect(px + ((sr(sd * 6) * 20) | 0), py + ((sr(sd * 8) * 20) | 0), 2, 2);
+        }
+        const edge = (dx: number, dy: number): boolean => inb(x + dx, y + dy) && s.grid[gi(x + dx, y + dy)] === ROCK;
+        g.fillStyle = '#2c5a40';
+        if (edge(0, -1)) g.fillRect(px, py, T, 2);
+        if (edge(0, 1)) g.fillRect(px, py + T - 2, T, 2);
+        if (edge(-1, 0)) g.fillRect(px, py, 2, T);
+        if (edge(1, 0)) g.fillRect(px + T - 2, py, 2, T);
+      }
+    }
+  }
+}
+
 export function createRenderer(canvas: HTMLCanvasElement): Renderer {
   const C = canvas.getContext('2d') as Ctx;
   C.imageSmoothingEnabled = false;
@@ -47,42 +93,7 @@ export function createRenderer(canvas: HTMLCanvasElement): Renderer {
       rockCv.width = W;
       rockCv.height = H;
     }
-    const g = rockCv.getContext('2d') as Ctx;
-    g.imageSmoothingEnabled = false;
-    const sr = (v: number): number => Math.abs(Math.sin(v) * 43758.5453) % 1;
-    for (let y = 0; y < TR; y++) {
-      for (let x = 0; x < TC; x++) {
-        const c = s.grid[gi(x, y)];
-        const px = x * T;
-        const py = y * T;
-        const sd = x * 7.13 + y * 3.7;
-        if (c === ROCK) {
-          g.fillStyle = sr(sd) > 0.5 ? '#16291f' : '#122219';
-          g.fillRect(px, py, T, T);
-          g.fillStyle = '#0b1710';
-          g.fillRect(px, py + T - 3, T, 3);
-          g.fillStyle = '#234a34';
-          g.fillRect(px, py, T, 2);
-        } else {
-          g.fillStyle = '#101a12';
-          g.fillRect(px, py, T, T);
-          if ((x + y) % 2) {
-            g.fillStyle = 'rgba(0,0,0,.16)';
-            g.fillRect(px, py, T, T);
-          }
-          if (sr(sd * 7) > 0.82) {
-            g.fillStyle = '#2ab070';
-            g.fillRect(px + ((sr(sd * 6) * 20) | 0), py + ((sr(sd * 8) * 20) | 0), 2, 2);
-          }
-          const edge = (dx: number, dy: number): boolean => inb(x + dx, y + dy) && s.grid[gi(x + dx, y + dy)] === ROCK;
-          g.fillStyle = '#2c5a40';
-          if (edge(0, -1)) g.fillRect(px, py, T, 2);
-          if (edge(0, 1)) g.fillRect(px, py + T - 2, T, 2);
-          if (edge(-1, 0)) g.fillRect(px, py, 2, T);
-          if (edge(1, 0)) g.fillRect(px + T - 2, py, 2, T);
-        }
-      }
-    }
+    paintLair(rockCv.getContext('2d') as Ctx, s);
   }
 
   function drawGuard(g2: Guard, t: number, a: number): void {
