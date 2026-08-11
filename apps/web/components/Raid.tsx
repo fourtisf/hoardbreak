@@ -34,6 +34,7 @@ import {
 import { applyRunResult, markPlayed, shareText, slayerReadiness, snapshotRunMeta, verdictFor } from '@dragonjob/shared';
 import { abandonRun, snapshotJSON } from '@dragonjob/engine';
 import { getMeta, markTutorialSeen, mutate, setLastRun, tutorialSeen } from '@/lib/store';
+import { disarmRaid, raidArmed } from '@/lib/entry';
 import { toast } from '@/lib/toast';
 import SpriteCanvas from './SpriteCanvas';
 import Toast from './Toast';
@@ -241,6 +242,15 @@ export default function Raid() {
   useEffect(() => {
     const canvas = cvRef.current;
     if (!canvas) return;
+
+    // Refreshing /raid, or opening it cold, used to start a brand-new run out of
+    // nowhere. A raid is somewhere you walk into — send anyone who arrived any
+    // other way back to the front door. Checked before `createRun`, so a bounced
+    // load never touches the save.
+    if (!raidArmed()) {
+      router.replace('/');
+      return;
+    }
 
     const meta = getMeta();
     if (meta.crew.length === 0) {
@@ -469,6 +479,11 @@ export default function Raid() {
       w.HB = handle; // the name the handoff (§4) tells QA to reach for
     }
 
+    // the ticket dies with the page, which is what makes a refresh land on the
+    // landing page instead of silently rerolling the night
+    const drop = (): void => disarmRaid();
+    window.addEventListener('pagehide', drop);
+
     drain(run); // the opening banner, whisper and drum hit
 
     const loop = createLoop({
@@ -491,6 +506,11 @@ export default function Raid() {
     loop.start();
 
     return () => {
+      window.removeEventListener('pagehide', drop);
+      // deliberately NOT disarming here: React StrictMode runs this cleanup
+      // between two mounts in development, and tearing the ticket up in the
+      // middle would bounce a raid the player legitimately walked into. The
+      // ticket's own expiry covers the case this would have caught.
       loop.stop();
       input.dispose();
       inputRef.current = null;

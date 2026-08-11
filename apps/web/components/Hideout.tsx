@@ -34,6 +34,7 @@ import {
   unlockedDepth,
 } from '@dragonjob/shared';
 import { getMeta, mutate, replaceMeta, resetMeta, useLastRun, useMeta } from '@/lib/store';
+import { armRaid } from '@/lib/entry';
 import { toast } from '@/lib/toast';
 import SpriteCanvas from './SpriteCanvas';
 import Toast from './Toast';
@@ -76,6 +77,9 @@ export default function Hideout() {
       toast('Recruit a crew first');
       return;
     }
+    // the raid asks to see this on the way in, so a refreshed /raid can tell
+    // "walked here from the hideout" from "typed the URL"
+    armRaid();
     router.push('/raid');
   };
 
