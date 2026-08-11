@@ -25,6 +25,13 @@ export interface InputController {
   push(cmd: RunCommand): void;
   /** Latch creep on/off — the mobile toggle. Shift overrides it while held. */
   setCreep(on: boolean): void;
+  /**
+   * Aim the next tap at one thief, or at the whole crew with `null`.
+   *
+   * Cleared after the tap lands: a targeting mode the player can forget they
+   * are in is a mode that loses runs.
+   */
+  setSolo(tid: number | null): void;
   isCreeping(): boolean;
   dispose(): void;
 }
@@ -40,6 +47,7 @@ export function createInput(opts: InputOptions): InputController {
   let queue: RunCommand[] = [];
   // creep is held on desktop (Shift) and latched on touch (the CREEP button)
   let creepLatched = false;
+  let solo: number | null = null;
 
   const push = (cmd: RunCommand): void => {
     queue.push(cmd);
@@ -74,7 +82,12 @@ export function createInput(opts: InputOptions): InputController {
     const r = canvas.getBoundingClientRect();
     const x = (e.clientX - r.left) * (W / r.width);
     const y = (e.clientY - r.top) * (H / r.height);
-    push({ c: 'move', x: clamp((x / T) | 0, 0, TC - 1), y: clamp((y / T) | 0, 0, TR - 1) });
+    const cmd: RunCommand =
+      solo === null
+        ? { c: 'move', x: clamp((x / T) | 0, 0, TC - 1), y: clamp((y / T) | 0, 0, TR - 1) }
+        : { c: 'move', x: clamp((x / T) | 0, 0, TC - 1), y: clamp((y / T) | 0, 0, TR - 1), tid: solo };
+    solo = null;
+    push(cmd);
   };
   const onCanvasCancel = (e: PointerEvent): void => {
     if (e.pointerId === tap.id) tap.id = -1;
@@ -210,6 +223,9 @@ export function createInput(opts: InputOptions): InputController {
       return { mx: mv.x, my: mv.y, mm: mv.m, creep: creeping(), commands };
     },
     push,
+    setSolo(tid: number | null): void {
+      solo = tid;
+    },
     setCreep(on: boolean): void {
       creepLatched = on;
     },

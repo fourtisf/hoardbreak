@@ -159,12 +159,30 @@ export default function Raid() {
   const [relics, setRelics] = useState<RelicKey[]>([]);
   const [creep, setCreep] = useState(false);
   const [muted, setMuted] = useState(() => getMeta().muted);
+  /**
+   * Whose turn it is to be given an order.
+   *
+   * null = the whole crew, which is how the game has always worked and stays
+   * the default. Picking one thief makes the next tap on the lair a posting for
+   * them alone, then hands the pointer back to the crew — a mode you can forget
+   * you are in is a mode that loses runs.
+   */
+  const [picked, setPicked] = useState<number | null>(null);
+  /**
+   * Who is currently standing on a posting.
+   *
+   * Kept apart from `squad` because it changes on a tap, not on a join or a
+   * death — and because a posted thief with no way back is a thief you lose.
+   */
+  const [held, setHeld] = useState<readonly number[]>([]);
   const audioRef = useRef<{ muted: boolean } | null>(null);
   const runRef = useRef<RunState | null>(null);
   const readyRef = useRef('');
+  const pickedRef = useRef<number | null>(null);
   const felt = useRef({ seen: false, stirs: false, woke: false });
 
   pausedRef.current = tut || menu || over !== null;
+  pickedRef.current = picked;
 
   /**
    * A short buzz on the beats that matter.
@@ -253,6 +271,7 @@ export default function Raid() {
       enabled: () => !pausedRef.current,
     });
     inputRef.current = input;
+    input.setSolo(pickedRef.current);
 
     const unlock = (): void => audio.resume();
     window.addEventListener('pointerdown', unlock, { once: true });
@@ -267,6 +286,7 @@ export default function Raid() {
 
     let lastItems = '';
     let lastRelics = 0;
+    let lastHeld = '';
     let toldAboutPrisons = false;
     let applied = false;
 
@@ -282,6 +302,12 @@ export default function Raid() {
       }
       if (out.squadDirty) {
         setSquad(s.units.map((u) => ({ tid: u.tid, name: u.name, kind: u.k, lv: u.lv })));
+        lastHeld = 'reset'; // a death can free a posting; force the chips to re-read
+        // don't leave the next tap aimed at someone who just died
+        if (pickedRef.current !== null && !s.units.some((u) => u.tid === pickedRef.current)) {
+          setPicked(null);
+          input.setSolo(null);
+        }
       }
       const sig = `${s.items.smoke}/${s.items.lull}/${s.items.trap}`;
       if (sig !== lastItems) {
@@ -360,7 +386,12 @@ export default function Raid() {
       }
 
       const inz = extractReady(s);
-      setT(hintBar.current, coachFor(s, inz));
+      setT(
+        hintBar.current,
+        pickedRef.current !== null && !s.dragon.awake
+          ? `◎ ${s.units.find((u) => u.tid === pickedRef.current)?.name ?? 'They'} alone — tap where they should hold`
+          : coachFor(s, inz),
+      );
 
       const stolen = Math.round(100 * (1 - s.hoard.pool / s.hoard.pool0));
       setT(stolenPct.current, `${stolen}%`);
@@ -384,6 +415,13 @@ export default function Raid() {
       for (const u of s.units) {
         const bar = hpBars.current.get(u.tid);
         if (bar) bar.style.width = `${(100 * u.hp) / u.max}%`;
+      }
+
+      const posted = s.units.filter((u) => u.ord).map((u) => u.tid);
+      const sigHeld = posted.join(',');
+      if (sigHeld !== lastHeld) {
+        lastHeld = sigHeld;
+        setHeld(posted);
       }
     };
 
@@ -413,7 +451,14 @@ export default function Raid() {
 
     const loop = createLoop({
       state: () => run,
-      input: () => input.read(),
+      input: () => {
+        const f = input.read();
+        // The pointer goes back to the crew the moment a posting is given, so
+        // the highlight has to go with it — a mode that lies about being on is
+        // worse than no mode at all.
+        if (f.commands?.some((c) => c.c === 'move' && c.tid !== undefined)) setPicked(null);
+        return f;
+      },
       paused: () => pausedRef.current,
       afterStep: drain,
       render: (s, alpha, t, dt) => {
@@ -631,11 +676,41 @@ export default function Raid() {
           <div className="lbl">THE CREW</div>
           <div id="squadList" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {squad.map((u) => (
-              <div className="sq" key={u.tid}>
+              <div
+                className={`sq${picked === u.tid ? ' picked' : ''}`}
+                key={u.tid}
+                role="button"
+                tabIndex={0}
+                title={`Order ${u.name} alone — then tap the lair`}
+                onClick={() => {
+                  const next = picked === u.tid ? null : u.tid;
+                  setPicked(next);
+                  inputRef.current?.setSolo(next);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter' && e.key !== ' ') return;
+                  e.preventDefault();
+                  const next = picked === u.tid ? null : u.tid;
+                  setPicked(next);
+                  inputRef.current?.setSolo(next);
+                }}
+              >
                 <SpriteCanvas sprite={UD[u.kind].spr} width={20} height={22} pad={2} />
                 <span className="sn">
                   {u.name} <span style={{ color: 'var(--dim)' }}>· {UD[u.kind].n}</span>
                 </span>
+                {held.includes(u.tid) && (
+                  <button
+                    className="heldChip"
+                    title={`${u.name} is holding a post — click to call them back`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      inputRef.current?.push({ c: 'recall', tid: u.tid });
+                    }}
+                  >
+                    HOLDING ✕
+                  </button>
+                )}
                 {u.lv > 0 && <span className="sl">Lv.{u.lv}</span>}
                 <span className="shp">
                   <i

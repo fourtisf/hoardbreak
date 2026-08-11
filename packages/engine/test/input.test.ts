@@ -99,3 +99,37 @@ describe('tap to send the crew', () => {
     expect(input.read().commands).toHaveLength(0);
   });
 });
+
+describe('ordering one thief', () => {
+  it('tags the tap with whoever was picked', () => {
+    const c = stubCanvas();
+    const input = createInput({ canvas: c.el });
+    input.setSolo(7);
+    c.fire('pointerdown', { pointerId: 1, clientX: 240, clientY: 120 });
+    c.fire('pointerup', { pointerId: 1, clientX: 240, clientY: 120 });
+    expect(input.read().commands).toEqual([{ c: 'move', x: 10, y: 5, tid: 7 }]);
+  });
+
+  it('hands the pointer back to the crew after one order', () => {
+    const c = stubCanvas();
+    const input = createInput({ canvas: c.el });
+    input.setSolo(7);
+    c.fire('pointerdown', { pointerId: 1, clientX: 240, clientY: 120 });
+    c.fire('pointerup', { pointerId: 1, clientX: 240, clientY: 120 });
+    input.read();
+    c.fire('pointerdown', { pointerId: 2, clientX: 240, clientY: 120 });
+    c.fire('pointerup', { pointerId: 2, clientX: 240, clientY: 120 });
+    // no tid this time: a targeting mode you can forget is a mode that loses runs
+    expect(input.read().commands).toEqual([{ c: 'move', x: 10, y: 5 }]);
+  });
+
+  it('is cleared by picking nobody', () => {
+    const c = stubCanvas();
+    const input = createInput({ canvas: c.el });
+    input.setSolo(7);
+    input.setSolo(null);
+    c.fire('pointerdown', { pointerId: 1, clientX: 240, clientY: 120 });
+    c.fire('pointerup', { pointerId: 1, clientX: 240, clientY: 120 });
+    expect(input.read().commands).toEqual([{ c: 'move', x: 10, y: 5 }]);
+  });
+});

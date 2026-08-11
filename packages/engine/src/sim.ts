@@ -427,15 +427,24 @@ function unitStep(s: RunState, u: Unit, dt: number): void {
 
   const leader = s.units[0] as Unit;
   const sm = crewSpeed(s);
+
+  // a posting given to this thief alone beats anything the crew was told
+  if (u.ord && !(u === leader && u.steer)) {
+    const done = follow(s, u, u.ord.x, u.ord.y, d.spd * sm, dt);
+    if (done) u.path = null;
+    return; // arriving does not release them: they were told to hold
+  }
+
+  const crewCmd = s.cmdOnly === null ? s.cmd : null;
   if (u === leader) {
-    if (!u.steer && s.cmd) {
-      const done = follow(s, u, s.cmd.x, s.cmd.y, d.spd * sm, dt);
+    if (!u.steer && crewCmd) {
+      const done = follow(s, u, crewCmd.x, crewCmd.y, d.spd * sm, dt);
       if (done) u.path = null;
     }
     return;
   }
-  if (s.cmd) {
-    const done = follow(s, u, s.cmd.x, s.cmd.y, d.spd * sm, dt);
+  if (crewCmd) {
+    const done = follow(s, u, crewCmd.x, crewCmd.y, d.spd * sm, dt);
     if (done) u.path = null;
     return;
   }
@@ -986,6 +995,7 @@ function update(s: RunState, dt: number, input: InputFrame): void {
           slam: 0,
           steer: false,
           tgt: null,
+          ord: null,
           id: s.rngSim.range(0, 99),
         });
         s.out.squadDirty = true;
@@ -1103,13 +1113,42 @@ function applyCommand(s: RunState, c: RunCommand): void {
       toast(s, 'Solid rock — the crew can’t phase through walls');
       return;
     }
+    if (c.tid !== undefined) {
+      // one thief, posted. Everyone else keeps doing what they were doing.
+      const one = s.units.find((u) => u.tid === c.tid);
+      if (!one) return;
+      one.ord = { x: gx, y: gy };
+      one.path = null;
+      one.ptile = -1;
+      // the marker is cosmetic; `cmdOnly` stops everyone else reading it as
+      // their order, which is what made a solo posting move the whole crew
+      s.cmd = { x: gx, y: gy };
+      s.cmdOnly = one.tid;
+      s.cmdT = TUNING.CMD_MARKER_TIME * 0.6;
+      feed(s, `${one.name} peels off.`);
+      snd(s, 620, 0.04, 'square', 0.035);
+      return;
+    }
     s.cmd = { x: gx, y: gy };
+    s.cmdOnly = null;
     s.cmdT = TUNING.CMD_MARKER_TIME;
     for (const u of s.units) {
+      // a posted thief is NOT recalled by a crew order — otherwise "hold this
+      // corridor while the rest take the gold" is impossible, which is the
+      // entire reason for splitting the crew. Use `recall` to release them.
+      if (u.ord) continue;
       u.path = null;
       u.ptile = -1;
     }
     snd(s, 500, 0.04, 'square', 0.04);
+  } else if (c.c === 'recall') {
+    const one = s.units.find((u) => u.tid === c.tid);
+    if (!one || !one.ord) return;
+    one.ord = null;
+    one.path = null;
+    one.ptile = -1;
+    feed(s, `${one.name} falls back in.`);
+    snd(s, 420, 0.05, 'square', 0.035);
   } else if (c.c === 'item') {
     useItem(s, c.k);
   } else if (c.c === 'extract') {
@@ -1174,6 +1213,7 @@ export function createRun(opts: CreateRunOptions): RunState {
     items: { smoke: meta.items.smoke, lull: meta.items.lull, trap: meta.items.trap },
     itemsUsed: { smoke: 0, lull: 0, trap: 0 },
     cmd: null,
+    cmdOnly: null,
     cmdT: 0,
     creep: false,
     everSpotted: false,
@@ -1219,6 +1259,7 @@ export function createRun(opts: CreateRunOptions): RunState {
       slam: 0,
       steer: false,
       tgt: null,
+      ord: null,
       id: s.rngSim.range(0, 99),
     });
   });

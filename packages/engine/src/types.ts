@@ -57,6 +57,15 @@ export interface Unit extends Walker {
   steer: boolean;
   /** gid of whoever this thief is currently swinging at, for target stickiness */
   tgt: number | null;
+  /**
+   * A personal posting, set by ordering this thief alone.
+   *
+   * Outranks the crew-wide order and survives it being given, so a Bruiser told
+   * to hold a corridor stays there while everyone else runs for the gold. It
+   * clears when they are re-ordered as part of the crew — and NOT when they
+   * arrive, because "go and stand there" has to mean "and stay".
+   */
+  ord: { x: number; y: number } | null;
   /** cosmetic bob phase */
   id: number;
   rescued?: boolean;
@@ -247,8 +256,11 @@ export type RunEvent = [number, EventCode, number];
 /* ---------------- input ---------------- */
 
 export type RunCommand =
-  | { c: 'move'; x: number; y: number }
+  /** `tid` sends one thief; omit it and the whole crew goes. */
+  | { c: 'move'; x: number; y: number; tid?: number }
   | { c: 'item'; k: ItemKey }
+  /** Release a posted thief back to the crew. */
+  | { c: 'recall'; tid: number }
   | { c: 'extract' };
 
 /** One tick of player intent. This is the unit of a Phase 4 replay log. */
@@ -347,6 +359,14 @@ export interface RunState {
   items: Record<ItemKey, number>;
   itemsUsed: Record<ItemKey, number>;
   cmd: { x: number; y: number } | null;
+  /**
+   * Set when `cmd` was a posting for one thief.
+   *
+   * The marker is drawn either way; this stops everyone else reading a solo
+   * order as their own, which is what made posting one thief walk the whole
+   * crew across the room.
+   */
+  cmdOnly: number | null;
   cmdT: number;
   /** whether the crew is creeping this tick (v0.3) */
   creep: boolean;
