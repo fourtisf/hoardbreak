@@ -302,6 +302,10 @@ export default function Hideout() {
           <button className="ul linkish" onClick={startOver}>
             start over
           </button>
+          <span className="ul">·</span>
+          <a className="ul xlink" href="https://x.com/TheDragonjob" target="_blank" rel="noopener noreferrer">
+            𝕏 @TheDragonjob
+          </a>
         </div>
 
         {/* The one thing a player came here to do. It is the last element in the
