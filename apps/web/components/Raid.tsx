@@ -783,18 +783,36 @@ export default function Raid() {
                 friend. Stand close to interact.
               </div>
               <div className="ts">
-                <b>3 · THERE IS NO ATTACK BUTTON.</b> Your crew <span className="au">fights on its own</span> the
+                <b>3 · SPLIT THEM UP.</b> Click a name under <b>THE CREW</b>, then click the lair:{' '}
+                <span className="au">that thief alone</span> goes there and holds it while everyone else carries
+                on. A Bruiser parked in a doorway buys the rest of the crew a great deal of time. Their row
+                shows <b>HOLDING</b> — click it to call them back.
+              </div>
+              <div className="ts">
+                <b>4 · THERE IS NO ATTACK BUTTON.</b> Your crew <span className="au">fights on its own</span> the
                 moment a guard is in reach — you will see the damage numbers pop. Your job is <em>where</em> they
                 stand, not when they swing. Walk away and they stop.
               </div>
               <div className="ts">
-                <b>4 · STAY QUIET.</b> Noise fills <span className="re">WYRM WAKE</span>. At 50% one eye opens and
+                <b>5 · STAY QUIET.</b> Noise fills <span className="re">WYRM WAKE</span>. At 50% one eye opens and
                 it breathes in its sleep. At 75% guards stir. At 100% — it hunts. Hold <b>SHIFT</b> (or tap{' '}
                 <b>CREEP</b>) to move slow and quiet — guards notice you far later. Items help: <b>[1]</b> Smoke{' '}
                 <b>[2]</b> Lullaby <b>[3]</b> Bear Trap.
               </div>
               <div className="ts">
-                <b>5 · GET OUT.</b> Green arrow = time to run. Reach the EXIT tiles, press <b>EXTRACT / E</b>.
+                <b>6 · IT IS NOT DEAD, IT IS ASLEEP.</b> The wyrm <span className="re">turns over</span> on its
+                bed and sweeps its tail across the gold — you get a warning ring, so move. The coins it is lying
+                on are the <span className="au">DEEP GOLD</span>: standing in that ring pays roughly double and
+                wakes it far faster. The ring moves when it does.
+              </div>
+              <div className="ts">
+                <b>7 · HALF THE HOARD IS THE LINE.</b> Take more than half and every guard stops chasing you and
+                goes to <span className="re">hold the entrance</span> — the exit tiles turn red. Past 60% your
+                whole take pays <span className="au">double</span>. Those two facts are meant to argue with each
+                other.
+              </div>
+              <div className="ts">
+                <b>8 · GET OUT.</b> Green arrow = time to run. Reach the EXIT tiles, press <b>EXTRACT / E</b>.
                 Anyone not standing on the green is <span className="re">left behind for good</span> — the button
                 tells you how many. Survivors gain XP. The dead end up in dragon prisons — go get them back.
               </div>
