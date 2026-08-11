@@ -45,19 +45,45 @@ export function createInput(opts: InputOptions): InputController {
     queue.push(cmd);
   };
 
-  /* ---- pointer: click / tap to send the crew ---- */
+  /* ---- pointer: click / tap to send the crew ----
+   *
+   * Issued on *up*, not down, and only if the pointer barely moved. Firing on
+   * down meant every drag that began on the canvas — including a thumb that
+   * reached for the joystick and missed — flung the crew at wherever the finger
+   * happened to land first. On a phone that is most of them.
+   */
+  const TAP_SLOP = 12; // px of travel still counted as a tap
+  const TAP_MS = 700; // longer than this is a considered press, not a tap
+  const tap = { id: -1, x: 0, y: 0, t: 0 };
+
   const onContextMenu = (e: Event): void => e.preventDefault();
   const onCanvasDown = (e: PointerEvent): void => {
     e.preventDefault();
     if (!enabled()) return;
+    tap.id = e.pointerId;
+    tap.x = e.clientX;
+    tap.y = e.clientY;
+    tap.t = performance.now();
+  };
+  const onCanvasUp = (e: PointerEvent): void => {
+    if (e.pointerId !== tap.id) return;
+    tap.id = -1;
+    if (!enabled()) return;
+    if (Math.hypot(e.clientX - tap.x, e.clientY - tap.y) > TAP_SLOP) return;
+    if (performance.now() - tap.t > TAP_MS) return;
     const r = canvas.getBoundingClientRect();
     const x = (e.clientX - r.left) * (W / r.width);
     const y = (e.clientY - r.top) * (H / r.height);
     push({ c: 'move', x: clamp((x / T) | 0, 0, TC - 1), y: clamp((y / T) | 0, 0, TR - 1) });
   };
+  const onCanvasCancel = (e: PointerEvent): void => {
+    if (e.pointerId === tap.id) tap.id = -1;
+  };
 
   canvas.addEventListener('contextmenu', onContextMenu);
   canvas.addEventListener('pointerdown', onCanvasDown);
+  canvas.addEventListener('pointerup', onCanvasUp);
+  canvas.addEventListener('pointercancel', onCanvasCancel);
 
   /* ---- keyboard ---- */
   const ITEM_KEYS: Record<string, ItemKey> = { '1': 'smoke', '2': 'lull', '3': 'trap' };
@@ -97,6 +123,15 @@ export function createInput(opts: InputOptions): InputController {
     stick.dy = dy / STICK_MAX;
     if (knob) knob.style.transform = `translate(${dx}px,${dy}px)`;
   };
+  /**
+   * Take the stick where the thumb landed.
+   *
+   * A joystick pinned to one corner asks the player to look away from the lair
+   * and aim for a circle. Re-basing it under the finger means the first touch is
+   * always dead centre, which is how every phone game that feels good does it.
+   * The element still snaps back to its resting place on release, so the
+   * affordance stays where a new player expects to find it.
+   */
   const onStickDown = (e: PointerEvent): void => {
     e.preventDefault();
     if (!stEl) return;
@@ -108,8 +143,21 @@ export function createInput(opts: InputOptions): InputController {
     stick.active = true;
     stick.id = e.pointerId;
     const r = stEl.getBoundingClientRect();
-    stick.bx = r.left + r.width / 2;
-    stick.by = r.top + r.height / 2;
+    if (e.pointerType === 'touch') {
+      // `left`/`top` are relative to the offset parent, not the viewport — using
+      // the raw clientY here dropped the stick a header's height below the thumb
+      const host = (stEl.offsetParent as HTMLElement | null)?.getBoundingClientRect();
+      const ox = host?.left ?? 0;
+      const oy = host?.top ?? 0;
+      stEl.style.left = `${e.clientX - ox - r.width / 2}px`;
+      stEl.style.top = `${e.clientY - oy - r.height / 2}px`;
+      stEl.style.bottom = 'auto';
+      stick.bx = e.clientX;
+      stick.by = e.clientY;
+    } else {
+      stick.bx = r.left + r.width / 2;
+      stick.by = r.top + r.height / 2;
+    }
     stMove(e);
   };
   const onStickMove = (e: PointerEvent): void => {
@@ -121,6 +169,12 @@ export function createInput(opts: InputOptions): InputController {
       stick.dx = 0;
       stick.dy = 0;
       if (knob) knob.style.transform = 'translate(0,0)';
+      // back to its resting corner, so it is where a new player looks for it
+      if (stEl && e.pointerType === 'touch') {
+        stEl.style.left = '';
+        stEl.style.top = '';
+        stEl.style.bottom = '';
+      }
     }
   };
   if (stEl) {
@@ -163,6 +217,8 @@ export function createInput(opts: InputOptions): InputController {
     dispose(): void {
       canvas.removeEventListener('contextmenu', onContextMenu);
       canvas.removeEventListener('pointerdown', onCanvasDown);
+      canvas.removeEventListener('pointerup', onCanvasUp);
+      canvas.removeEventListener('pointercancel', onCanvasCancel);
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('blur', onBlur);

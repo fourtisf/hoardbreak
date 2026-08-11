@@ -162,8 +162,27 @@ export default function Raid() {
   const audioRef = useRef<{ muted: boolean } | null>(null);
   const runRef = useRef<RunState | null>(null);
   const readyRef = useRef('');
+  const felt = useRef({ seen: false, stirs: false, woke: false });
 
   pausedRef.current = tut || menu || over !== null;
+
+  /**
+   * A short buzz on the beats that matter.
+   *
+   * Phones are held, not watched — a player looking at the exit tiles will feel
+   * the wyrm wake before they see the banner. Ignored on desktop, refused by
+   * iOS Safari, and silenced with the sound: someone who muted the game did not
+   * ask to be poked either.
+   */
+  const buzz = useCallback((pattern: number | number[]): void => {
+    if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return;
+    if (getMeta().muted) return;
+    try {
+      navigator.vibrate(pattern);
+    } catch {
+      /* a nicety; never let it break a run */
+    }
+  }, []);
 
   /**
    * Hand the card to whatever the device is best at.
@@ -322,6 +341,17 @@ export default function Raid() {
       // The wyrm's own bar, only once it is awake. Before that it would just be
       // a number to stare at; after, it is the single fact deciding fight or run.
       if (wyrmBox.current) wyrmBox.current.style.display = s.dragon.awake ? '' : 'none';
+      // the three beats worth feeling through a phone, each fired once
+      if (s.dragon.awake && !felt.current.woke) {
+        felt.current.woke = true;
+        buzz([60, 50, 60, 50, 180]);
+      } else if (s.wake >= 75 && !felt.current.stirs) {
+        felt.current.stirs = true;
+        buzz([30, 40, 30]);
+      } else if (s.guards.some((g) => g.alert) && !felt.current.seen) {
+        felt.current.seen = true;
+        buzz(35);
+      }
       if (s.dragon.awake) {
         const pct = Math.max(0, (s.dragon.hp / s.dragon.max) * 100);
         setT(wyrmPct.current, `${Math.ceil(pct)}%`);
