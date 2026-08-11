@@ -82,30 +82,39 @@ disk on a VPS is virtualised and you cannot guarantee that from inside the guest
 
 ## 2. Install what the app needs
 
+Check before installing — a box that already served something may have most of
+this, and re-running the NodeSource script on a *newer* Node downgrades it.
+
 ```bash
-# Node 20 (the workspace requires >= 20.11)
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+node -v; pnpm -v; git --version; nginx -v; certbot --version
+```
+
+Install only what's missing. Node must be >= 20.11:
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -   # only if Node < 20
 apt-get install -y nodejs nginx git
 corepack enable && corepack prepare pnpm@10.33.0 --activate
-
-node -v && pnpm -v && nginx -v
 ```
 
 ## 3. Get the code
 
-The repository is private, so give the server read access first — either a
-deploy key or a personal access token.
+The repository is public and `claude/new-session-74mwt7` is its default branch,
+so this needs no credentials and no explicit checkout.
 
 ```bash
-# deploy key (preferred: read-only, revocable, tied to this one box)
-ssh-keygen -t ed25519 -C "srv1879549" -f ~/.ssh/id_ed25519 -N ""
-cat ~/.ssh/id_ed25519.pub
-# paste that into GitHub -> repo -> Settings -> Deploy keys -> Add, read-only
+mkdir -p /srv
+git clone https://github.com/fourtisf/hoardbreak.git /srv/dragonjob
+cd /srv/dragonjob && git branch --show-current    # expect claude/new-session-74mwt7
+```
 
-mkdir -p /srv && cd /srv
-git clone git@github.com:fourtisf/hoardbreak.git dragonjob
-cd dragonjob
-git checkout claude/new-session-74mwt7
+If the repo is ever made private, add a read-only deploy key instead and clone
+over SSH:
+
+```bash
+ssh-keygen -t ed25519 -C "srv1879549" -f /root/.ssh/id_ed25519 -N ""
+cat /root/.ssh/id_ed25519.pub    # GitHub -> repo -> Settings -> Deploy keys
+git clone git@github.com:fourtisf/hoardbreak.git /srv/dragonjob
 ```
 
 ## 4. Build and start
