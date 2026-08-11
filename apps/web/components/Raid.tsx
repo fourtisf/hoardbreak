@@ -89,7 +89,12 @@ function swingingAt(s: RunState): { name: string; foe: string } | null {
  * told what to do *next*. First match wins, most urgent first.
  */
 function coachFor(s: RunState, inZoneCount: number): string {
-  if (s.dragon.awake) return '☠ IT HUNTS — get everyone onto the green tiles and press E';
+  if (s.dragon.awake) return '☠ IT HUNTS — get everyone onto the exit tiles and press E';
+  // the lockdown outranks everything short of the wyrm: the room you are in
+  // stopped being the problem the moment they went to stand on the door
+  if (s.sealed && !s.units.some((u) => u.ord))
+    return '⛔ The door is held — send one thief ahead to break the line, or fight through together';
+  if (s.sealed) return '⛔ The door is held — your forward thief buys the rest of the crew a way through';
   if (s.relicOffers.length) return '◆ Two relics — walk into the one you want, the other crumbles';
   // an actual fight outranks a mere sighting: this is the moment a new player
   // asks "why isn't my crew attacking?", and the answer is that they already are
@@ -99,7 +104,7 @@ function coachFor(s: RunState, inZoneCount: number): string {
     return `⚔ ${swing.name} is fighting ${a} ${swing.foe} — the crew swings on its own, there is no attack button`;
   }
   if (inZoneCount > 0 && inZoneCount === s.units.length && (s.wake >= 55 || s.hoard.pool < s.hoard.pool0 * 0.5))
-    return '⚑ Everyone is on the green — press E to bank it';
+    return '⚑ Everyone is on the exit — press E to bank it';
   if (s.wake >= 75) return '⚠ It stirs, and guards are waking. Take what you have and go.';
   if (s.guards.some((g) => g.alert)) return '! Spotted — the crew fights on its own · [1] Smoke to break away';
   if (s.units.some((u) => {
@@ -110,7 +115,8 @@ function coachFor(s: RunState, inZoneCount: number): string {
     return '💰 Siphoning — every second on the gold is noise';
   if (s.prison && !s.prison.done && s.revealed[((s.prison.y / 24) | 0) * 32 + ((s.prison.x / 24) | 0)])
     return `🗝 ${s.prison.thief.name} is in that cage — stand close to cut them loose`;
-  if (s.hoard.pool < s.hoard.pool0 * 0.55) return '↩ Over half the hoard is yours — the arrow turns green when it is time to run';
+  if (s.hoard.pool < s.hoard.pool0 * 0.62)
+    return '⚠ Past half the hoard and every guard turns for the door — take it knowing that';
   return '🕹 Follow the golden arrow · hold SHIFT to creep — slower, but they will not see you';
 }
 
@@ -144,6 +150,7 @@ export default function Raid() {
   const hintBar = useRef<HTMLDivElement>(null);
   const stolenPct = useRef<HTMLElement>(null);
   const stolenFill = useRef<HTMLElement>(null);
+  const stolenHint = useRef<HTMLDivElement>(null);
   const extractBtn = useRef<HTMLButtonElement>(null);
   const hpBars = useRef(new Map<number, HTMLElement>());
 
@@ -396,6 +403,17 @@ export default function Raid() {
       const stolen = Math.round(100 * (1 - s.hoard.pool / s.hoard.pool0));
       setT(stolenPct.current, `${stolen}%`);
       if (stolenFill.current) stolenFill.current.style.width = `${stolen}%`;
+      // The two thresholds pull against each other on purpose: the guards move
+      // to the door at 50%, the payout doubles at 60%. Say both out loud, at
+      // the moment each one is the question the player is actually asking.
+      setT(
+        stolenHint.current,
+        !s.sealed
+          ? 'Half the hoard turns every guard toward the door. 60% pays double.'
+          : stolen < 60
+            ? 'The door is held. 60% still pays double — decide what that is worth.'
+            : 'Double pay is yours. There is nothing else to buy down here.',
+      );
 
       const b = extractBtn.current;
       if (b) {
@@ -626,7 +644,11 @@ export default function Raid() {
             <div className="wbar gold">
               <i id="stolenFill" ref={stolenFill} />
             </div>
-            <div style={{ fontSize: 9.5, color: 'var(--dim)', fontStyle: 'italic', marginTop: 5 }}>
+            <div
+              id="stolenHint"
+              ref={stolenHint}
+              style={{ fontSize: 9.5, color: 'var(--dim)', fontStyle: 'italic', marginTop: 5 }}
+            >
               60% or more pays double $LOOT for this depth.
             </div>
           </div>

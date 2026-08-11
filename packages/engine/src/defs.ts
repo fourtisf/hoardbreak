@@ -263,6 +263,11 @@ export const TUNING = {
   HEX_MUL: 1.3,
   BURN_DPS: 9,
   GUARD_SWING_CD: 0.32,
+  /* the lockdown: how much of the hoard has to be gone before the lair stops
+     hunting you and starts guarding the only way out */
+  SEAL_AT: 0.5,           // fraction of the hoard taken
+  SEAL_ENGAGE_R: 3.4,     // tiles — closer than this, a sealing guard still swings
+  SEAL_SPEED_MUL: 1.15,   // they are marching with purpose, not patrolling
 
   /* crew */
   UNIT_SWING_CD: 0.3,
@@ -351,6 +356,7 @@ export const TUNING = {
   BANNER_DEPTH: 2.8,
   BANNER_RELIC: 3,
   BANNER_WAKE: 3,
+  BANNER_SEAL: 2.8,
   BANNER_RESCUE: 2.6,
 } as const;
 

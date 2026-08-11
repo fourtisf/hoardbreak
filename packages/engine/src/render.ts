@@ -347,17 +347,19 @@ export function createRenderer(canvas: HTMLCanvasElement): Renderer {
     if (rockCv) C.drawImage(rockCv, 0, 0);
 
     const hunting = s.dragon.awake;
+    // green while the way home is yours; red once the guards are standing on it
+    const exitRgb = s.sealed ? '255,90,110' : '61,220,132';
     for (const tix of s.exitTiles) {
       const x = tix % TC;
       const y = (tix / TC) | 0;
       C.fillStyle =
-        'rgba(61,220,132,' + (hunting ? 0.24 + 0.14 * Math.sin(t * 6) : 0.14 + 0.08 * Math.sin(t * 3)) + ')';
+        'rgba(' + exitRgb + ',' + (hunting ? 0.24 + 0.14 * Math.sin(t * 6) : 0.14 + 0.08 * Math.sin(t * 3)) + ')';
       C.fillRect(x * T, y * T, T, T);
     }
     C.font = 'bold ' + (hunting ? 13 : 11) + 'px Consolas,monospace';
     C.textAlign = 'center';
-    C.fillStyle = 'rgba(61,220,132,' + (hunting ? 0.8 + 0.2 * Math.sin(t * 6) : 0.6 + 0.3 * Math.sin(t * 3)) + ')';
-    C.fillText('EXIT', s.exitCtr.x, s.exitCtr.y - 16);
+    C.fillStyle = 'rgba(' + exitRgb + ',' + (hunting ? 0.8 + 0.2 * Math.sin(t * 6) : 0.6 + 0.3 * Math.sin(t * 3)) + ')';
+    C.fillText(s.sealed ? 'EXIT — HELD' : 'EXIT', s.exitCtr.x, s.exitCtr.y - 16);
     C.fillText('▼', s.exitCtr.x, s.exitCtr.y - 4);
     C.textAlign = 'left';
 

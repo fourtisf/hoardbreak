@@ -545,6 +545,16 @@ function guardStep(s: RunState, g: Guard, dt: number): void {
   }
   if (!tgt) return;
 
+  // Under lockdown a guard stops chasing and goes to hold the door. Anyone who
+  // walks into arm's reach still gets hit — they are not sleepwalking — but
+  // they will not be drawn across the lair by a thief they can see. That is
+  // what makes the way home the problem instead of the room you are standing in.
+  if (s.sealed && td > TUNING.SEAL_ENGAGE_R * T) {
+    const slot = s.exitTiles[g.gid % s.exitTiles.length] as number;
+    follow(s, g, slot % TC, (slot / TC) | 0, d.spd * TUNING.SEAL_SPEED_MUL, dt);
+    return;
+  }
+
   if (td <= d.range * T) {
     g.cd -= dt;
     tgt.hp -= d.dps * dt;
@@ -843,6 +853,34 @@ function flushSiphon(s: RunState): void {
   }
 }
 
+/* ================= the lockdown ================= */
+
+/**
+ * Half the hoard is gone, and a hoard that size does not go quietly.
+ *
+ * Every guard drops what it was doing and marches for the entrance. Nothing is
+ * hidden from the player: the banner says it, the exit tiles change colour, and
+ * it fires on a threshold they crossed themselves one coin at a time.
+ *
+ * This is also what makes GHOST mean something. A run where the alarm never
+ * went up is now a run that left before taking half — the greedy line and the
+ * clean line pull in opposite directions instead of both being "stay longer".
+ */
+function sealTheDoor(s: RunState): void {
+  s.sealed = true;
+  s.everSpotted = true;
+  for (const g of s.guards) {
+    g.alert = true;
+    g.path = null;
+    g.ptile = -1;
+  }
+  s.banner = { t1: 'THE DOOR IS HELD', t2: 'they are between you and the night', l: TUNING.BANNER_SEAL, l0: TUNING.BANNER_SEAL };
+  feed(s, 'Half the hoard is gone. Every guard turns for the entrance.', 'e');
+  s.shake = Math.max(s.shake, 5);
+  snd(s, 150, 0.5, 'sawtooth', 0.08, -70);
+  snd(s, 90, 0.6, 'square', 0.05, undefined, 120);
+}
+
 /* ================= the tick ================= */
 
 function update(s: RunState, dt: number, input: InputFrame): void {
@@ -1044,6 +1082,7 @@ function update(s: RunState, dt: number, input: InputFrame): void {
       }
     }
   }
+  if (!s.sealed && hh.pool <= hh.pool0 * (1 - TUNING.SEAL_AT)) sealTheDoor(s);
 
   /* guard deaths */
   for (let i = s.guards.length - 1; i >= 0; i--) {
@@ -1217,6 +1256,7 @@ export function createRun(opts: CreateRunOptions): RunState {
     cmdT: 0,
     creep: false,
     everSpotted: false,
+    sealed: false,
     gidNext: 1,
     fx: [],
     tele: [],

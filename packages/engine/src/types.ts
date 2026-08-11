@@ -372,6 +372,14 @@ export interface RunState {
   creep: boolean;
   /** true the moment any guard first notices the crew — a clean run is a GHOST */
   everSpotted: boolean;
+  /**
+   * The lockdown: half the hoard is gone and the lair has noticed.
+   *
+   * Guards stop chasing whoever is nearest and go stand between the crew and
+   * the door instead. It turns "how much more can I take" from a slider you
+   * hold into a decision with a price attached.
+   */
+  sealed: boolean;
   /** next guard id to hand out */
   gidNext: number;
 
