@@ -1,9 +1,9 @@
 /**
  * Headless entry point — everything that runs without a browser.
  *
- * `@hoardbreak/engine/headless` is what the Fastify API and the Phase 4 replay
+ * `@quietgold/engine/headless` is what the Fastify API and the Phase 4 replay
  * worker import: same simulation, no canvas, no `window`. The default entry
- * (`@hoardbreak/engine`) re-exports all of this plus the browser surfaces.
+ * (`@quietgold/engine`) re-exports all of this plus the browser surfaces.
  */
 
 export * from './defs.js';

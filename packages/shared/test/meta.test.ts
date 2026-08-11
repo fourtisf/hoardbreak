@@ -19,7 +19,7 @@ import {
   type RunResult,
   type RunThief,
   type Unit,
-} from '@hoardbreak/engine/headless';
+} from '@quietgold/engine/headless';
 import {
   applyRunResult,
   boardRows,

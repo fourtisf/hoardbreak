@@ -65,9 +65,9 @@ export default function Landing() {
   return (
     <div id="landing">
       <canvas id="lcv" ref={cvRef} />
-      <h1>HOARDBREAK</h1>
+      <h1>QUIET GOLD</h1>
       <div className="tag">
-        Rob the dragon. Don&apos;t wake it. <b>Be the exit liquidity.</b>
+        Rob the dragon. <b>Don&apos;t wake it.</b>
       </div>
       <div className="lsub">
         Lead a named crew of thieves into a sleeping wyrm&apos;s lair. Every day, one lair — same for every player

@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { MODS, fmt, modFor, todayUTC } from '@hoardbreak/engine';
-import { boardRows } from '@hoardbreak/shared';
+import { MODS, fmt, modFor, todayUTC } from '@quietgold/engine';
+import { boardRows } from '@quietgold/shared';
 import { useMeta } from '@/lib/store';
 
 const DAYS_BACK = 7;

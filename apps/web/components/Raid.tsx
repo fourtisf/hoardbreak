@@ -27,9 +27,9 @@ import {
   type ItemKey,
   type RelicKey,
   type RunState,
-} from '@hoardbreak/engine';
-import { applyRunResult, snapshotRunMeta, verdictFor } from '@hoardbreak/shared';
-import { abandonRun, snapshotJSON } from '@hoardbreak/engine';
+} from '@quietgold/engine';
+import { applyRunResult, snapshotRunMeta, verdictFor } from '@quietgold/shared';
+import { abandonRun, snapshotJSON } from '@quietgold/engine';
 import { getMeta, markTutorialSeen, mutate, setLastRun, tutorialSeen } from '@/lib/store';
 import { toast } from '@/lib/toast';
 import SpriteCanvas from './SpriteCanvas';
@@ -267,7 +267,7 @@ export default function Raid() {
     /* The prototype's QA handle (handoff §4). Development only — it exposes
        the whole run state, which would be a cheat surface in production. */
     if (process.env.NODE_ENV !== 'production') {
-      (window as unknown as { HB?: unknown }).HB = {
+      const handle = {
         get M() {
           return getMeta();
         },
@@ -281,6 +281,9 @@ export default function Raid() {
         forceEnd: (ok: boolean) => (ok ? void inputRef.current?.push({ c: 'extract' }) : abandonRun(run)),
         snapshot: () => snapshotJSON(run),
       };
+      const w = window as unknown as { QG?: unknown; HB?: unknown };
+      w.QG = handle;
+      w.HB = handle; // the name the handoff (§4) tells QA to reach for
     }
 
     drain(run); // the opening banner, whisper and drum hit
@@ -302,7 +305,11 @@ export default function Raid() {
       input.dispose();
       inputRef.current = null;
       runRef.current = null;
-      if (process.env.NODE_ENV !== 'production') delete (window as unknown as { HB?: unknown }).HB;
+      if (process.env.NODE_ENV !== 'production') {
+        const w = window as unknown as { QG?: unknown; HB?: unknown };
+        delete w.QG;
+        delete w.HB;
+      }
       window.removeEventListener('pointerdown', unlock);
       window.removeEventListener('keydown', unlock);
       window.removeEventListener('keydown', onEsc);
@@ -342,7 +349,7 @@ export default function Raid() {
     <>
       <div id="app">
         <header>
-          <div className="brand">HOARDBREAK</div>
+          <div className="brand">QUIET GOLD</div>
           <div className="hstat">
             <span className="lbl">DEPTH</span>
             <b id="hDepth" ref={hDepth}>

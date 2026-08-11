@@ -1,8 +1,8 @@
 {
-  "name": "@hoardbreak/web",
+  "name": "@quietgold/web",
   "version": "0.3.0",
   "private": true,
-  "description": "HOARDBREAK client — landing, hideout, raid and daily board.",
+  "description": "QUIET GOLD client — landing, hideout, raid and daily board.",
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",
@@ -11,8 +11,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@hoardbreak/engine": "workspace:*",
-    "@hoardbreak/shared": "workspace:*",
+    "@quietgold/engine": "workspace:*",
+    "@quietgold/shared": "workspace:*",
     "next": "14.2.35",
     "react": "18.3.1",
     "react-dom": "18.3.1"

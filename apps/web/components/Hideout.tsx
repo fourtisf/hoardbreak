@@ -18,7 +18,7 @@ import {
   type CrewKind,
   type ItemKey,
   type UpgradeKey,
-} from '@hoardbreak/engine';
+} from '@quietgold/engine';
 import {
   boardRows,
   buyItem,
@@ -29,7 +29,7 @@ import {
   rollDay,
   selectDepth,
   unlockedDepth,
-} from '@hoardbreak/shared';
+} from '@quietgold/shared';
 import { getMeta, mutate, resetMeta, useLastRun, useMeta } from '@/lib/store';
 import { toast } from '@/lib/toast';
 import SpriteCanvas from './SpriteCanvas';

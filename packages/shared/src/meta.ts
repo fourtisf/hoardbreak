@@ -25,7 +25,7 @@ import {
   type RunResult,
   type RunThief,
   type UpgradeKey,
-} from '@hoardbreak/engine/headless';
+} from '@quietgold/engine/headless';
 
 export interface Meta {
   gold: number;

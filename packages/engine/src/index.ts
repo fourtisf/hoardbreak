@@ -1,10 +1,10 @@
 /**
- * @hoardbreak/engine — the framework-free HOARDBREAK game engine.
+ * @quietgold/engine — the framework-free QUIET GOLD game engine.
  *
  * Ported from `HOARDBREAK_v0.2.html` per the production handoff. This entry
  * point is the browser one: it adds the canvas renderer, input and audio to the
  * headless simulation. Node consumers should import
- * `@hoardbreak/engine/headless` instead.
+ * `@quietgold/engine/headless` instead.
  */
 
 export * from './headless.js';

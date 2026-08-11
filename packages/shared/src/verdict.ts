@@ -7,7 +7,7 @@
  * RESTLESS WYRM", handoff §12) needs the same string server-side.
  */
 
-import type { RunResult } from '@hoardbreak/engine/headless';
+import type { RunResult } from '@quietgold/engine/headless';
 
 export type VerdictId =
   | 'FED'

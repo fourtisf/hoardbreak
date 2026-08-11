@@ -14,10 +14,10 @@ importers:
 
   apps/web:
     dependencies:
-      '@hoardbreak/engine':
+      '@quietgold/engine':
         specifier: workspace:*
         version: link:../../packages/engine
-      '@hoardbreak/shared':
+      '@quietgold/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       next:
@@ -57,7 +57,7 @@ importers:
 
   packages/shared:
     dependencies:
-      '@hoardbreak/engine':
+      '@quietgold/engine':
         specifier: workspace:*
         version: link:../engine
       zod:

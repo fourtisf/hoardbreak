@@ -9,9 +9,9 @@
  */
 
 import { useSyncExternalStore } from 'react';
-import { createMeta, type Meta } from '@hoardbreak/shared';
+import { createMeta, type Meta } from '@quietgold/shared';
 
-const KEY = 'hoardbreak.hideout';
+const KEY = 'quietgold.hideout';
 /** Bump when the saved shape changes in a way old saves cannot satisfy. */
 const SAVE_VERSION = 3;
 

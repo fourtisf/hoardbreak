@@ -1,9 +1,9 @@
 {
-  "name": "@hoardbreak/shared",
+  "name": "@quietgold/shared",
   "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "HOARDBREAK meta state, economy rules and API contracts (zod).",
+  "description": "QUIET GOLD meta state, economy rules and API contracts (zod).",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
@@ -17,7 +17,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@hoardbreak/engine": "workspace:*",
+    "@quietgold/engine": "workspace:*",
     "zod": "4.4.3"
   },
   "devDependencies": {

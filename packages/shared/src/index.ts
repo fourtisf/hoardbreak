@@ -1,7 +1,7 @@
 /**
- * @hoardbreak/shared — meta state, economy rules and API contracts.
+ * @quietgold/shared — meta state, economy rules and API contracts.
  *
- * Depends on `@hoardbreak/engine` for game data (crew stats, item prices, the
+ * Depends on `@quietgold/engine` for game data (crew stats, item prices, the
  * PRNG) so there is exactly one definition of every number in the product.
  */
 
