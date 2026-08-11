@@ -95,6 +95,11 @@ display:flex;flex-direction:column;gap:8px;overflow-y:auto}
 #wakePct{color:#fff;font-size:14px}
 .wbar{height:9px;background:#08110c;border:1px solid var(--line);border-radius:5px;overflow:hidden}
 .wbar i{display:block;height:100%;background:linear-gradient(90deg,#3ddc84,#ffd75e,#ff5a6e);width:0%}
+/* the wyrm's own bar runs the other way — full is bad news, empty is a trophy */
+.wyrmBox{border-color:#5a2430;background:#160b0e}
+.wbar-wyrm{border-color:#5a2430}
+.wbar-wyrm i{background:linear-gradient(90deg,#7a1f2c,#ff5a6e);width:100%}
+.wyrmCall{font-size:9.5px;font-style:italic;color:#ffb0ba;margin-top:5px;line-height:1.45}
 .lootRow{display:flex;align-items:center;gap:8px;font-family:Consolas,monospace;font-size:15px}
 .lootRow b{color:var(--goldhi);font-size:18px}
 #itemBar{display:flex;gap:6px}
@@ -343,6 +348,23 @@ header{min-width:0;overflow:hidden}
   #app{grid-template-columns:minmax(0,1fr) 310px}
   #feed{font-size:12px}
 }
+
+/* ── the slayer verdict ──────────────────────────────────────────────
+ * Three states, three colours, one line of copy the player can act on.
+ * `flee` is the honest default and must not read as a failure — most crews,
+ * at most depths, should never fight the thing.
+ */
+.slayer{display:flex;flex-direction:column;gap:3px;align-items:center;text-align:center;
+  border:1px solid var(--line2);border-radius:10px;padding:8px 16px;max-width:520px;background:#0f1d15}
+.slHead{font-family:'Pirata One',serif;font-size:13px;letter-spacing:.14em}
+.slLine{font-size:11px;font-style:italic;color:var(--bone);line-height:1.5}
+.slNums{font-family:Consolas,monospace;font-size:9.5px;color:var(--dim);letter-spacing:.04em}
+.sl-flee{border-color:#5a2430;background:#160b0e}
+.sl-flee .slHead{color:var(--red)}
+.sl-risky{border-color:#6b5a24;background:#1a1408}
+.sl-risky .slHead{color:var(--gold)}
+.sl-ready{border-color:#2c6a44;background:#0d2015}
+.sl-ready .slHead{color:var(--em)}
 
 /* ── the mark ─────────────────────────────────────────────────────────
  * The seal, as a background rather than an <img>: it is decorative, it must

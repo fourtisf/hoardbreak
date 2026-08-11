@@ -47,6 +47,17 @@ export interface Meta {
   uid: number;
   /** the UTC day the today-scoped fields belong to */
   day: string;
+  /**
+   * Consecutive UTC days on which a run was finished.
+   *
+   * The reason to open the game on a Tuesday when Monday went badly. Broken by
+   * a missed day, not by a bad run — the game asks you to show up, not to win.
+   */
+  streak: number;
+  /** longest streak ever held, so breaking one still leaves a mark */
+  bestStreak: number;
+  /** the last UTC day a run was finished, or '' */
+  lastPlayed: string;
   /** biggest single heist today, any depth */
   todayBest: number;
   /** biggest single heist today, per depth — this is what the board ranks */
@@ -97,6 +108,9 @@ export function createMeta(day = ''): Meta {
     best: 0,
     uid: 0,
     day,
+    streak: 0,
+    bestStreak: 0,
+    lastPlayed: '',
     todayBest: 0,
     todayBestByDepth: {},
     bestByDepth: {},
@@ -208,6 +222,28 @@ export interface RunPayout {
  * records them chronologically so a rescue that empties a lost-queue slot
  * before a later death leaves room for that death.
  */
+/** Yesterday, in UTC, for a `YYYY-MM-DD` string. */
+function dayBefore(day: string): string {
+  const d = new Date(`${day}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Advance the streak for a run finished on `today`.
+ *
+ * Counts the run, not the result — a wipe still keeps the streak alive. The
+ * game is asking for the habit, and punishing a bad night by also taking the
+ * streak would punish it twice.
+ */
+export function markPlayed(meta: Meta, today: string): number {
+  if (meta.lastPlayed === today) return meta.streak;
+  meta.streak = meta.lastPlayed === dayBefore(today) ? meta.streak + 1 : 1;
+  meta.lastPlayed = today;
+  meta.bestStreak = Math.max(meta.bestStreak, meta.streak);
+  return meta.streak;
+}
+
 export function applyRunResult(meta: Meta, r: RunResult): RunPayout {
   const notes: FeedLine[] = [];
   const depthPlayed = meta.depth;

@@ -21,6 +21,7 @@ import {
 } from '@dragonjob/engine';
 import {
   boardRows,
+  slayerReadiness,
   buyItem,
   buyUpgrade,
   conscript,
@@ -46,6 +47,7 @@ export default function Hideout() {
   const rows = boardRows(date, meta.depth, meta.todayBestByDepth[meta.depth] ?? 0);
   const bestHere = meta.bestByDepth[meta.depth] ?? 0;
   const stranded = needsConscript(meta);
+  const ready = slayerReadiness(meta, meta.depth);
 
   // a session that outlives UTC midnight has to roll its own day over
   useEffect(() => {
@@ -149,6 +151,24 @@ export default function Hideout() {
           </span>
           <span>
             TODAY&apos;S BEST <b>{fmt(meta.todayBest)}</b>g
+          </span>
+          {meta.streak > 0 && (
+            <span title={`Longest run of days: ${meta.bestStreak}`}>
+              STREAK <b>{meta.streak}</b>
+              {meta.streak >= 2 ? ' days' : ' day'}
+            </span>
+          )}
+        </div>
+
+        {/* The question every wipe against the dragon raises, answered before
+            the player walks in rather than after they have lost everyone. */}
+        <div className={`slayer sl-${ready.grade}`}>
+          <span className="slHead">
+            {ready.grade === 'ready' ? '⚔ WYRMSLAYER' : ready.grade === 'risky' ? '⚔ ALMOST' : '☠ DO NOT FIGHT IT'}
+          </span>
+          <span className="slLine">{ready.line}</span>
+          <span className="slNums">
+            crew {Math.round(ready.dps)} dps · wyrm {fmt(ready.dragonHp)} hp at depth {meta.depth}
           </span>
         </div>
 

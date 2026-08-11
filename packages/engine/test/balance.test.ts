@@ -20,7 +20,7 @@ import {
   type RunState,
 } from '../src/headless.js';
 
-const IDLE: InputFrame = { ax: 0, ay: 0, click: null, commands: [] };
+const IDLE: InputFrame = { mx: 0, my: 0, mm: 0, commands: [] };
 
 const meta = (depth: number, crew: RunMeta['crew'], up: RunMeta['up']): RunMeta => ({
   depth,

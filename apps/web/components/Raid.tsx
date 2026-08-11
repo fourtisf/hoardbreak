@@ -30,7 +30,7 @@ import {
   type RelicKey,
   type RunState,
 } from '@dragonjob/engine';
-import { applyRunResult, snapshotRunMeta, verdictFor } from '@dragonjob/shared';
+import { applyRunResult, markPlayed, slayerReadiness, snapshotRunMeta, verdictFor } from '@dragonjob/shared';
 import { abandonRun, snapshotJSON } from '@dragonjob/engine';
 import { getMeta, markTutorialSeen, mutate, setLastRun, tutorialSeen } from '@/lib/store';
 import { toast } from '@/lib/toast';
@@ -134,6 +134,10 @@ export default function Raid() {
   const wakePct = useRef<HTMLElement>(null);
   const wakeFill = useRef<HTMLElement>(null);
   const wakeHint = useRef<HTMLDivElement>(null);
+  const wyrmBox = useRef<HTMLDivElement>(null);
+  const wyrmPct = useRef<HTMLElement>(null);
+  const wyrmFill = useRef<HTMLElement>(null);
+  const wyrmCall = useRef<HTMLDivElement>(null);
   const sLoot = useRef<HTMLElement>(null);
   const hintBar = useRef<HTMLDivElement>(null);
   const stolenPct = useRef<HTMLElement>(null);
@@ -153,6 +157,7 @@ export default function Raid() {
   const [relics, setRelics] = useState<RelicKey[]>([]);
   const [creep, setCreep] = useState(false);
   const runRef = useRef<RunState | null>(null);
+  const readyRef = useRef('');
 
   pausedRef.current = tut || menu || over !== null;
 
@@ -180,6 +185,9 @@ export default function Raid() {
     // a generated prisoner burns a thief id whether or not anyone frees them
     if (run.freshPrisonerTid !== null) meta.uid = Math.max(meta.uid, run.freshPrisonerTid);
     runRef.current = run;
+
+    // computed once: the roster cannot change mid-raid, so neither can the answer
+    readyRef.current = slayerReadiness(meta, depth).line;
 
     const renderer = createRenderer(canvas);
     renderer.buildRockCache(run);
@@ -234,7 +242,11 @@ export default function Raid() {
       if (s.over && s.result && !applied) {
         applied = true;
         const r = s.result;
-        const payout = mutate((m) => applyRunResult(m, r));
+        const payout = mutate((m) => {
+          // the streak counts the run, not the result — showing up is the ask
+          markPlayed(m, date);
+          return applyRunResult(m, r);
+        });
         if (payout.notes.length) setFeed((f) => [...f, ...payout.notes].slice(-6));
         const verdict = verdictFor(r);
         setOver({
@@ -262,6 +274,16 @@ export default function Raid() {
       setT(wakePct.current, `${Math.floor(s.wake)}%`);
       if (wakeFill.current) wakeFill.current.style.width = `${s.wake}%`;
       setT(wakeHint.current, wakeHintFor(s));
+
+      // The wyrm's own bar, only once it is awake. Before that it would just be
+      // a number to stare at; after, it is the single fact deciding fight or run.
+      if (wyrmBox.current) wyrmBox.current.style.display = s.dragon.awake ? '' : 'none';
+      if (s.dragon.awake) {
+        const pct = Math.max(0, (s.dragon.hp / s.dragon.max) * 100);
+        setT(wyrmPct.current, `${Math.ceil(pct)}%`);
+        if (wyrmFill.current) wyrmFill.current.style.width = `${pct}%`;
+        setT(wyrmCall.current, readyRef.current);
+      }
 
       const inz = extractReady(s);
       setT(hintBar.current, coachFor(s, inz));
@@ -421,6 +443,19 @@ export default function Raid() {
         </main>
 
         <section id="side">
+          <div className="wakeBox wyrmBox" ref={wyrmBox} style={{ display: 'none' }}>
+            <div className="row">
+              <span className="lbl">THE WYRM</span>
+              <b id="wyrmPct" ref={wyrmPct}>
+                100%
+              </b>
+            </div>
+            <div className="wbar wbar-wyrm">
+              <i ref={wyrmFill} />
+            </div>
+            <div className="wyrmCall" ref={wyrmCall} />
+          </div>
+
           <div className="wakeBox">
             <div className="row">
               <span className="lbl">WYRM WAKE</span>

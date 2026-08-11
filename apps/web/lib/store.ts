@@ -13,7 +13,7 @@ import { createMeta, type Meta } from '@dragonjob/shared';
 
 const KEY = 'dragonjob.hideout';
 /** Bump when the saved shape changes in a way old saves cannot satisfy. */
-const SAVE_VERSION = 3;
+const SAVE_VERSION = 4;
 
 interface SavePayload {
   v: number;
@@ -45,6 +45,9 @@ function hydrate(raw: unknown): Meta {
     best: Math.max(0, num(p.best, base.best)),
     uid: Math.max(0, num(p.uid, base.uid)),
     day: typeof p.day === 'string' ? p.day : base.day,
+    streak: Math.max(0, num(p.streak, 0)),
+    bestStreak: Math.max(0, num(p.bestStreak, 0)),
+    lastPlayed: typeof p.lastPlayed === 'string' ? p.lastPlayed : '',
     todayBest: num(p.todayBest, 0),
     todayBestByDepth: rec(p.todayBestByDepth),
     bestByDepth: rec(p.bestByDepth),
