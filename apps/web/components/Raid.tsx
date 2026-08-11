@@ -30,7 +30,7 @@ import {
   type RelicKey,
   type RunState,
 } from '@dragonjob/engine';
-import { applyRunResult, markPlayed, slayerReadiness, snapshotRunMeta, verdictFor } from '@dragonjob/shared';
+import { applyRunResult, markPlayed, shareText, slayerReadiness, snapshotRunMeta, verdictFor } from '@dragonjob/shared';
 import { abandonRun, snapshotJSON } from '@dragonjob/engine';
 import { getMeta, markTutorialSeen, mutate, setLastRun, tutorialSeen } from '@/lib/store';
 import { toast } from '@/lib/toast';
@@ -54,6 +54,8 @@ interface OverCard {
   crewLost: number;
   tok: number;
   nextDepth: number;
+  /** the pasteable result card */
+  share: string;
 }
 
 /** Only touch the DOM when the text actually changed (the prototype's `setT`). */
@@ -161,6 +163,31 @@ export default function Raid() {
 
   pausedRef.current = tut || menu || over !== null;
 
+  /**
+   * Hand the card to whatever the device is best at.
+   *
+   * The native sheet is the right answer on a phone — it reaches the app the
+   * player actually posts from. Everywhere else, and whenever the sheet is
+   * refused, the clipboard is the reliable fallback. A cancelled share is not a
+   * failure and must not report one.
+   */
+  const doShare = useCallback(async (text: string): Promise<void> => {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({ text });
+        return;
+      } catch {
+        /* dismissed, or refused — fall through to the clipboard */
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      toast('Copied. Go and tell someone.');
+    } catch {
+      toast('Could not copy — select the card and copy it by hand.');
+    }
+  }, []);
+
   useEffect(() => {
     const canvas = cvRef.current;
     if (!canvas) return;
@@ -188,6 +215,10 @@ export default function Raid() {
 
     // computed once: the roster cannot change mid-raid, so neither can the answer
     readyRef.current = slayerReadiness(meta, depth).line;
+    // the fallen are gone from the roster by the time the card is built, so
+    // their names are taken now, while they are still on it
+    const crewAtStart = meta.crew.length;
+    const nameOf = new Map(meta.crew.map((t) => [t.tid, t.name]));
 
     const renderer = createRenderer(canvas);
     renderer.buildRockCache(run);
@@ -259,6 +290,15 @@ export default function Raid() {
           crewLost: r.crewLost,
           tok: payout.tok,
           nextDepth: getMeta().depth,
+          share: shareText({
+            date,
+            depth,
+            mod: modFor(date, depth).n,
+            result: r,
+            crewIn: crewAtStart,
+            lostNames: r.crewLostTids.map((tid) => nameOf.get(tid) ?? 'someone'),
+            streak: getMeta().streak,
+          }),
         });
         const m = getMeta();
         setLastRun(
@@ -668,9 +708,15 @@ export default function Raid() {
                 <>Your hideout gold is safe. The fallen wait in dragon prisons.</>
               )}
             </div>
-            <button className="btn gold big" onClick={() => router.push('/hideout')}>
-              ⛺ RETURN TO HIDEOUT
-            </button>
+            <pre className="shareCard">{over.share}</pre>
+            <div className="overBtns">
+              <button className="btn" onClick={() => doShare(over.share)}>
+                📋 COPY THE STORY
+              </button>
+              <button className="btn gold" onClick={() => router.push('/hideout')}>
+                ⛺ RETURN TO HIDEOUT
+              </button>
+            </div>
           </div>
         </div>
       )}

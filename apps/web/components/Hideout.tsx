@@ -21,6 +21,8 @@ import {
 } from '@dragonjob/engine';
 import {
   boardRows,
+  exportSave,
+  importSave,
   slayerReadiness,
   buyItem,
   buyUpgrade,
@@ -31,7 +33,7 @@ import {
   selectDepth,
   unlockedDepth,
 } from '@dragonjob/shared';
-import { getMeta, mutate, resetMeta, useLastRun, useMeta } from '@/lib/store';
+import { getMeta, mutate, replaceMeta, resetMeta, useLastRun, useMeta } from '@/lib/store';
 import { toast } from '@/lib/toast';
 import SpriteCanvas from './SpriteCanvas';
 import Toast from './Toast';
@@ -84,6 +86,33 @@ export default function Hideout() {
   const takeConscript = (): void => {
     const r = mutate((m) => conscript(m));
     toast(r.msg);
+  };
+
+  /**
+   * Everything lives in this browser, so one cleared cache takes the crew, the
+   * gold and the streak with it. Until accounts exist, a code the player keeps
+   * is the honest answer.
+   */
+  const copySave = async (): Promise<void> => {
+    const code = exportSave(getMeta());
+    try {
+      await navigator.clipboard.writeText(code);
+      toast('Save code copied. Keep it somewhere safe — it is your whole hideout.');
+    } catch {
+      window.prompt('Copy this save code and keep it somewhere safe:', code);
+    }
+  };
+
+  const restoreSave = (): void => {
+    const code = window.prompt('Paste a save code to restore that hideout. This replaces the one you have now.');
+    if (code === null) return;
+    const r = importSave(code);
+    if (!r.ok) {
+      toast(r.msg);
+      return;
+    }
+    replaceMeta(r.meta);
+    toast('Hideout restored.');
   };
 
   const startOver = (): void => {
@@ -321,6 +350,14 @@ export default function Hideout() {
           <span className="ul">·</span>
           <button className="ul linkish" onClick={startOver}>
             start over
+          </button>
+          <span className="ul">·</span>
+          <button className="ul linkish" onClick={copySave} title="Copy a code that restores this hideout anywhere">
+            save code
+          </button>
+          <span className="ul">·</span>
+          <button className="ul linkish" onClick={restoreSave}>
+            restore
           </button>
           <span className="ul">·</span>
           <a className="ul xlink" href="https://x.com/TheDragonjob" target="_blank" rel="noopener noreferrer">

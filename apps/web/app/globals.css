@@ -349,6 +349,16 @@ header{min-width:0;overflow:hidden}
   #feed{font-size:12px}
 }
 
+/* ── the share card ───────────────────────────────────────────────────
+ * Shown, not hidden behind the button: a player decides whether to post
+ * by reading what they would be posting.
+ */
+.shareCard{font-family:Consolas,monospace;font-size:11px;line-height:1.65;color:var(--bone);
+  background:#0a140e;border:1px solid var(--line2);border-radius:10px;
+  padding:11px 14px;margin:12px 0 4px;text-align:left;white-space:pre-wrap;
+  max-height:210px;overflow:auto}
+.overBtns{display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+
 /* ── the slayer verdict ──────────────────────────────────────────────
  * Three states, three colours, one line of copy the player can act on.
  * `flee` is the honest default and must not read as a failure — most crews,

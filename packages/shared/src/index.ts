@@ -10,3 +10,5 @@ export * from './board.js';
 export * from './schemas.js';
 export * from './verdict.js';
 export * from './slayer.js';
+export * from './share.js';
+export * from './savecode.js';

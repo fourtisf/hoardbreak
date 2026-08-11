@@ -142,6 +142,13 @@ export const markTutorialSeen = (): void => {
   save();
 };
 
+/** Adopt a hideout restored from a save code, keeping React and disk in step. */
+export function replaceMeta(next: Meta): void {
+  meta = next;
+  lastRun = null;
+  emit();
+}
+
 /** Wipe the save and start a brand new hideout. */
 export function resetMeta(): void {
   meta = createMeta();
