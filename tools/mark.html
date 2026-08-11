@@ -1,0 +1,137 @@
+<style>
+body{margin:0;background:#15202b;padding:20px;font:11px Consolas,monospace;color:#8899a6}
+#out{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start}
+.b{display:flex;flex-direction:column;align-items:center;gap:10px}
+.big{width:230px;height:230px;border-radius:50%;overflow:hidden;display:block}
+.av{border-radius:50%;overflow:hidden;display:block}
+.on-dark{background:#000;padding:8px;border-radius:12px;display:flex;gap:10px;align-items:center}
+.on-light{background:#fff;padding:8px;border-radius:12px;display:flex;gap:10px;align-items:center}
+</style>
+<div id="out"></div>
+<script>
+const NS='http://www.w3.org/2000/svg';
+const el=(n,a)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e;};
+
+const C=32, R=21, A0=310, A1=58, SW=10;                // head end / tail end / body thickness
+const rad=d=>d*Math.PI/180;
+const P=(d,r=R)=>[C+Math.cos(rad(d))*r, C+Math.sin(rad(d))*r];
+const f=n=>Math.round(n*100)/100;
+
+// ── the wyrm, in silhouette ───────────────────────────────────────────
+function coilGroup(fill, eyeFill){
+  // centred on the mark's own bounding box, not the arc's, so nothing crowds the rim
+  const g=el('g',{transform:`translate(${C},${C}) scale(0.856) translate(-32.07,-27.48)`});
+
+  // dorsal ridge — tapered at both ends so it flows into neck and tail
+  const spikes=el('g',{fill});
+  const angs=[105,131,157,183,209,235,261,285];
+  angs.forEach(deg=>{
+    const t=(deg-angs[0])/(angs[angs.length-1]-angs[0]);
+    const k=0.55+0.45*Math.sin(Math.PI*t);
+    const ca=Math.cos(rad(deg)), sa=Math.sin(rad(deg)), pa=rad(deg)+Math.PI/2;
+    const len=9.5*k, w=3.6*(0.55+0.45*k);
+    const bx=C+ca*(R+1), by=C+sa*(R+1), tx=C+ca*(R+len), ty=C+sa*(R+len);
+    spikes.appendChild(el('path',{d:`M${f(bx+Math.cos(pa)*w)} ${f(by+Math.sin(pa)*w)} L${f(tx)} ${f(ty)} L${f(bx-Math.cos(pa)*w)} ${f(by-Math.sin(pa)*w)} Z`}));
+  });
+  g.appendChild(spikes);
+
+  // body — one filled path, thick at the shoulders and tapering into the tail,
+  // so the coil reads as a creature rather than a ring of constant width
+  const [hx,hy]=P(A0), [tx0,ty0]=P(A1);
+  {
+    const SPAN=((A0-A1)%360+360)%360, N=64;                 // the long way round, once
+    const halfW=t=>(SW-3.8*Math.pow(t,1.05))/2;
+    const outer=[], inner=[];
+    for(let i=0;i<=N;i++){
+      const t=i/N, w=halfW(t);
+      outer.push(P(A0-SPAN*t, R+w)); inner.push(P(A0-SPAN*t, R-w));
+    }
+    const dx=Math.sin(rad(A1)), dy=-Math.cos(rad(A1));      // direction of travel at the tail
+    const nx=Math.cos(rad(A1)), ny=Math.sin(rad(A1));       // radial at the tail
+    const q=(a,b)=>`${f(tx0+dx*a+nx*b)} ${f(ty0+dy*a+ny*b)}`;
+    const w0=halfW(0);
+    const cap=[];                                           // rounded shoulder at the neck
+    for(let k=1;k<12;k++){ const a=rad(A0+180-180*k/12); cap.push([hx+Math.cos(a)*w0, hy+Math.sin(a)*w0]); }
+    const j=pts=>pts.map(([x,y])=>`${f(x)} ${f(y)}`).join(' L');
+    g.appendChild(el('path',{fill,d:
+      `M${j(outer)} Q${q(5,3.4)} ${q(12,1)} Q${q(6,-1.6)} ${j([inner[N]])}`+
+      ` L${j(inner.slice(0,N).reverse())} L${j(cap)} Z`}));
+  }
+
+  // head — local frame: u = snout direction, n = below the jaw
+  {
+    const u=[0.848,0.530], n=[-0.530,0.848];
+    const ax=hx+Math.cos(rad(A0))*2, ay=hy+Math.sin(rad(A0))*2;
+    const p=(a,b)=>`${f(ax+u[0]*a+n[0]*b)} ${f(ay+u[1]*a+n[1]*b)}`;
+    const poly=pts=>'M'+pts.map(([a,b])=>p(a,b)).join(' L')+' Z';
+    // horns, swept back over the neck
+    g.appendChild(el('path',{d:poly([[-6,-4.8],[-12.5,-12],[-0.5,-7.4]]),fill}));
+    g.appendChild(el('path',{d:poly([[0.5,-8],[-4,-14.5],[6,-6]]),fill}));
+    // skull + snout
+    g.appendChild(el('path',{d:poly([[-4.5,-6],[2,-7.8],[8.5,-6.8],[13.5,-4],[18,-0.8],[11.5,1.6],[-4,2.5]]),fill}));
+    // lower jaw
+    g.appendChild(el('path',{d:poly([[-2,3.5],[9.5,2.7],[15,1.1],[9.5,5],[1,7],[-1.5,5.8]]),fill}));
+    // eye
+    g.appendChild(el('path',{d:poly([[3,-4.3],[8,-2.8],[7.4,0.4],[2.6,-1.1]]),fill:eyeFill}));
+  }
+  return g;
+}
+
+function defs(svg){
+  const d=el('defs',{});
+  const lg=el('linearGradient',{id:'goldF',x1:'0',y1:'0',x2:'0',y2:'1'});
+  [['0%','#ffeeb0'],['42%','#ffd75e'],['100%','#c08f2c']].forEach(([o,c])=>lg.appendChild(el('stop',{offset:o,'stop-color':c})));
+  d.appendChild(lg);
+  const rg=el('radialGradient',{id:'deepF',cx:'50%',cy:'38%',r:'70%'});
+  [['0%','#183a27'],['100%','#050a07']].forEach(([o,c])=>rg.appendChild(el('stop',{offset:o,'stop-color':c})));
+  d.appendChild(rg);
+  const lg2=el('linearGradient',{id:'goldStroke',x1:'0',y1:'0',x2:'0',y2:'1'});
+  [['0%','#fff0b8'],['100%','#a8862a']].forEach(([o,c])=>lg2.appendChild(el('stop',{offset:o,'stop-color':c})));
+  d.appendChild(lg2);
+  svg.appendChild(d);
+}
+
+// A · SIGNET — dark wyrm struck into a gold disc
+function signet(){
+  const s=el('svg',{viewBox:'0 0 64 64'}); defs(s);
+  s.appendChild(el('circle',{cx:32,cy:32,r:32,fill:'url(#goldF)'}));
+  s.appendChild(el('circle',{cx:32,cy:32,r:29.4,fill:'none',stroke:'#0d1a12','stroke-width':1.1,opacity:'.55'}));
+  s.appendChild(coilGroup('#0d1a12','#ffd75e'));
+  return s;
+}
+// B · SEAL — gold wyrm on a deep ground, struck ring
+function seal(){
+  const s=el('svg',{viewBox:'0 0 64 64'}); defs(s);
+  s.appendChild(el('circle',{cx:32,cy:32,r:32,fill:'url(#deepF)'}));
+  s.appendChild(el('circle',{cx:32,cy:32,r:30.4,fill:'none',stroke:'url(#goldStroke)','stroke-width':2}));
+  s.appendChild(el('circle',{cx:32,cy:32,r:27.4,fill:'none',stroke:'#ffd75e','stroke-width':.5,opacity:'.45'}));
+  s.appendChild(coilGroup('url(#goldF)','#050a07'));
+  return s;
+}
+// C · ECLIPSE — wyrm coiled around the hoard itself
+function eclipse(){
+  const s=el('svg',{viewBox:'0 0 64 64'}); defs(s);
+  s.appendChild(el('circle',{cx:32,cy:32,r:32,fill:'#070b09'}));
+  s.appendChild(el('circle',{cx:31.94,cy:35.87,r:12.2,fill:'url(#goldF)'}));   // the hoard, centred in the coil's own ring
+  s.appendChild(coilGroup('#2f7a52','#ffd75e'));
+  return s;
+}
+
+const marks=[['A · SIGNET',signet],['B · SEAL',seal],['C · ECLIPSE',eclipse]];
+const out=document.getElementById('out');
+marks.forEach(([name,fn])=>{
+  const box=document.createElement('div'); box.className='b';
+  const big=fn(); big.setAttribute('class','big'); box.appendChild(big);
+  const lbl=document.createElement('span'); lbl.textContent=name; box.appendChild(lbl);
+  const dark=document.createElement('div'); dark.className='on-dark';
+  const light=document.createElement('div'); light.className='on-light';
+  [dark,light].forEach(host=>{
+    [133,48,24].forEach(px=>{
+      const s=fn(); s.setAttribute('class','av'); s.setAttribute('width',px); s.setAttribute('height',px);
+      s.style.width=px+'px'; s.style.height=px+'px'; host.appendChild(s);
+    });
+  });
+  box.appendChild(dark); box.appendChild(light);
+  out.appendChild(box);
+});
+</script>
