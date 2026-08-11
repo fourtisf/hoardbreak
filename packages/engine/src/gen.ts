@@ -183,6 +183,7 @@ export function genLair(s: RunState): void {
     awake: false,
     cd: TUNING.AWAKE_BREATH_CD,
     scd: 6,
+    stir: TUNING.STIR_CD,
     stunT: 0,
   };
 

@@ -620,6 +620,111 @@ function sleepBreath(s: RunState): void {
   });
 }
 
+/**
+ * A sleeping dragon should not be scenery.
+ *
+ * For the whole first half of a run the wyrm was a wake meter with a sprite
+ * attached: it never moved, and the tile it slept on was the safest square in
+ * the lair right up until the moment it was the deadliest. Now it heaves over
+ * onto a new patch of its bed, and every so often its tail comes round across
+ * the gold. Both are telegraphed, both are dodgeable, and between them the
+ * hoard stops being somewhere you can park.
+ *
+ * It also gives the deep gold (`DEEP_R`) legs — the ring that pays double moves
+ * when the wyrm does, so working it means following a sleeping animal around
+ * rather than standing still on top of one.
+ */
+function stir(s: RunState): void {
+  const D = s.dragon;
+  const rng = s.rngSim;
+  const hh = s.hoard;
+
+  // the tail only comes into it once it is sleeping badly
+  if (s.stage >= 1 && rng.next() < TUNING.TAIL_CHANCE) {
+    s.timers.push({ k: 'tail', t: TUNING.STIR_TELE });
+    for (let gx = hh.x0; gx <= hh.x1; gx++) {
+      s.tele.push({ x: (gx + 0.5) * T, y: (hh.y0 + hh.y1 + 1) * 0.5 * T, l: TUNING.STIR_TELE });
+    }
+    feed(s, 'Its tail draws back across the gold.', 'e');
+    snd(s, 70, 0.35, 'sawtooth', 0.05, -20);
+    return;
+  }
+
+  // pick a fresh patch of bed, far enough that moving there means something
+  let tx = D.x;
+  let ty = D.y;
+  for (let i = 0; i < 10; i++) {
+    const cx = (rng.int(hh.x0, hh.x1) + 0.5) * T;
+    const cy = (rng.int(hh.y0, hh.y1) + 0.5) * T;
+    if (dist(cx, cy, D.x, D.y) < T) continue;
+    tx = cx;
+    ty = cy;
+    break;
+  }
+  if (tx === D.x && ty === D.y) return;
+
+  s.timers.push({ k: 'roll', t: TUNING.STIR_TELE, x: tx, y: ty });
+  s.tele.push({ x: tx, y: ty, l: TUNING.STIR_TELE });
+  snd(s, 55, 0.4, 'sine', 0.05, -14);
+}
+
+/** The wyrm lands: anyone still under it is crushed and thrown clear. */
+function landRoll(s: RunState, x: number, y: number): void {
+  const D = s.dragon;
+  D.x = x;
+  D.y = y;
+  D.px = x;
+  D.py = y;
+  s.shake = Math.max(s.shake, 4);
+  s.fx.push({ k: 'slam', x, y, l: 0.35, l0: 0.35 });
+  snd(s, 48, 0.35, 'sawtooth', 0.07, -18);
+  for (const u of s.units) {
+    if (dist(u.x, u.y, x, y) > TUNING.ROLL_R * T) continue;
+    u.hp -= TUNING.ROLL_DMG;
+    shoveFrom(s, u, x, y);
+    s.fx.push({ k: 'txt', x: u.x, y: u.y - 16, txt: 'CRUSHED', c: '#ff9aa6', s: 9, l: 0.7, l0: 0.7 });
+  }
+}
+
+/** The tail comes round: everyone on the pile takes it and is swept off. */
+function sweepTail(s: RunState): void {
+  const hh = s.hoard;
+  const D = s.dragon;
+  s.shake = Math.max(s.shake, 5);
+  s.fx.push({ k: 'slam', x: (hh.x0 + hh.x1 + 1) * 0.5 * T, y: (hh.y0 + hh.y1 + 1) * 0.5 * T, l: 0.4, l0: 0.4 });
+  snd(s, 62, 0.45, 'sawtooth', 0.08, -26);
+  for (const u of s.units) {
+    const gx = (u.x / T) | 0;
+    const gy = (u.y / T) | 0;
+    if (!(gx >= hh.x0 && gx <= hh.x1 && gy >= hh.y0 && gy <= hh.y1)) continue;
+    u.hp -= TUNING.TAIL_DMG;
+    shoveFrom(s, u, D.x, D.y);
+    s.fx.push({ k: 'txt', x: u.x, y: u.y - 16, txt: 'SWEPT', c: '#ff9aa6', s: 9, l: 0.7, l0: 0.7 });
+  }
+}
+
+/** Throw a thief away from (x, y), but never into rock. */
+function shoveFrom(s: RunState, u: Unit, x: number, y: number): void {
+  let dx = u.x - x;
+  let dy = u.y - y;
+  let m = Math.hypot(dx, dy);
+  // dead centre has no "away" — someone pinned exactly under it still has to
+  // end up somewhere, or being crushed leaves them there to be crushed again
+  if (m < 0.001) {
+    const a = s.rngSim.range(0, Math.PI * 2);
+    dx = Math.cos(a);
+    dy = Math.sin(a);
+    m = 1;
+  }
+  const nx = u.x + (dx / m) * TUNING.SHOVE;
+  const ny = u.y + (dy / m) * TUNING.SHOVE;
+  if (!blockedPx(s.grid, nx, u.y)) u.x = nx;
+  if (!blockedPx(s.grid, u.x, ny)) u.y = ny;
+  // whatever they were walking toward, they are not walking there from here
+  u.path = null;
+  u.ptile = -1;
+}
+
 function dragonStep(s: RunState, dt: number): void {
   const D = s.dragon;
   const rng = s.rngSim;
@@ -654,6 +759,13 @@ function dragonStep(s: RunState, dt: number): void {
         D.scd = s.stage >= 2 ? TUNING.SLEEP_BREATH_CD_S2 : TUNING.SLEEP_BREATH_CD;
         sleepBreath(s);
       }
+    }
+    // it turns over in its sleep from the first second of the run, and does it
+    // more often the closer it gets to waking
+    D.stir -= dt;
+    if (D.stir <= 0) {
+      D.stir = s.stage >= 2 ? TUNING.STIR_CD_S2 : s.stage >= 1 ? TUNING.STIR_CD_S1 : TUNING.STIR_CD;
+      stir(s);
     }
     if (rng.next() < dt * 0.2) snd(s, 48, 0.35, 'sine', 0.035, -8);
     if (rng.next() < dt * 0.7) {
@@ -738,6 +850,11 @@ function runTimers(s: RunState, dt: number): void {
         }
       }
       s.out.sounds.push(tm.snd);
+    } else if (tm.k === 'roll') {
+      // a wyrm that woke up mid-heave is busy with worse things
+      if (!s.dragon.awake) landRoll(s, tm.x, tm.y);
+    } else if (tm.k === 'tail') {
+      if (!s.dragon.awake) sweepTail(s);
     } else {
       endRun(s, true, true);
       return;
@@ -1266,7 +1383,7 @@ export function createRun(opts: CreateRunOptions): RunState {
     relicOffers: [],
     // replaced by genLair
     hoard: { x0: 0, y0: 0, x1: 0, y1: 0, pool: 0, pool0: 1 },
-    dragon: { x: 0, y: 0, px: 0, py: 0, hp: 1, max: 1, awake: false, cd: 0, scd: 0, stunT: 0 },
+    dragon: { x: 0, y: 0, px: 0, py: 0, hp: 1, max: 1, awake: false, cd: 0, scd: 0, stir: 0, stunT: 0 },
     t: 0,
     ticks: 0,
     loot: 0,

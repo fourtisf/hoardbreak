@@ -98,6 +98,8 @@ export interface Dragon {
   cd: number;
   /** sleeping breath cooldown */
   scd: number;
+  /** seconds until it next shifts on its bed or sweeps its tail (v0.3) */
+  stir: number;
   stunT: number;
 }
 
@@ -232,6 +234,10 @@ export interface RunOutput {
  */
 export type Timer =
   | { k: 'blast'; t: number; x: number; y: number; dmg: number; shake: number; snd: SoundCue }
+  /** the sleeping wyrm heaves over onto a new patch of its bed */
+  | { k: 'roll'; t: number; x: number; y: number }
+  /** its tail comes round across the whole pile */
+  | { k: 'tail'; t: number }
   | { k: 'endSlain'; t: number };
 
 /* ---------------- event log (handoff §6) ---------------- */

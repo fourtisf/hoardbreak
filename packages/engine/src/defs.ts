@@ -286,6 +286,18 @@ export const TUNING = {
   DRAGON_HP_BASE: 2600,
   DRAGON_HP_PER_DEPTH: 400,
   DRAGON_SPD: 54,         // px/s, ignores walls
+  /* the sleeping wyrm's own movement — it shifts on its bed and sweeps its tail
+     across the gold. Both are telegraphed and both are dodgeable; between them
+     they stop the hoard from being a place you can simply park on. */
+  STIR_CD: 7.5,           // s between stirs while it sleeps
+  STIR_CD_S1: 5.4,        // …once one eye is open
+  STIR_CD_S2: 3.8,        // …once it is properly restless
+  STIR_TELE: 0.75,        // s of warning before it lands
+  TAIL_CHANCE: 0.42,      // odds a stir is a tail sweep rather than a roll
+  ROLL_R: 1.5,            // tiles — crushed if you are still under it
+  ROLL_DMG: 20,
+  TAIL_DMG: 26,
+  SHOVE: 26,              // px a thief is thrown clear
   SLEEP_BREATH_CD: 6.5,
   SLEEP_BREATH_CD_S2: 4.2,
   SLEEP_BREATH_TELE: 0.6,
