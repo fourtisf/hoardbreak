@@ -311,6 +311,17 @@ export const TUNING = {
   HOARD_BASE: 800,
   HOARD_PER_DEPTH: 420,
   SIPHON_RATE: 60,        // gold/s per thief standing on the hoard
+  /* the deep gold: the coins actually under the wyrm. Standing there pays more
+     per second than the rim and wakes it faster still — the trade is meant to
+     be slightly bad on paper and good only if you can leave in time */
+  DEEP_R: 1.35,           // tiles from the dragon
+  DEEP_PAY: 2.2,          // ×gold/s while inside it
+  /* 3.2 rather than something just above DEEP_PAY: passive and proximity wake
+     are the same wherever you stand on the hoard, so a multiplier applied to
+     the siphon term alone gets diluted. At 3.2 the *total* wake rate still
+     outruns the payout, which is the only version of this that is a decision.
+     `test/deep.test.ts` measures the real ratio rather than trusting arithmetic. */
+  DEEP_WAKE: 3.2,         // ×wake/s while inside it
   GREED_MUL: 1.3,         // Greedy Gauntlets
   LOW_HOARD_FRAC: 0.15,   // compass flips to EXIT below this much hoard left
 

@@ -1056,19 +1056,35 @@ function update(s: RunState, dt: number, input: InputFrame): void {
   const hh = s.hoard;
   if (hh.pool > 0) {
     let sip = 0;
+    let pay = 0;
+    let noise = 0;
+    let deepest: Unit | null = null;
     for (const u of s.units) {
       const gx = (u.x / T) | 0;
       const gy = (u.y / T) | 0;
-      if (gx >= hh.x0 && gx <= hh.x1 && gy >= hh.y0 && gy <= hh.y1) sip++;
+      if (!(gx >= hh.x0 && gx <= hh.x1 && gy >= hh.y0 && gy <= hh.y1)) continue;
+      sip++;
+      // the coins under the wyrm itself. Same hoard, different price.
+      const deep = dist(u.x, u.y, s.dragon.x, s.dragon.y) <= TUNING.DEEP_R * T;
+      pay += deep ? TUNING.DEEP_PAY : 1;
+      noise += deep ? TUNING.DEEP_WAKE : 1;
+      if (deep) deepest = u;
     }
     if (sip) {
-      const raw = TUNING.SIPHON_RATE * sip * dt;
+      const raw = TUNING.SIPHON_RATE * pay * dt;
       const take = Math.min(hh.pool, raw * (s.relics.greed ? TUNING.GREED_MUL : 1));
       hh.pool -= Math.min(hh.pool, raw);
       s.loot += take;
       s.siphonAcc += take;
       if (s.siphonAcc >= TUNING.SIPHON_RATE) flushSiphon(s);
-      addWake(s, TUNING.WAKE_SIPHON * dt * Math.min(sip, TUNING.WAKE_SIPHON_CAP));
+      // the cap still says "a crowd is not linearly louder"; the deep factor is
+      // applied after it so digging under the wyrm always costs what it costs
+      addWake(s, TUNING.WAKE_SIPHON * dt * Math.min(sip, TUNING.WAKE_SIPHON_CAP) * (noise / sip));
+      if (deepest && !s.deepTold) {
+        s.deepTold = true;
+        feed(s, `${deepest.name} digs into the gold under the wyrm. It pays. It costs.`, 'w');
+        snd(s, 330, 0.18, 'triangle', 0.05, 60);
+      }
       if (s.rngSim.next() < dt * 4) {
         s.fx.push({
           k: 'txt',
@@ -1078,6 +1094,20 @@ function update(s: RunState, dt: number, input: InputFrame): void {
           c: '#ffd75e',
           l: 0.6,
           l0: 0.6,
+        });
+      }
+      // a second, hotter stream so the deep gold reads as paying more without
+      // anyone having to be told a multiplier
+      if (deepest && s.rngSim.next() < dt * 5) {
+        s.fx.push({
+          k: 'txt',
+          x: s.dragon.x + s.rngSim.range(-14, 14),
+          y: s.dragon.y - 6 + s.rngSim.range(-8, 8),
+          txt: '++g',
+          c: '#ffae3c',
+          s: 11,
+          l: 0.7,
+          l0: 0.7,
         });
       }
     }
@@ -1257,6 +1287,7 @@ export function createRun(opts: CreateRunOptions): RunState {
     creep: false,
     everSpotted: false,
     sealed: false,
+    deepTold: false,
     gidNext: 1,
     fx: [],
     tele: [],

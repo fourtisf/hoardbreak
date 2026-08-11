@@ -380,6 +380,8 @@ export interface RunState {
    * hold into a decision with a price attached.
    */
   sealed: boolean;
+  /** whether the "you are digging under the wyrm" line has been said once */
+  deepTold: boolean;
   /** next guard id to hand out */
   gidNext: number;
 

@@ -505,11 +505,17 @@ describe('14 · wake multipliers', () => {
  * 15–16 · the hoard and the prison
  * ============================================================ */
 
+/*
+ * The rate below is the prototype's, and these place their thieves on the rim
+ * of the hoard on purpose: the coins under the wyrm itself pay a multiple of it
+ * (v0.3, `test/deep.test.ts`). Standing on tile 27,5 — where these used to
+ * stand — is now the deep gold, so it would measure the wrong number.
+ */
 describe('15 · siphoning the hoard', () => {
-  it('pays 60 g/s per thief standing on the pile', () => {
+  it('pays 60 g/s per thief standing on the rim of the pile', () => {
     const s = mkRun();
     const u = solo(s);
-    place(u, 27, 5);
+    place(u, 28, 7);
     const pool = s.hoard.pool;
     advance(s, 1);
     expect(s.loot).toBeCloseTo(TUNING.SIPHON_RATE, 6);
@@ -525,7 +531,7 @@ describe('15 · siphoning the hoard', () => {
     for (const u of s.units) {
       u.hp = 1e6;
       u.max = 1e6;
-      place(u, 27, 5);
+      place(u, 28, 7);
     }
     advance(s, 1);
     expect(s.loot).toBeCloseTo(TUNING.SIPHON_RATE * 2, 6);
@@ -535,7 +541,7 @@ describe('15 · siphoning the hoard', () => {
     const s = mkRun();
     const u = solo(s);
     s.relics.greed = 1;
-    place(u, 27, 5);
+    place(u, 28, 7);
     const pool = s.hoard.pool;
     advance(s, 1);
     expect(s.loot).toBeCloseTo(TUNING.SIPHON_RATE * TUNING.GREED_MUL, 6);
@@ -878,7 +884,7 @@ describe('v0.3 · creep makes stealth a mechanic, not a timer', () => {
     const mk = (creep: boolean): number => {
       const s = mkRun({ mod: 'quiet' });
       const u = solo(s);
-      place(u, 27, 5);
+      place(u, 28, 7);
       const before = s.wake;
       advance(s, 1, creep ? creeping : idle);
       return s.wake - before;

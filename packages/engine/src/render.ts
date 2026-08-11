@@ -381,6 +381,34 @@ export function createRenderer(canvas: HTMLCanvasElement): Renderer {
       C.beginPath();
       C.ellipse(cxp, cyp + 5, 33 * p + 11, 10 * p + 4, 0, 0, 7);
       C.fill();
+
+      /* the deep gold — the coins actually under the wyrm.
+         It pays more per second and wakes it faster, which is only a decision
+         if the player can see where the line is. So the line is drawn: a hot
+         ring under the dragon that breathes, and a word for what it is. */
+      if (hh.pool > 0 && !s.dragon.awake && s.revealed[tileOf(s.dragon.x, s.dragon.y)]) {
+        const r = TUNING.DEEP_R * T;
+        const pulse = 0.5 + 0.5 * Math.sin(t * 2.2);
+        const dg = C.createRadialGradient(s.dragon.x, s.dragon.y, r * 0.3, s.dragon.x, s.dragon.y, r);
+        dg.addColorStop(0, `rgba(255,174,60,${0.2 + 0.12 * pulse})`);
+        dg.addColorStop(1, 'rgba(255,174,60,0)');
+        C.fillStyle = dg;
+        C.beginPath();
+        C.arc(s.dragon.x, s.dragon.y, r, 0, 7);
+        C.fill();
+        C.strokeStyle = `rgba(255,174,60,${0.34 + 0.2 * pulse})`;
+        C.lineWidth = 1.5;
+        C.setLineDash([4, 4]);
+        C.beginPath();
+        C.arc(s.dragon.x, s.dragon.y, r, 0, 7);
+        C.stroke();
+        C.setLineDash([]);
+        C.font = 'bold 8px Consolas,monospace';
+        C.textAlign = 'center';
+        C.fillStyle = `rgba(255,196,110,${0.55 + 0.3 * pulse})`;
+        C.fillText('DEEP GOLD', s.dragon.x, s.dragon.y + r + 9);
+        C.textAlign = 'left';
+      }
     }
 
     for (const p of s.piles) {

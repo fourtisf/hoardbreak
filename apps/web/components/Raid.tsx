@@ -10,6 +10,7 @@ import {
   RELICS,
   RELIC_KEYS,
   T,
+  TUNING,
   UD,
   W,
   createAudio,
@@ -107,12 +108,15 @@ function coachFor(s: RunState, inZoneCount: number): string {
     return '⚑ Everyone is on the exit — press E to bank it';
   if (s.wake >= 75) return '⚠ It stirs, and guards are waking. Take what you have and go.';
   if (s.guards.some((g) => g.alert)) return '! Spotted — the crew fights on its own · [1] Smoke to break away';
-  if (s.units.some((u) => {
+  const onGold = s.units.filter((u) => {
     const gx = (u.x / 24) | 0;
     const gy = (u.y / 24) | 0;
     return gx >= s.hoard.x0 && gx <= s.hoard.x1 && gy >= s.hoard.y0 && gy <= s.hoard.y1;
-  }))
-    return '💰 Siphoning — every second on the gold is noise';
+  });
+  if (onGold.some((u) => Math.hypot(u.x - s.dragon.x, u.y - s.dragon.y) <= TUNING.DEEP_R * 24))
+    return '🔥 Deep gold — it pays double and wakes it faster. Do not fall in love with it.';
+  if (onGold.length)
+    return '💰 Siphoning — the ring under the wyrm pays double, if you dare stand in it';
   if (s.prison && !s.prison.done && s.revealed[((s.prison.y / 24) | 0) * 32 + ((s.prison.x / 24) | 0)])
     return `🗝 ${s.prison.thief.name} is in that cage — stand close to cut them loose`;
   if (s.hoard.pool < s.hoard.pool0 * 0.62)
