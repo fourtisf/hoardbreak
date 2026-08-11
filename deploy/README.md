@@ -166,7 +166,21 @@ pm2 reload dragonjob
 ## When something is wrong
 
 ```bash
-pm2 logs dragonjob --lines 100
+pm2 logs dragonjob --lines 100 --nostream
 tail -50 /var/log/nginx/error.log
 ss -tlnp | grep 3000                       # is next actually listening?
 ```
+
+**502 from nginx** means nginx is fine and the app is not answering on 3000.
+Do not debug nginx — check the app:
+
+```bash
+curl -sS -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3000
+pm2 list                                   # a climbing ↺ count means a crash loop
+```
+
+**pm2 says `online` but nothing listens.** pm2 reports a process it has spawned
+as online even when that process dies immediately and is being restarted, so
+`online` is not proof the app works — the port check is. The known cause here is
+a missing `interpreter` in the pm2 config: under pnpm, `node_modules/.bin/next`
+is a `/bin/sh` shim, and pm2's default node interpreter cannot parse it.

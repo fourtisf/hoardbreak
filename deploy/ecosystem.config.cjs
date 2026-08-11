@@ -7,6 +7,13 @@
  * `next start` is invoked through the workspace's own binary rather than
  * `pnpm start`, so pm2 supervises node directly instead of a pnpm wrapper it
  * would have to kill twice.
+ *
+ * `interpreter` is NOT optional here. Under pnpm, `node_modules/.bin/next` is a
+ * /bin/sh shim that exports the NODE_PATH pnpm's isolated store needs before it
+ * execs node — it is not a JavaScript file. pm2 defaults to running scripts
+ * with the node interpreter, which hands that shell script to node and dies on
+ * the first line. The shim's `exec` replaces the shell with node, so pm2 still
+ * ends up supervising the node process directly.
  */
 module.exports = {
   apps: [
@@ -14,6 +21,7 @@ module.exports = {
       name: 'dragonjob',
       cwd: `${__dirname}/../apps/web`,
       script: './node_modules/.bin/next',
+      interpreter: '/bin/sh',
       args: 'start -p 3000',
       instances: 1,
       exec_mode: 'fork',
