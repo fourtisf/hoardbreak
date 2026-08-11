@@ -79,6 +79,11 @@ text-shadow:0 0 12px rgba(255,215,94,.35)}
 #helpBtn{margin-left:auto;font-family:Consolas,monospace;font-size:11px;background:#12251b;
 border:1px solid var(--line2);border-radius:20px;padding:4px 11px;color:var(--em);cursor:pointer}
 #helpBtn:hover{border-color:var(--em)}
+/* a browser game that makes noise with no way to stop it is not a friendly one */
+#muteBtn{font-size:14px;line-height:1;background:#12251b;border:1px solid var(--line2);
+  border-radius:20px;padding:4px 9px;color:var(--em);cursor:pointer}
+#muteBtn:hover{border-color:var(--em)}
+#muteBtn:focus-visible{outline:2px solid var(--em);outline-offset:2px}
 main{grid-area:main;display:flex;flex-direction:column;background:#040806;min-width:0;min-height:0;overflow:hidden}
 #cwrap{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;padding:8px;position:relative}
 #cv{max-width:100%;max-height:100%;border:1px solid var(--line);border-radius:4px;background:#060b08}

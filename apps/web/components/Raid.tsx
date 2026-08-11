@@ -158,6 +158,8 @@ export default function Raid() {
   const [menu, setMenu] = useState(false);
   const [relics, setRelics] = useState<RelicKey[]>([]);
   const [creep, setCreep] = useState(false);
+  const [muted, setMuted] = useState(() => getMeta().muted);
+  const audioRef = useRef<{ muted: boolean } | null>(null);
   const runRef = useRef<RunState | null>(null);
   const readyRef = useRef('');
 
@@ -223,6 +225,8 @@ export default function Raid() {
     const renderer = createRenderer(canvas);
     renderer.buildRockCache(run);
     const audio = createAudio();
+    audio.muted = getMeta().muted;
+    audioRef.current = audio;
     const input = createInput({
       canvas,
       stick: stickRef.current,
@@ -465,6 +469,20 @@ export default function Raid() {
             <span className="helpLong">? how to heist</span>
             <span className="helpShort">?</span>
           </span>
+          <button
+            id="muteBtn"
+            type="button"
+            onClick={() => {
+              const next = !muted;
+              setMuted(next);
+              if (audioRef.current) audioRef.current.muted = next;
+              mutate((m) => (m.muted = next));
+            }}
+            aria-pressed={muted}
+            title={muted ? 'Sound off — click for sound' : 'Sound on — click to mute'}
+          >
+            {muted ? '🔇' : '🔊'}
+          </button>
           <span id="pauseBtn" onClick={() => setMenu(true)} title="Pause (Esc)">
             ❙❙
           </span>

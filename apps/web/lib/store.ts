@@ -13,7 +13,7 @@ import { createMeta, type Meta } from '@dragonjob/shared';
 
 const KEY = 'dragonjob.hideout';
 /** Bump when the saved shape changes in a way old saves cannot satisfy. */
-const SAVE_VERSION = 5;
+const SAVE_VERSION = 6;
 
 interface SavePayload {
   v: number;
@@ -45,6 +45,7 @@ function hydrate(raw: unknown): Meta {
     best: Math.max(0, num(p.best, base.best)),
     uid: Math.max(0, num(p.uid, base.uid)),
     name: typeof p.name === 'string' ? p.name : '',
+    muted: p.muted === true,
     day: typeof p.day === 'string' ? p.day : base.day,
     streak: Math.max(0, num(p.streak, 0)),
     bestStreak: Math.max(0, num(p.bestStreak, 0)),
@@ -72,7 +73,20 @@ if (typeof window !== 'undefined') {
     const raw = window.localStorage.getItem(KEY);
     if (raw) {
       const p = JSON.parse(raw) as Partial<SavePayload>;
-      if (p && p.v === SAVE_VERSION) {
+      /*
+       * Any save this build or older is migrated, not discarded.
+       *
+       * Requiring an exact version match meant every schema bump silently wiped
+       * a hideout: the crew, the gold, the depths and — worst — the streak the
+       * game had just spent a week asking the player to build. `hydrate` merges
+       * field by field over a fresh Meta, so a save written before a field
+       * existed simply picks up that field's default and keeps everything else.
+       *
+       * A *newer* version is still refused. It was written by a build that knows
+       * things this one does not, and half-reading it would corrupt it on the
+       * next write.
+       */
+      if (p && typeof p.v === 'number' && p.v <= SAVE_VERSION) {
         meta = hydrate(p.meta);
         lastRun = typeof p.lastRun === 'string' ? p.lastRun : null;
         // returning players do not need the tutorial thrown at them again

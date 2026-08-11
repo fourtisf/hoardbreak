@@ -36,6 +36,8 @@ export interface Meta {
    * machine should not make you a stranger again.
    */
   name: string;
+  /** sound off, remembered — a player who mutes once should stay muted */
+  muted: boolean;
   gold: number;
   /** $LOOT balance (Phase 3 moves this to the ledger) */
   tok: number;
@@ -111,6 +113,7 @@ export function newThief(meta: Meta, kind: CrewKind): RunThief {
 export function createMeta(day = ''): Meta {
   const meta: Meta = {
     name: '',
+    muted: false,
     gold: 300,
     tok: 0,
     depth: 1,
