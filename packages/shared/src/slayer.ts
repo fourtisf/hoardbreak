@@ -10,7 +10,16 @@
  * The damage maths mirrors `unitDmgMul` in sim.ts. If that formula changes and
  * this does not, `slayer.test.ts` fails.
  */
-import { TUNING, UD, lvlOf, type CrewKind, type RunThief } from '@dragonjob/engine/headless';
+import {
+  CREW_CAP,
+  CREW_KINDS,
+  TUNING,
+  UD,
+  UPGRADE_COST_MUL,
+  lvlOf,
+  type CrewKind,
+  type RunThief,
+} from '@dragonjob/engine/headless';
 import type { Meta } from './meta.js';
 
 /** What the wyrm is worth in health at a given depth. */
@@ -124,4 +133,131 @@ export function huntLines(grade: Readiness['grade']): HuntLines {
     wake: 'IT HUNTS. Get to the exit tiles.',
     call: 'RUN.',
   };
+}
+
+/* ================= the climb ================= */
+
+/**
+ * What it would actually take to kill the thing.
+ *
+ * "You cannot kill it yet" is true and useless on its own — it names a wall
+ * without naming a door, and a player who reads it three runs running concludes
+ * the fight is decorative. This prices the climb instead: the cheapest set of
+ * recruits and upgrades that turns the verdict, and what it costs in gold.
+ *
+ * Greedy on damage-per-gold, which is roughly the order a player shopping by
+ * feel would land on anyway. It is advice, not a purchase — nothing here spends
+ * anything or touches the roster.
+ */
+export interface SlayerStep {
+  /** a crew kind to recruit, or the Sharpened Steel upgrade */
+  what: CrewKind | 'dmg';
+  n: number;
+  gold: number;
+}
+
+export interface SlayerPlan {
+  steps: SlayerStep[];
+  gold: number;
+  /** false when the roster is capped and upgrades alone cannot close the gap */
+  reachable: boolean;
+  /** free damage still on the table: levels the current crew has not earned yet */
+  levelsLeft: number;
+  line: string;
+}
+
+/**
+ * A copy deep enough for costing — never handed back to the caller.
+ *
+ * Everyone in it is at the level cap, because levels cost runs rather than gold
+ * and a plan that ignores them quotes four times the real price. The caller is
+ * told how many levels that assumes with `levelsLeft`.
+ */
+const forCosting = (meta: Meta): Meta => ({
+  ...meta,
+  crew: meta.crew.map((t) => ({ ...t, xp: TUNING.LEVEL_CAP })),
+  up: { ...meta.up },
+  upCost: { ...meta.upCost },
+});
+
+/**
+ * How many exhales a body has to live through to be worth recruiting for this.
+ *
+ * The fight the plan is aiming at is about fourteen seconds and the breath comes
+ * every 3.6, so three or four land. Ranked purely on damage per gold the plan
+ * recruits Picklocks — the best value in the game, and 91 hp at the level cap
+ * against an 85-damage exhale. Surviving the first breath by six points is not
+ * surviving the fight, and a corpse deals no damage, so it is not a saving.
+ */
+const BREATHS_SURVIVED = 2;
+
+const worthRecruiting = (k: CrewKind, up: Meta['up']): boolean => {
+  const hp = UD[k].hp * (1 + TUNING.UP_HP_PER_LEVEL * up.hp) * (1 + TUNING.XP_STAT_PER_LEVEL * TUNING.LEVEL_CAP);
+  // Emberkin are built for exactly this and take half of it
+  const perBreath = TUNING.AWAKE_BREATH_DMG * (UD[k].fireRes ?? 1);
+  return hp > perBreath * BREATHS_SURVIVED;
+};
+
+export function slayerPlan(meta: Meta, depth: number): SlayerPlan {
+  const levelsLeft = meta.crew.reduce((n, t) => n + (TUNING.LEVEL_CAP - lvlOf(t)), 0);
+  if (slayerReadiness(meta, depth).grade === 'ready') {
+    return {
+      steps: [],
+      gold: 0,
+      reachable: true,
+      levelsLeft,
+      line: 'Your crew is already enough. Go and take its head.',
+    };
+  }
+
+  const m = forCosting(meta);
+  const tally = new Map<CrewKind | 'dmg', { n: number; gold: number }>();
+  let gold = 0;
+  // bounded: nine bodies plus a realistic ceiling on Sharpened Steel
+  for (let guard = 0; guard < 40; guard++) {
+    if (slayerReadiness(m, depth).grade === 'ready') break;
+    const before = crewDps(m);
+
+    let best: { what: CrewKind | 'dmg'; cost: number; gain: number } | null = null;
+    if (m.crew.length < CREW_CAP) {
+      const hire = CREW_KINDS.filter((k) => worthRecruiting(k, m.up));
+      for (const k of (hire.length ? hire : CREW_KINDS)) {
+        const probe = forCosting(m);
+        probe.crew.push({ tid: -1, name: '', kind: k, xp: TUNING.LEVEL_CAP });
+        const gain = crewDps(probe) - before;
+        const cost = UD[k].cost;
+        if (gain > 0 && (!best || gain / cost > best.gain / best.cost)) best = { what: k, cost, gain };
+      }
+    }
+    {
+      const probe = forCosting(m);
+      probe.up.dmg++;
+      const gain = crewDps(probe) - before;
+      const cost = m.upCost.dmg;
+      if (gain > 0 && (!best || gain / cost > best.gain / best.cost)) best = { what: 'dmg', cost, gain };
+    }
+    if (!best) break;
+
+    if (best.what === 'dmg') {
+      m.up.dmg++;
+      m.upCost.dmg = Math.ceil(m.upCost.dmg * UPGRADE_COST_MUL);
+    } else {
+      m.crew.push({ tid: -1, name: '', kind: best.what, xp: TUNING.LEVEL_CAP });
+    }
+    gold += best.cost;
+    const row = tally.get(best.what) ?? { n: 0, gold: 0 };
+    tally.set(best.what, { n: row.n + 1, gold: row.gold + best.cost });
+  }
+
+  const reachable = slayerReadiness(m, depth).grade === 'ready';
+  const steps: SlayerStep[] = [...tally].map(([what, r]) => ({ what, n: r.n, gold: r.gold }));
+  const name = (s: SlayerStep): string =>
+    s.what === 'dmg' ? `Sharpened Steel ×${s.n}` : `${s.n}× ${UD[s.what].n}`;
+
+  const line = !reachable
+    ? 'Not at this depth, at any price. Clear a shallower lair first.'
+    : `${steps.map(name).join(' + ')} — about ${gold}g — and the answer changes.` +
+      (levelsLeft > 0 ? ` Assumes your crew is levelled: ${levelsLeft} levels still unearned.` : '');
+
+  return { steps, gold, reachable, levelsLeft, line };
 }

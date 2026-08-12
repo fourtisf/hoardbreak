@@ -9,7 +9,7 @@
 import { describe, expect, it } from 'vitest';
 import { TUNING, UD } from '@dragonjob/engine/headless';
 import { createMeta, markPlayed, newThief, type Meta } from '../src/meta.js';
-import { crewDps, dragonHpAt, glassCount, huntLines, slayerReadiness } from '../src/slayer.js';
+import { crewDps, dragonHpAt, glassCount, huntLines, slayerPlan, slayerReadiness } from '../src/slayer.js';
 
 const withCrew = (kinds: Parameters<typeof newThief>[1][], xp = 0): Meta => {
   const m = createMeta('2026-08-11');
@@ -154,5 +154,89 @@ describe('what it says when the wyrm hunts', () => {
     );
     expect(r.grade).not.toBe('flee');
     expect(huntLines(r.grade).hint).not.toMatch(/Not with this crew/);
+  });
+});
+
+/**
+ * Naming the wall is not the same as naming the door.
+ *
+ * "You cannot kill it yet" is true, and on its own it reads as "this fight is
+ * decorative" to anyone who sees it three runs running. These pin the advice
+ * that turns it into a goal.
+ */
+describe('the climb to slayer', () => {
+  it('prices the starting crew a real shopping list', () => {
+    const p = slayerPlan(createMeta('2026-08-11'), 1);
+    expect(p.reachable).toBe(true);
+    expect(p.steps.length).toBeGreaterThan(0);
+    expect(p.gold).toBeGreaterThan(0);
+    expect(p.line).toMatch(/and the answer changes/);
+  });
+
+  it('quotes a price a run can actually earn toward', () => {
+    // if the number is astronomical it is a wall with extra steps
+    const p = slayerPlan(createMeta('2026-08-11'), 1);
+    expect(p.gold).toBeLessThan(2500);
+  });
+
+  /** Buy exactly what the plan said, on the terms the plan stated. */
+  const shop = (m: Meta, levelled: boolean): Meta => {
+    for (const s of slayerPlan(m, 1).steps) {
+      if (s.what === 'dmg') m.up.dmg += s.n;
+      else for (let i = 0; i < s.n; i++) m.crew.push(newThief(m, s.what));
+    }
+    if (levelled) for (const t of m.crew) t.xp = TUNING.LEVEL_CAP;
+    return m;
+  };
+
+  it('the list it quotes actually works', () => {
+    expect(slayerReadiness(shop(createMeta('2026-08-11'), true), 1).grade).toBe('ready');
+  });
+
+  it('says out loud that it is counting on the levels, because it is', () => {
+    // the same shopping list without the levels does NOT get there — which is
+    // why the caveat is in the line rather than in a comment nobody reads
+    expect(slayerReadiness(shop(createMeta('2026-08-11'), false), 1).grade).not.toBe('ready');
+    expect(slayerPlan(createMeta('2026-08-11'), 1).line).toMatch(/levels still unearned/);
+  });
+
+  it('never puts a thief in the plan who dies to the first breath', () => {
+    // Picklocks are the best damage per gold in the game and have 70 hp against
+    // an 85-damage exhale; a corpse deals no damage, so it is not a saving
+    const p = slayerPlan(createMeta('2026-08-11'), 1);
+    for (const s of p.steps) {
+      if (s.what === 'dmg') continue;
+      const hp = UD[s.what].hp * (1 + TUNING.XP_STAT_PER_LEVEL * TUNING.LEVEL_CAP);
+      expect(hp).toBeGreaterThan(TUNING.AWAKE_BREATH_DMG);
+    }
+  });
+
+  it('tells a crew that is already there to stop shopping', () => {
+    const m = withCrew(
+      ['golem', 'emberkin', 'emberkin', 'golem', 'emberkin', 'bruiser', 'emberkin', 'golem', 'emberkin'],
+      40,
+    );
+    const p = slayerPlan(m, 1);
+    expect(p.steps).toHaveLength(0);
+    expect(p.gold).toBe(0);
+    expect(p.line).toMatch(/already enough/);
+  });
+
+  it('never suggests a tenth thief — the roster caps at nine', () => {
+    const m = withCrew(['picklock', 'picklock', 'picklock', 'picklock', 'picklock', 'picklock', 'picklock', 'picklock', 'picklock']);
+    const p = slayerPlan(m, 1);
+    expect(p.steps.every((s) => s.what === 'dmg')).toBe(true);
+  });
+
+  it('counts the free damage nobody has to pay for', () => {
+    // four fresh thieves are four levels short each
+    expect(slayerPlan(createMeta('2026-08-11'), 1).levelsLeft).toBe(4 * TUNING.LEVEL_CAP);
+  });
+
+  it('spends nothing and recruits nobody just by being asked', () => {
+    const m = createMeta('2026-08-11');
+    const before = JSON.stringify(m);
+    slayerPlan(m, 1);
+    expect(JSON.stringify(m)).toBe(before);
   });
 });

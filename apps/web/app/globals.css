@@ -386,6 +386,9 @@ header{min-width:0;overflow:hidden}
 .slHead{font-family:'Pirata One',serif;font-size:13px;letter-spacing:.14em}
 .slLine{font-size:11px;font-style:italic;color:var(--bone);line-height:1.5}
 .slNums{font-family:Consolas,monospace;font-size:9.5px;color:var(--dim);letter-spacing:.04em}
+/* the shopping list that turns the verdict — reads as an instruction, not a
+   statistic, so it sits apart from the numbers above it */
+.slPlan{display:block;margin-top:5px;font-size:10.5px;font-style:italic;color:var(--gold);line-height:1.5}
 .sl-flee{border-color:#5a2430;background:#160b0e}
 .sl-flee .slHead{color:var(--red)}
 .sl-risky{border-color:#6b5a24;background:#1a1408}

@@ -23,6 +23,7 @@ import {
   boardRows,
   exportSave,
   importSave,
+  slayerPlan,
   slayerReadiness,
   buyItem,
   buyUpgrade,
@@ -51,6 +52,7 @@ export default function Hideout() {
   const bestHere = meta.bestByDepth[meta.depth] ?? 0;
   const stranded = needsConscript(meta);
   const ready = slayerReadiness(meta, meta.depth);
+  const plan = slayerPlan(meta, meta.depth);
 
   // a session that outlives UTC midnight has to roll its own day over
   useEffect(() => {
@@ -203,6 +205,9 @@ export default function Hideout() {
           <span className="slNums">
             crew {Math.round(ready.dps)} dps · wyrm {fmt(ready.dragonHp)} hp at depth {meta.depth}
           </span>
+          {/* Naming the wall without naming the door is what makes players
+              conclude the fight is decorative. This is the door, priced. */}
+          {plan.steps.length > 0 && <span className="slPlan">→ {plan.line}</span>}
         </div>
 
         <div className="cols">
