@@ -50,6 +50,7 @@ function hydrate(raw: unknown): Meta {
     muted: p.muted === true,
     day: typeof p.day === 'string' ? p.day : base.day,
     streak: Math.max(0, num(p.streak, 0)),
+    retainerPaid: typeof p.retainerPaid === 'string' ? p.retainerPaid : '',
     bestStreak: Math.max(0, num(p.bestStreak, 0)),
     lastPlayed: typeof p.lastPlayed === 'string' ? p.lastPlayed : '',
     todayBest: num(p.todayBest, 0),

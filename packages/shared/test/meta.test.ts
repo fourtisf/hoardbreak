@@ -21,6 +21,8 @@ import {
   type Unit,
 } from '@dragonjob/engine/headless';
 import {
+  RETAINER_CAP_DAYS,
+  RETAINER_STEP,
   applyRunResult,
   buyItem,
   buyUpgrade,
@@ -28,10 +30,14 @@ import {
   conscript,
   createMeta,
   lootTokens,
+  markPlayed,
   needsConscript,
+  payRetainer,
   recruit,
+  retainerFor,
   rollDay,
   selectDepth,
+  slayerPlan,
   unlockedDepth,
   verdictFor,
   VERDICTS,
@@ -426,5 +432,81 @@ describe('v0.3 · a run gets a verdict, not just a win/lose', () => {
       expect(v.title.length).toBeGreaterThan(0);
       if (v.id !== 'FED' && v.id !== 'CLEAN') expect(v.sub.length).toBeGreaterThan(0);
     }
+  });
+});
+
+/**
+ * The retainer.
+ *
+ * The streak used to be a number that went up and touched nothing — the game
+ * asked for a daily habit and paid in congratulation. These pin what it is now
+ * worth, and just as importantly what it is capped at: an uncapped daily bonus
+ * turns a game you can miss into a job you cannot.
+ */
+describe('v0.3 · the streak pays a retainer', () => {
+  it('pays for showing up on the very first night', () => {
+    const m = createMeta('2026-08-11');
+    const before = m.gold;
+    markPlayed(m, '2026-08-11');
+    expect(payRetainer(m, '2026-08-11')).toBe(RETAINER_STEP);
+    expect(m.gold).toBe(before + RETAINER_STEP);
+  });
+
+  it('pays more the longer you keep turning up', () => {
+    const m = createMeta('2026-08-11');
+    const paid: number[] = [];
+    for (let i = 0; i < 5; i++) {
+      const day = `2026-08-${String(11 + i).padStart(2, '0')}`;
+      markPlayed(m, day);
+      paid.push(payRetainer(m, day));
+    }
+    expect(paid).toEqual([30, 60, 90, 120, 150]);
+  });
+
+  it('stops climbing after a week, so a daily stays a daily', () => {
+    expect(retainerFor(RETAINER_CAP_DAYS)).toBe(RETAINER_CAP_DAYS * RETAINER_STEP);
+    expect(retainerFor(RETAINER_CAP_DAYS + 40)).toBe(retainerFor(RETAINER_CAP_DAYS));
+  });
+
+  it('pays once a night, however many runs are played', () => {
+    const m = createMeta('2026-08-11');
+    markPlayed(m, '2026-08-11');
+    expect(payRetainer(m, '2026-08-11')).toBe(30);
+    expect(payRetainer(m, '2026-08-11')).toBe(0);
+    expect(payRetainer(m, '2026-08-11')).toBe(0);
+  });
+
+  it('pays a run that went badly — the streak counts turning up, and so does this', () => {
+    const m = createMeta('2026-08-11');
+    m.crew = []; // wiped
+    markPlayed(m, '2026-08-11');
+    expect(payRetainer(m, '2026-08-11')).toBeGreaterThan(0);
+  });
+
+  it('drops back to one night after a day off, like the streak it follows', () => {
+    const m = createMeta('2026-08-11');
+    for (const d of ['2026-08-11', '2026-08-12', '2026-08-13']) {
+      markPlayed(m, d);
+      payRetainer(m, d);
+    }
+    markPlayed(m, '2026-08-15'); // skipped the 14th
+    expect(payRetainer(m, '2026-08-15')).toBe(RETAINER_STEP);
+  });
+
+  /**
+   * The number that made these the numbers.
+   *
+   * A week of turning up has to pay for the crew that changes the wyrm's
+   * verdict, or the game is still describing an arc it does not fund.
+   */
+  it('buys a starting crew its way to the dragon inside a week', () => {
+    const m = createMeta('2026-08-11');
+    let earned = 0;
+    for (let i = 0; i < 7; i++) {
+      const day = `2026-08-${String(11 + i).padStart(2, '0')}`;
+      markPlayed(m, day);
+      earned += payRetainer(m, day);
+    }
+    expect(earned).toBeGreaterThanOrEqual(slayerPlan(createMeta('2026-08-11'), 1).gold);
   });
 });

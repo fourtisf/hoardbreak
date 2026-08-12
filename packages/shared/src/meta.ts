@@ -73,6 +73,8 @@ export interface Meta {
    * a missed day, not by a bad run — the game asks you to show up, not to win.
    */
   streak: number;
+  /** the last day the retainer was paid, so a second run does not draw it twice */
+  retainerPaid: string;
   /** longest streak ever held, so breaking one still leaves a mark */
   bestStreak: number;
   /** the last UTC day a run was finished, or '' */
@@ -147,6 +149,7 @@ export function createMeta(day = ''): Meta {
     uid: 0,
     day,
     streak: 0,
+    retainerPaid: '',
     bestStreak: 0,
     lastPlayed: '',
     todayBest: 0,
@@ -280,6 +283,47 @@ export function markPlayed(meta: Meta, today: string): number {
   meta.lastPlayed = today;
   meta.bestStreak = Math.max(meta.bestStreak, meta.streak);
   return meta.streak;
+}
+
+/* ---------------- the retainer ---------------- */
+
+/**
+ * What the streak is worth.
+ *
+ * It used to be worth nothing: a number that went up, sat in the corner of the
+ * hideout, and did not touch a single decision. The game asked players to come
+ * back every day and paid them in congratulation.
+ *
+ * The guild now pays a retainer for showing up, once a night, scaling with the
+ * streak and capped at a week. The cap is the important half — an uncapped one
+ * turns a daily into a job you cannot miss, and the point of a daily is that
+ * missing one costs you a little, not everything.
+ *
+ * The numbers are chosen against the climb: a week of showing up from cold pays
+ * 30+60+…+210 = 840g, and `slayerPlan` prices a starting crew's path to killing
+ * the wyrm at about 820g. Turn up for a week and the answer changes — which is
+ * the arc the game kept describing and never funded.
+ */
+export const RETAINER_STEP = 30;
+export const RETAINER_CAP_DAYS = 7;
+
+export const retainerFor = (streak: number): number =>
+  Math.max(0, Math.min(streak, RETAINER_CAP_DAYS)) * RETAINER_STEP;
+
+/**
+ * Pay it, at most once per day.
+ *
+ * Paid on the run being *played*, not won, for the same reason the streak
+ * counts the run and not the result: a wipe is already punishment enough, and
+ * charging a player twice for one bad night is how dailies lose people.
+ * Returns 0 when today has already been paid, so calling it twice is safe.
+ */
+export function payRetainer(meta: Meta, today: string): number {
+  if (meta.retainerPaid === today) return 0;
+  const gold = retainerFor(meta.streak);
+  meta.retainerPaid = today;
+  meta.gold += gold;
+  return gold;
 }
 
 export function applyRunResult(meta: Meta, r: RunResult): RunPayout {

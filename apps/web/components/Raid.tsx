@@ -31,7 +31,16 @@ import {
   type RelicKey,
   type RunState,
 } from '@dragonjob/engine';
-import { applyRunResult, huntLines, markPlayed, shareText, slayerReadiness, snapshotRunMeta, verdictFor } from '@dragonjob/shared';
+import {
+  applyRunResult,
+  huntLines,
+  markPlayed,
+  payRetainer,
+  shareText,
+  slayerReadiness,
+  snapshotRunMeta,
+  verdictFor,
+} from '@dragonjob/shared';
 import type { Readiness } from '@dragonjob/shared';
 import { abandonRun, snapshotJSON } from '@dragonjob/engine';
 import { getMeta, markTutorialSeen, mutate, setLastRun, tutorialSeen } from '@/lib/store';
@@ -372,9 +381,18 @@ export default function Raid() {
         applied = true;
         const r = s.result;
         const payout = mutate((m) => {
-          // the streak counts the run, not the result — showing up is the ask
+          // the streak counts the run, not the result — showing up is the ask,
+          // and the retainer is paid on the same terms
           markPlayed(m, date);
-          return applyRunResult(m, r);
+          const retainer = payRetainer(m, date);
+          const out = applyRunResult(m, r);
+          if (retainer > 0) {
+            out.notes.unshift({
+              msg: `The guild pays ${fmt(retainer)}g — ${m.streak} ${m.streak === 1 ? 'night' : 'nights'} running.`,
+              cls: 'w',
+            });
+          }
+          return out;
         });
         if (payout.notes.length) setFeed((f) => [...f, ...payout.notes].slice(-6));
         const verdict = verdictFor(r);
