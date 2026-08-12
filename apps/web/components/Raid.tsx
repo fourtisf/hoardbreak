@@ -122,7 +122,21 @@ type Grade = Readiness['grade'];
  * never seen the game does not need to be told about hotkeys — they need to be
  * told what to do *next*. First match wins, most urgent first.
  */
-function coachFor(s: RunState, inZoneCount: number, grade: Grade): string {
+/**
+ * Does this player have a keyboard?
+ *
+ * The coach line told phone players to "hold SHIFT to creep" and to "press E"
+ * — instructions for hardware they are not holding, in the one strip of text
+ * the game uses to teach itself. `pointer: coarse` is the honest question: not
+ * "is this a phone" but "is this a finger", which is what actually decides
+ * whether a key exists to press.
+ */
+const hasKeys = (): boolean =>
+  typeof window === 'undefined' || typeof window.matchMedia !== 'function'
+    ? true
+    : !window.matchMedia('(pointer: coarse)').matches;
+
+function coachFor(s: RunState, inZoneCount: number, grade: Grade, keys: boolean): string {
   if (s.dragon.awake) return huntLines(grade).hint;
   // the lockdown outranks everything short of the wyrm: the room you are in
   // stopped being the problem the moment they went to stand on the door
@@ -138,9 +152,12 @@ function coachFor(s: RunState, inZoneCount: number, grade: Grade): string {
     return `⚔ ${swing.name} is fighting ${a} ${swing.foe} — the crew swings on its own, there is no attack button`;
   }
   if (inZoneCount > 0 && inZoneCount === s.units.length && (s.wake >= 55 || s.hoard.pool < s.hoard.pool0 * 0.5))
-    return '⚑ Everyone is on the exit — press E to bank it';
+    return keys ? '⚑ Everyone is on the exit — press E to bank it' : '⚑ Everyone is on the exit — tap EXTRACT';
   if (s.wake >= 75) return '⚠ It stirs, and guards are waking. Take what you have and go.';
-  if (s.guards.some((g) => g.alert)) return '! Spotted — the crew fights on its own · [1] Smoke to break away';
+  if (s.guards.some((g) => g.alert))
+    return keys
+      ? '! Spotted — the crew fights on its own · [1] Smoke to break away'
+      : '! Spotted — the crew fights on its own · tap Smoke to break away';
   const onGold = s.units.filter((u) => {
     const gx = (u.x / 24) | 0;
     const gy = (u.y / 24) | 0;
@@ -154,7 +171,9 @@ function coachFor(s: RunState, inZoneCount: number, grade: Grade): string {
     return `🗝 ${s.prison.thief.name} is in that cage — stand close to cut them loose`;
   if (s.hoard.pool < s.hoard.pool0 * 0.62)
     return '⚠ Past half the hoard and every guard turns for the door — take it knowing that';
-  return '🕹 Follow the golden arrow · hold SHIFT to creep — slower, but they will not see you';
+  return keys
+    ? '🕹 Follow the golden arrow · hold SHIFT to creep — slower, but they will not see you'
+    : '🕹 Follow the golden arrow · tap CREEP — slower, but they will not see you';
 }
 
 const wakeHintFor = (s: RunState, grade: Grade): string =>
@@ -219,11 +238,25 @@ export default function Raid() {
    * death — and because a posted thief with no way back is a thief you lose.
    */
   const [held, setHeld] = useState<readonly number[]>([]);
+  /**
+   * Whether this player has a keyboard, for the copy that would otherwise name
+   * keys they are not holding. State rather than a ref because the tutorial and
+   * the pause card are rendered React, not painted per frame — and it starts
+   * `true` so the server and the first client paint agree.
+   */
+  const [keys, setKeys] = useState(true);
+  useEffect(() => {
+    setKeys(hasKeys());
+  }, []);
   const audioRef = useRef<{ muted: boolean } | null>(null);
   const runRef = useRef<RunState | null>(null);
   const readyRef = useRef<Readiness | null>(null);
   const pickedRef = useRef<number | null>(null);
   const felt = useRef({ seen: false, stirs: false, woke: false });
+  // the per-frame coach line reads this rather than `keys` so it never touches
+  // React state from inside the render loop
+  const keysRef = useRef(true);
+  keysRef.current = keys;
 
   pausedRef.current = tut || menu || over !== null;
   pickedRef.current = picked;
@@ -475,7 +508,7 @@ export default function Raid() {
         hintBar.current,
         pickedRef.current !== null && !s.dragon.awake
           ? `◎ ${s.units.find((u) => u.tid === pickedRef.current)?.name ?? 'They'} alone — tap where they should hold`
-          : coachFor(s, inz, grade),
+          : coachFor(s, inz, grade, keysRef.current),
       );
 
       const stolen = Math.round(100 * (1 - s.hoard.pool / s.hoard.pool0));
@@ -640,7 +673,7 @@ export default function Raid() {
               0
             </b>
           </div>
-          <div className="hstat">
+          <div className="hstat hstatCrew">
             <span className="lbl">CREW</span>
             <b id="hCrew" ref={hCrew}>
               0
@@ -677,7 +710,7 @@ export default function Raid() {
             </div>
           </div>
           <div id="hintBar" ref={hintBar}>
-            🕹 Drag the stick or WASD to steer · items on hotkeys 1·2·3 · E = extract at the green tiles
+            🕹 Drag the stick to steer · tap an item to use it · EXTRACT at the exit tiles
           </div>
         </main>
 
@@ -762,7 +795,7 @@ export default function Raid() {
             id="creepBtn"
             className={`creepBtn${creep ? ' on' : ''}`}
             onClick={toggleCreep}
-            title="Slower, quieter, harder to spot. Hold Shift on a keyboard."
+            title="Slower, quieter, harder to spot."
           >
             <span className="em">👣</span>
             <span className="tn">{creep ? 'CREEPING' : 'CREEP'}</span>
@@ -784,7 +817,7 @@ export default function Raid() {
           </div>
 
           <div className="lbl">THE CREW</div>
-          <div id="squadList" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div id="squadList" className="squadList">
             {squad.map((u) => (
               <div
                 className={`sq${picked === u.tid ? ' picked' : ''}`}
@@ -861,13 +894,15 @@ export default function Raid() {
                 <span className="au">golden arrow</span> points to the gold.
               </div>
               <div className="ts">
-                <b>2 · MOVE.</b> Steer with the <b>joystick / WASD</b> — your lead thief (gold ▼) drives, the crew
-                follows. Or click a tile to send them. Rooms hide chests, shrines with{' '}
+                <b>2 · MOVE.</b> Steer with the <b>{keys ? 'joystick / WASD' : 'stick'}</b> — your lead thief
+                (gold ▼) drives, the crew follows. Or {keys ? 'click' : 'tap'} a tile to send them. Rooms hide
+                chests, shrines with{' '}
                 <span className="au">relics</span>, armories… and sometimes a <b>prison</b> holding a fallen
                 friend. Stand close to interact.
               </div>
               <div className="ts">
-                <b>3 · SPLIT THEM UP.</b> Click a name under <b>THE CREW</b>, then click the lair:{' '}
+                <b>3 · SPLIT THEM UP.</b> {keys ? 'Click' : 'Tap'} a name under <b>THE CREW</b>, then{' '}
+                {keys ? 'click' : 'tap'} the lair:{' '}
                 <span className="au">that thief alone</span> goes there and holds it while everyone else carries
                 on. A Bruiser parked in a doorway buys the rest of the crew a great deal of time. Their row
                 shows <b>HOLDING</b> — click it to call them back.
@@ -879,9 +914,17 @@ export default function Raid() {
               </div>
               <div className="ts">
                 <b>5 · STAY QUIET.</b> Noise fills <span className="re">WYRM WAKE</span>. At 50% one eye opens and
-                it breathes in its sleep. At 75% guards stir. At 100% — it hunts. Hold <b>SHIFT</b> (or tap{' '}
-                <b>CREEP</b>) to move slow and quiet — guards notice you far later. Items help: <b>[1]</b> Smoke{' '}
-                <b>[2]</b> Lullaby <b>[3]</b> Bear Trap.
+                it breathes in its sleep. At 75% guards stir. At 100% — it hunts.{' '}
+                {keys ? (
+                  <>
+                    Hold <b>SHIFT</b> (or tap <b>CREEP</b>)
+                  </>
+                ) : (
+                  <>
+                    Tap <b>CREEP</b>
+                  </>
+                )}{' '}
+                to move slow and quiet — guards notice you far later. Items help: Smoke, Lullaby, Bear Trap.
               </div>
               <div className="ts">
                 <b>6 · IT IS NOT DEAD, IT IS ASLEEP.</b> The wyrm <span className="re">turns over</span> on its
@@ -896,7 +939,17 @@ export default function Raid() {
                 other.
               </div>
               <div className="ts">
-                <b>8 · GET OUT.</b> Green arrow = time to run. Reach the EXIT tiles, press <b>EXTRACT / E</b>.
+                <b>8 · GET OUT.</b> Green arrow = time to run. Reach the EXIT tiles and{' '}
+                {keys ? (
+                  <>
+                    press <b>EXTRACT / E</b>
+                  </>
+                ) : (
+                  <>
+                    tap <b>EXTRACT</b>
+                  </>
+                )}
+                .
                 Anyone not standing on the green is <span className="re">left behind for good</span> — the button
                 tells you how many. Survivors gain XP. The dead end up in dragon prisons — go get them back.
               </div>
@@ -916,7 +969,8 @@ export default function Raid() {
               The wyrm is not counting while you think.
               <br />
               <span style={{ color: 'var(--dim)' }}>
-                Esc to close. Walking away costs you the loot <b>and the crew</b> — same as dying, just faster.
+                {keys ? 'Esc to close. ' : ''}Walking away costs you the loot <b>and the crew</b> — same as dying,
+                just faster.
               </span>
             </div>
             <button className="btn gold big" onClick={() => setMenu(false)}>

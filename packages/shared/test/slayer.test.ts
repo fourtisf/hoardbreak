@@ -112,6 +112,13 @@ describe('what it says when the wyrm hunts', () => {
     expect(`${l.strip} ${l.hint} ${l.wake}`).not.toMatch(/EXTRACT|exit tiles/);
   });
 
+  it('names no key on any line — half the players are holding a phone', () => {
+    for (const g of ['flee', 'risky', 'ready'] as const) {
+      const l = huntLines(g);
+      expect(`${l.strip} ${l.hint} ${l.wake} ${l.call}`).not.toMatch(/press E|SHIFT|hotkey|\[1\]/i);
+    }
+  });
+
   it('tells a crew that cannot win to leave — on every line', () => {
     const l = huntLines('flee');
     expect(l.strip).toMatch(/EXTRACT/);

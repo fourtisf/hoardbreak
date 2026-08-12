@@ -129,7 +129,12 @@ export function huntLines(grade: Readiness['grade']): HuntLines {
   }
   return {
     strip: '☠ IT HUNTS — get your crew to the exit and EXTRACT',
-    hint: '☠ Not with this crew — get everyone onto the exit tiles and press E',
+    // device-neutral on purpose: this is the branch that fires the moment the
+    // wyrm wakes, it outranks every other coach line for the rest of the run,
+    // and `flee` is the grade most crews get at most depths — so on a phone it
+    // was the single most-read sentence in the game, telling players to press a
+    // key they are not holding
+    hint: '☠ Not with this crew — get everyone onto the exit tiles and extract',
     wake: 'IT HUNTS. Get to the exit tiles.',
     call: 'RUN.',
   };

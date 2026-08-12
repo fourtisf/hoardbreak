@@ -275,16 +275,79 @@ header{min-width:0;overflow:hidden}
   #helpBtn .helpShort{display:inline}
   .brand .brandLong{display:none}
   .brand .brandShort{display:inline}
-  #side{border-left:none;border-top:1px solid var(--line);
-    max-height:40vh;padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+  /* ── the lair takes what it needs, the sheet takes the rest ──────────
+   * `1fr` on the canvas row centred a 263px-tall canvas inside a 430px box
+   * and left a black band above it the size of a third of the screen, while
+   * the sheet below was capped at 40vh and scrolled inside itself. Two
+   * nested scrollers and a hole between them. The canvas row is now sized to
+   * the canvas, and everything it was hoarding goes to the sheet.
+   */
+  #app{grid-template-rows:44px auto minmax(0,1fr)}
+  #cwrap{padding:4px 4px 0;flex:0 0 auto}
+  #side{border-left:none;border-top:1px solid var(--line);padding:8px 10px;
     border-radius:14px 14px 0 0;box-shadow:0 -8px 24px rgba(0,0,0,.5)}
   #side::before{content:'';display:block;width:34px;height:4px;border-radius:2px;
     background:var(--line2);margin:0 auto 6px}
   #feed{min-height:34px;max-height:56px}
-  #stick{left:12px;bottom:12px;width:124px;height:124px}
-  #knob{left:41px;top:41px}
+
+  /* the canvas row is `auto`, so `#cv{max-height:100%}` has no definite basis
+     to resolve against and behaves as `none`. In portrait the canvas is
+     width-bound and that is harmless; in landscape it would grow to 580px in a
+     390px viewport, collapse the sheet row to nothing and overflow a fixed
+     `#app`. Cap it explicitly rather than relying on which axis happens to bind. */
+  #cv{max-height:calc(100dvh - 236px)}
+
+  /* ── density ─────────────────────────────────────────────────────────
+   * The sheet is 390px wide where the desktop rail is 248, so the same
+   * padding and type that reads as a compact rail reads as a poster. None
+   * of this is smaller than the desktop values by accident — it is smaller
+   * because the panel is wider and the phone is held closer.
+   */
+  #side{gap:6px}
+  #side .lbl{font-size:10px;letter-spacing:.12em}
+  .wakeBox{padding:6px 9px;border-radius:8px}
+  .wakeBox .row{font-size:10px;margin-bottom:4px}
+  #wakePct,#wyrmPct,#stolenPct{font-size:12px}
+  .wbar{height:7px}
+  #wakeHint,#stolenHint,.wyrmCall{font-size:9px!important;line-height:1.4;margin-top:3px!important}
+  .lootRow{font-size:12px}
+  .itb{padding:5px 4px 4px}
+  .itb .em{font-size:13px}
+  .itb .tn{font-size:9px}
+  .creepBtn{padding:6px 4px}
+  .creepBtn .tn{font-size:12px}
+  /* zeroing this collapsed the empty state onto the label below it — the row
+     still needs one line's worth of room even when it holds nothing */
+  #relicRow{min-height:15px}
+
+  /* nine thieves stacked one per row is 300px of sheet; two-up halves it and
+     the row was never using the width anyway */
+  .squadList{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+  .sq{padding:2px 5px;gap:4px;border-radius:7px}
+  .sq canvas{width:16px;height:18px}
+  .sq .sn{font-size:9.5px}
+  .sq .sl{font-size:8px}
+  .shp{width:30px;height:5px}
+  .heldChip{font-size:7px;padding:1px 3px}
   #hintBar{font-size:10px;padding:2px 6px 4px}
-  #cwrap{padding:4px}
+
+  /* ── things a thumb has to hit ───────────────────────────────────────
+   * Measured, not guessed: on a 360px screen the pause button was painted
+   * 31px past the right edge and simply never seen, and the item tiles,
+   * the creep toggle and the crew rows were all under 40px tall. The crew
+   * rows were my own doing — compacting them to two columns took them to
+   * 24px, and tapping one is how a thief is sent somewhere alone.
+   */
+  header{gap:6px}
+  /* the header ran off the screen; the crew count is the one chip that is
+     also spelled out ten centimetres below it, in THE CREW */
+  .hstatCrew{display:none}
+  #helpBtn,#muteBtn,#pauseBtn{min-height:32px;display:inline-flex;align-items:center;justify-content:center}
+  #muteBtn{padding:4px 10px}
+  #pauseBtn{padding:4px 12px}
+  .itb{min-height:44px;justify-content:center}
+  .creepBtn{min-height:42px}
+  .sq{min-height:34px}
   .ocard{min-width:0;width:calc(100vw - 32px);padding:20px 18px}
   .ocard h2{font-size:23px}
   .ocard.tut .tsteps{font-size:12px;gap:8px}
@@ -296,9 +359,11 @@ header{min-width:0;overflow:hidden}
   .cols{gap:12px}
   .roster{gap:7px;max-width:100%}
   .rc{width:96px}
+  .rc .btn{min-height:34px;padding:6px 12px}
+  .upg,.itemRow{min-height:44px}
   .panelBox{min-width:0;width:calc(100vw - 32px);max-width:340px}
   .stats{gap:12px;font-size:12px}
-  .dbtn{min-width:62px;padding:4px 7px 5px}
+  .dbtn{min-width:62px;padding:6px 7px 7px;min-height:44px;justify-content:center}
   .dbtn b{font-size:14px}
   .dbtn span{font-size:7px}
   .stranded{width:calc(100vw - 32px);max-width:340px}
@@ -308,10 +373,80 @@ header{min-width:0;overflow:hidden}
   .relic .rt{font-size:9px}
 }
 
+
 /* the joystick is a touch affordance — hide it where there is no touch */
 @media (hover:hover) and (pointer:fine){
   #stick{opacity:.5}
   #stick:hover{opacity:1}
+}
+
+/* ── nothing on a touch screen should name a key ──────────────────────
+ * The item tiles carried 1 · 2 · 3 and the creep toggle carried SHIFT.
+ * On a phone those are instructions for hardware the player does not have,
+ * sitting in the corner of the only three buttons that matter. The controls
+ * themselves are unchanged — they were always tappable — so this only takes
+ * away the lie.
+ */
+/* ── the control dock ─────────────────────────────────────────────────
+ * Keyed to the input device, not the viewport width. Scoped by width it
+ * evaporated the moment the phone was turned sideways — and landscape is the
+ * orientation a 768×528 lair actually wants, so that is where players drift.
+ * Rotated, the stick reverted to sitting inside the canvas wrapper, at full
+ * opacity, directly on top of the exit tiles.
+ *
+ * `#app` reserves the dock's height rather than `#side` padding it: padding
+ * only protects the *end* of a scroll, so at rest the bottom rows of the crew
+ * list sat under an opaque, `touch-action:none` puck — a player with nine
+ * thieves tapped for the seventh and steered instead.
+ */
+@media (any-pointer:coarse){
+  #app{padding-bottom:calc(124px + env(safe-area-inset-bottom))}
+  /* the re-basing reads `offsetParent` live at touch time; a fixed element has
+     none, so its left/top are already viewport-relative and the maths holds */
+  #stick{position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom));
+    width:112px;height:112px;z-index:20;opacity:1;
+    background:rgba(14,23,18,.85);backdrop-filter:blur(2px)}
+  #knob{left:35px;top:35px}
+  /* the one control a hunted player needs, and it lived below the crew list
+     inside a scrolling sheet — findable only by scrolling, while being chased.
+     Held clear of the stick: two 112px targets 14px apart is a mis-tap that
+     costs a run. */
+  #btnExtract{position:fixed;z-index:20;right:12px;bottom:calc(18px + env(safe-area-inset-bottom));
+    width:auto;max-width:calc(100vw - 172px);min-height:50px;font-size:15px;padding:13px 18px;
+    box-shadow:0 6px 20px rgba(0,0,0,.6)}
+  #toast{bottom:calc(148px + env(safe-area-inset-bottom));max-width:calc(100vw - 40px)}
+
+  .itb .key,.creepBtn .key{display:none}
+  /* a 13px line of text is a link on a desktop and a dare on a phone; the
+     padding is invisible and makes it a target rather than a hazard */
+  .xlink{display:inline-block;padding:8px 2px}
+}
+
+/* ── a phone turned sideways ──────────────────────────────────────────
+ * A 768×528 lair wants a landscape screen, so this is where players end up.
+ * Stacking the sheet under the canvas there leaves the canvas 240px tall and
+ * the sheet 100px; side by side, the lair gets the height it was drawn for
+ * and the HUD becomes the rail it already is on a desktop.
+ */
+@media (any-pointer:coarse) and (orientation:landscape) and (max-height:520px){
+  #app{grid-template-columns:minmax(0,1fr) 216px;grid-template-rows:40px minmax(0,1fr);
+    grid-template-areas:'hd hd' 'main side';padding-bottom:0}
+  header{height:40px}
+  #side{border-top:none;border-left:1px solid var(--line);border-radius:0;box-shadow:none;
+    padding:6px 8px calc(6px + env(safe-area-inset-bottom))}
+  #side::before{display:none}
+  #cv{max-height:100%}
+  /* pinned left rather than centred: centring splits the leftover width into
+     two useless 70px margins, and pushed against one side it becomes a single
+     band wide enough to hold the dock clear of the lair entirely */
+  #cwrap{justify-content:flex-start;padding:4px}
+  #stick{left:auto;right:calc(228px + env(safe-area-inset-right));width:96px;height:96px;
+    bottom:calc(10px + env(safe-area-inset-bottom))}
+  #knob{left:29px;top:29px}
+  #btnExtract{right:calc(228px + env(safe-area-inset-right));bottom:calc(116px + env(safe-area-inset-bottom));
+    max-width:calc(100vw - 260px)}
+  #toast{bottom:calc(10px + env(safe-area-inset-bottom))}
+  #hintBar{display:none}
 }
 
 /* ── desktop ──────────────────────────────────────────────────────────
