@@ -817,6 +817,30 @@ export default function Raid() {
             </div>
           </div>
 
+          <div className="lbl">RELICS</div>
+          <div id="relicRow">
+            {relics.length === 0 ? (
+              <span className="relicNone">none yet — find a shrine</span>
+            ) : (
+              relics.map((k) => (
+                <span className="relic" key={k} title={`${RELICS[k].n} — ${RELICS[k].d}`}>
+                  <span className="em">{RELICS[k].em}</span>
+                  <span className="rt">{RELICS[k].n}</span>
+                </span>
+              ))
+            )}
+          </div>
+        </section>
+
+        {/* Everything a hand reaches for, in a band of its own.
+         *
+         * On a desktop this is simply the bottom half of the right rail and the
+         * seam is invisible. On a phone it is the whole point of the layout: the
+         * readouts sit above the lair, the controls sit below it, and the lair
+         * itself is in the middle of the screen instead of squeezed against one
+         * end of it. Splitting the markup is what lets one grid put them on
+         * opposite sides of the game. */}
+        <section id="under">
           <div id="itemBar">
             {ITEM_KEYS.map((k) => (
               <div
@@ -844,20 +868,6 @@ export default function Raid() {
             <span className="tn">{creep ? 'CREEPING' : 'CREEP'}</span>
             <span className="key">SHIFT</span>
           </button>
-
-          <div className="lbl">RELICS</div>
-          <div id="relicRow">
-            {relics.length === 0 ? (
-              <span className="relicNone">none yet — find a shrine</span>
-            ) : (
-              relics.map((k) => (
-                <span className="relic" key={k} title={`${RELICS[k].n} — ${RELICS[k].d}`}>
-                  <span className="em">{RELICS[k].em}</span>
-                  <span className="rt">{RELICS[k].n}</span>
-                </span>
-              ))
-            )}
-          </div>
 
           <div className="lbl">THE CREW</div>
           <div id="squadList" className="squadList">
