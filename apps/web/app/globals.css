@@ -439,3 +439,8 @@ header{min-width:0;overflow:hidden}
 #gate .gateName::placeholder{color:var(--dim);font-style:italic;letter-spacing:0}
 #gate .btn{width:100%;padding:11px;font-size:15px}
 #gate .sig{color:var(--line2);font-family:Consolas,monospace;font-size:10px;letter-spacing:.22em}
+/* the only useful thing on this page for someone who has no code, so it
+   reads a step brighter than the signature line under it */
+#gate .gateAsk{color:var(--dim);font-style:italic;font-size:12.5px}
+#gate .gateAsk .xlink{color:var(--bone);font-style:normal;font-family:Consolas,monospace;font-size:12px}
+#gate .gateAsk .xlink:hover{color:var(--gold);border-bottom-color:var(--gold)}

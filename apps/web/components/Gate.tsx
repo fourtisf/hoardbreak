@@ -134,6 +134,17 @@ export default function Gate({ children }: { children: React.ReactNode }): JSX.E
           ENTER
         </button>
       </form>
+      {/* Somebody standing at a locked door with no code needs somewhere to go
+          and ask for one, and this is the only screen they can see. It sits
+          above the signature line and reads brighter than it, because for a
+          visitor without a code this is the only thing on the page that helps. */}
+      <div className="gateAsk">
+        No code?{' '}
+        <a className="xlink" href="https://x.com/TheDragonjob" target="_blank" rel="noopener noreferrer">
+          𝕏 @TheDragonjob
+        </a>{' '}
+        hands them out.
+      </div>
       <span className="sig">THEDRAGONJOB.COM</span>
     </div>
   );
