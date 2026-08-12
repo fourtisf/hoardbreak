@@ -451,25 +451,42 @@ header{min-width:0;overflow:hidden}
  * themselves are unchanged — they were always tappable — so this only takes
  * away the lie.
  */
-/* ── the control dock ─────────────────────────────────────────────────
- * Keyed to the input device, not the viewport width. Scoped by width it
- * evaporated the moment the phone was turned sideways — and landscape is the
- * orientation a 768×528 lair actually wants, so that is where players drift.
- * Rotated, the stick reverted to sitting inside the canvas wrapper, at full
- * opacity, directly on top of the exit tiles.
- *
- * `#app` reserves the dock's height rather than `#side` padding it: padding
- * only protects the *end* of a scroll, so at rest the bottom rows of the crew
- * list sat under an opaque, `touch-action:none` puck — a player with nine
- * thieves tapped for the seventh and steered instead.
- */
+/* Anything true of a touch screen at any size: the stick is a real control
+   rather than a hint, and nothing names a key the device does not have. */
 @media (any-pointer:coarse){
+  #stick{opacity:1;background:rgba(14,23,18,.85);backdrop-filter:blur(2px)}
+  .itb .key,.creepBtn .key{display:none}
+  /* a 13px line of text is a link on a desktop and a dare on a phone; the
+     padding is invisible and makes it a target rather than a hazard */
+  .xlink{display:inline-block;padding:8px 2px}
+}
+
+/* ── the control dock ─────────────────────────────────────────────────
+ * A band along the bottom that belongs to the stick and the extract button
+ * and to nothing else. `#app` reserves its height rather than `#side`
+ * padding it: padding only protects the *end* of a scroll, so at rest the
+ * bottom rows of the crew list sat under an opaque, `touch-action:none`
+ * puck — a player with nine thieves tapped for the seventh and steered.
+ *
+ * The band is worth its 124px only where the screen is a phone's. On a
+ * touch screen with room — a tablet, a touchscreen laptop — it was 124px
+ * of empty black across the full width, taken from the lair and from the
+ * rail, to hold a stick that has a whole lair corner to sit in. So the
+ * dock is scoped to small screens; larger ones keep the stick inside the
+ * canvas where it always was, and get the height back.
+ *
+ * Size, not device — and both axes: scoped by width alone the dock evaporated
+ * the moment a phone was turned sideways, which is the orientation a 768×528
+ * lair wants. A narrow screen is a phone held upright; a short one is the same
+ * phone on its side. The width half matches the layout block exactly, so a
+ * screen either gets the stacked bands and the dock or neither.
+ */
+@media (any-pointer:coarse) and (max-width:480px), (any-pointer:coarse) and (max-height:600px){
   #app{padding-bottom:calc(124px + env(safe-area-inset-bottom))}
   /* the re-basing reads `offsetParent` live at touch time; a fixed element has
      none, so its left/top are already viewport-relative and the maths holds */
   #stick{position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom));
-    width:112px;height:112px;z-index:20;opacity:1;
-    background:rgba(14,23,18,.85);backdrop-filter:blur(2px)}
+    width:112px;height:112px;z-index:20}
   #knob{left:35px;top:35px}
   /* the one control a hunted player needs, and it lived below the crew list
      inside a scrolling sheet — findable only by scrolling, while being chased.
@@ -481,11 +498,6 @@ header{min-width:0;overflow:hidden}
   /* the bottom of the screen is the lair now — a toast there covers the thing
      it is commenting on */
   #toast{top:calc(52px + env(safe-area-inset-top));bottom:auto;max-width:calc(100vw - 40px)}
-
-  .itb .key,.creepBtn .key{display:none}
-  /* a 13px line of text is a link on a desktop and a dare on a phone; the
-     padding is invisible and makes it a target rather than a hazard */
-  .xlink{display:inline-block;padding:8px 2px}
 }
 
 /* ── a phone turned sideways ──────────────────────────────────────────
