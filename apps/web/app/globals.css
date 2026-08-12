@@ -275,19 +275,21 @@ header{min-width:0;overflow:hidden}
   #helpBtn .helpShort{display:inline}
   .brand .brandLong{display:none}
   .brand .brandShort{display:inline}
-  /* ── the lair takes what it needs, the sheet takes the rest ──────────
-   * `1fr` on the canvas row centred a 263px-tall canvas inside a 430px box
-   * and left a black band above it the size of a third of the screen, while
-   * the sheet below was capped at 40vh and scrolled inside itself. Two
-   * nested scrollers and a hole between them. The canvas row is now sized to
-   * the canvas, and everything it was hoarding goes to the sheet.
+  /* ── the game goes where the hands are ───────────────────────────────
+   * A phone is held at the bottom. Putting the lair at the top and the HUD
+   * under it meant the thing you are playing sat furthest from your thumbs,
+   * with your own hand between you and it, while numbers you glance at twice
+   * a minute took the reachable half of the screen.
+   *
+   * Inverted: readouts up top where a glance costs nothing, the lair down
+   * where the eyes and the thumbs already are, and the stick below that
+   * again in a band of its own — so nothing is ever covering the lair.
    */
-  #app{grid-template-rows:44px auto minmax(0,1fr)}
-  #cwrap{padding:4px 4px 0;flex:0 0 auto}
-  #side{border-left:none;border-top:1px solid var(--line);padding:8px 10px;
-    border-radius:14px 14px 0 0;box-shadow:0 -8px 24px rgba(0,0,0,.5)}
-  #side::before{content:'';display:block;width:34px;height:4px;border-radius:2px;
-    background:var(--line2);margin:0 auto 6px}
+  #app{grid-template-rows:44px minmax(0,1fr) auto;grid-template-areas:'hd' 'side' 'main'}
+  #cwrap{padding:0 4px 2px;flex:0 0 auto}
+  #hintBar{order:-1;padding:3px 6px 2px}
+  #side{border-left:none;border-bottom:1px solid var(--line);padding:8px 10px;
+    border-radius:0 0 14px 14px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
   #feed{min-height:34px;max-height:56px}
 
   /* the canvas row is `auto`, so `#cv{max-height:100%}` has no definite basis
@@ -329,7 +331,8 @@ header{min-width:0;overflow:hidden}
   .sq .sl{font-size:8px}
   .shp{width:30px;height:5px}
   .heldChip{font-size:7px;padding:1px 3px}
-  #hintBar{font-size:10px;padding:2px 6px 4px}
+  #hintBar{font-size:10px}
+  main{justify-content:flex-end}
 
   /* ── things a thumb has to hit ───────────────────────────────────────
    * Measured, not guessed: on a 360px screen the pause button was painted
