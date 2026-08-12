@@ -447,3 +447,13 @@ header{min-width:0;overflow:hidden}
 #gate .gateAsk{color:var(--dim);font-style:italic;font-size:12.5px}
 #gate .gateAsk .xlink{color:var(--bone);font-style:normal;font-family:Consolas,monospace;font-size:12px}
 #gate .gateAsk .xlink:hover{color:var(--gold);border-bottom-color:var(--gold)}
+/* the contract address, or an honest note that there is not one yet. Monospace
+   because it is a value to be checked character by character, not read. */
+.caRow{display:flex;align-items:center;gap:7px;font-family:Consolas,monospace;font-size:10px;letter-spacing:.1em}
+.caTag{color:var(--dim);letter-spacing:.22em}
+.caSoon{color:var(--line2)}
+.caVal{color:var(--bone);letter-spacing:.06em}
+.caCopy{background:#12251b;border:1px solid var(--line2);border-radius:5px;color:var(--em);
+  font-family:Consolas,monospace;font-size:9px;letter-spacing:.12em;padding:3px 7px;cursor:pointer}
+.caCopy:hover{border-color:var(--em);color:#8affc0}
+.caCopy:focus-visible{outline:2px solid var(--em);outline-offset:2px}

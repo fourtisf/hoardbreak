@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { NAME_MAX, cleanName } from '@dragonjob/shared';
 import { getMeta, mutate } from '@/lib/store';
 import LairCanvas from './LairCanvas';
+import CaRow from './CaRow';
 
 /**
  * Invitation gate.
@@ -150,6 +151,7 @@ export default function Gate({ children }: { children: React.ReactNode }): JSX.E
         </a>{' '}
         hands them out.
       </div>
+      <CaRow />
       <span className="sig">THEDRAGONJOB.COM</span>
     </div>
   );
