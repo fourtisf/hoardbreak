@@ -9,7 +9,7 @@
 import { describe, expect, it } from 'vitest';
 import { TUNING, UD } from '@dragonjob/engine/headless';
 import { createMeta, markPlayed, newThief, type Meta } from '../src/meta.js';
-import { crewDps, dragonHpAt, glassCount, slayerReadiness } from '../src/slayer.js';
+import { crewDps, dragonHpAt, glassCount, huntLines, slayerReadiness } from '../src/slayer.js';
 
 const withCrew = (kinds: Parameters<typeof newThief>[1][], xp = 0): Meta => {
   const m = createMeta('2026-08-11');
@@ -91,5 +91,61 @@ describe('the daily streak', () => {
     const m = createMeta('2026-08-31');
     markPlayed(m, '2026-08-31');
     expect(markPlayed(m, '2026-09-01')).toBe(2);
+  });
+});
+
+/**
+ * What the game says when the wyrm is up.
+ *
+ * The bug this pins: three separate places told the player to run the moment it
+ * opened its eyes, while the wyrm's own panel said their crew could kill it. Two
+ * opposite instructions at once read as "the fight is never allowed", so players
+ * stopped believing the dragon could be fought at all.
+ */
+describe('what it says when the wyrm hunts', () => {
+  it('tells a crew that can win that it can win — on every line, not just one', () => {
+    const l = huntLines('ready');
+    expect(l.strip).toMatch(/can be killed/);
+    expect(l.hint).toMatch(/can kill it/);
+    expect(l.wake).toMatch(/can be killed/);
+    // and never orders them out
+    expect(`${l.strip} ${l.hint} ${l.wake}`).not.toMatch(/EXTRACT|exit tiles/);
+  });
+
+  it('tells a crew that cannot win to leave — on every line', () => {
+    const l = huntLines('flee');
+    expect(l.strip).toMatch(/EXTRACT/);
+    expect(l.hint).toMatch(/exit tiles/);
+    expect(l.wake).toMatch(/exit tiles/);
+    expect(`${l.strip} ${l.hint} ${l.wake}`).not.toMatch(/can be killed|can kill it/);
+  });
+
+  it('leaves the middle case genuinely open, and says so both ways', () => {
+    const l = huntLines('risky');
+    expect(l.hint).toMatch(/fight/);
+    expect(l.hint).toMatch(/exit/);
+  });
+
+  it('says something different for each verdict — a line that never changes teaches nothing', () => {
+    const strips = (['flee', 'risky', 'ready'] as const).map((g) => huntLines(g).strip);
+    expect(new Set(strips).size).toBe(3);
+  });
+
+  it('matches the verdict a real starting crew gets', () => {
+    // the four everyone begins with, at depth 1: the engine's balance test
+    // measures that fight as unwinnable, so the copy has to send them home
+    const r = slayerReadiness(createMeta('2026-08-11'), 1);
+    expect(r.grade).toBe('flee');
+    expect(huntLines(r.grade).hint).toMatch(/Not with this crew/);
+  });
+
+  it('matches the verdict a full, levelled crew gets', () => {
+    // nine levelled bodies: the same balance test measures them killing it
+    const r = slayerReadiness(
+      withCrew(['golem', 'emberkin', 'emberkin', 'golem', 'emberkin', 'bruiser', 'emberkin', 'golem', 'emberkin'], 40),
+      1,
+    );
+    expect(r.grade).not.toBe('flee');
+    expect(huntLines(r.grade).hint).not.toMatch(/Not with this crew/);
   });
 });

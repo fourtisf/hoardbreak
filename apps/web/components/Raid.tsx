@@ -31,7 +31,8 @@ import {
   type RelicKey,
   type RunState,
 } from '@dragonjob/engine';
-import { applyRunResult, markPlayed, shareText, slayerReadiness, snapshotRunMeta, verdictFor } from '@dragonjob/shared';
+import { applyRunResult, huntLines, markPlayed, shareText, slayerReadiness, snapshotRunMeta, verdictFor } from '@dragonjob/shared';
+import type { Readiness } from '@dragonjob/shared';
 import { abandonRun, snapshotJSON } from '@dragonjob/engine';
 import { getMeta, markTutorialSeen, mutate, setLastRun, tutorialSeen } from '@/lib/store';
 import { disarmRaid, raidArmed } from '@/lib/entry';
@@ -84,14 +85,28 @@ function swingingAt(s: RunState): { name: string; foe: string } | null {
 }
 
 /**
+ * What an awake wyrm means for the crew that is standing in front of it.
+ *
+ * The game used to shout "RUN" from three places the moment it opened its eyes
+ * — the strip across the canvas, the hint bar and the wake panel — while the
+ * only honest reading sat quietly in the wyrm's own box saying "your crew can
+ * take it". A player being told two opposite things at once concludes the fight
+ * is never allowed, which is not true and is not the design: the wyrm is a wall
+ * you eventually break, and the game has to say which side of it you are on.
+ *
+ * All three lines now come from the same verdict `slayerReadiness` computes.
+ */
+type Grade = Readiness['grade'];
+
+/**
  * The hint bar under the canvas, rewritten every frame.
  *
  * The prototype showed one static control reminder forever. A player who has
  * never seen the game does not need to be told about hotkeys — they need to be
  * told what to do *next*. First match wins, most urgent first.
  */
-function coachFor(s: RunState, inZoneCount: number): string {
-  if (s.dragon.awake) return '☠ IT HUNTS — get everyone onto the exit tiles and press E';
+function coachFor(s: RunState, inZoneCount: number, grade: Grade): string {
+  if (s.dragon.awake) return huntLines(grade).hint;
   // the lockdown outranks everything short of the wyrm: the room you are in
   // stopped being the problem the moment they went to stand on the door
   if (s.sealed && !s.units.some((u) => u.ord))
@@ -125,9 +140,9 @@ function coachFor(s: RunState, inZoneCount: number): string {
   return '🕹 Follow the golden arrow · hold SHIFT to creep — slower, but they will not see you';
 }
 
-const wakeHintFor = (s: RunState): string =>
+const wakeHintFor = (s: RunState, grade: Grade): string =>
   s.dragon.awake
-    ? 'IT HUNTS. Get to the green tiles.'
+    ? huntLines(grade).wake
     : s.stage >= 2
       ? 'It stirs. Guards are waking. Leave soon.'
       : s.stage >= 1
@@ -189,7 +204,7 @@ export default function Raid() {
   const [held, setHeld] = useState<readonly number[]>([]);
   const audioRef = useRef<{ muted: boolean } | null>(null);
   const runRef = useRef<RunState | null>(null);
-  const readyRef = useRef('');
+  const readyRef = useRef<Readiness | null>(null);
   const pickedRef = useRef<number | null>(null);
   const felt = useRef({ seen: false, stirs: false, woke: false });
 
@@ -274,13 +289,15 @@ export default function Raid() {
     runRef.current = run;
 
     // computed once: the roster cannot change mid-raid, so neither can the answer
-    readyRef.current = slayerReadiness(meta, depth).line;
+    readyRef.current = slayerReadiness(meta, depth);
     // the fallen are gone from the roster by the time the card is built, so
     // their names are taken now, while they are still on it
     const crewAtStart = meta.crew.length;
     const nameOf = new Map(meta.crew.map((t) => [t.tid, t.name]));
 
-    const renderer = createRenderer(canvas);
+    const renderer = createRenderer(canvas, {
+      huntLine: () => huntLines(readyRef.current?.grade ?? 'flee').strip,
+    });
     renderer.buildRockCache(run);
     const audio = createAudio();
     audio.muted = getMeta().muted;
@@ -383,7 +400,8 @@ export default function Raid() {
       setT(sLoot.current, fmt(s.loot));
       setT(wakePct.current, `${Math.floor(s.wake)}%`);
       if (wakeFill.current) wakeFill.current.style.width = `${s.wake}%`;
-      setT(wakeHint.current, wakeHintFor(s));
+      const grade = readyRef.current?.grade ?? 'flee';
+      setT(wakeHint.current, wakeHintFor(s, grade));
 
       // The wyrm's own bar, only once it is awake. Before that it would just be
       // a number to stare at; after, it is the single fact deciding fight or run.
@@ -403,7 +421,7 @@ export default function Raid() {
         const pct = Math.max(0, (s.dragon.hp / s.dragon.max) * 100);
         setT(wyrmPct.current, `${Math.ceil(pct)}%`);
         if (wyrmFill.current) wyrmFill.current.style.width = `${pct}%`;
-        setT(wyrmCall.current, readyRef.current);
+        setT(wyrmCall.current, readyRef.current?.line ?? '');
       }
 
       const inz = extractReady(s);
@@ -411,7 +429,7 @@ export default function Raid() {
         hintBar.current,
         pickedRef.current !== null && !s.dragon.awake
           ? `◎ ${s.units.find((u) => u.tid === pickedRef.current)?.name ?? 'They'} alone — tap where they should hold`
-          : coachFor(s, inz),
+          : coachFor(s, inz, grade),
       );
 
       const stolen = Math.round(100 * (1 - s.hoard.pool / s.hoard.pool0));

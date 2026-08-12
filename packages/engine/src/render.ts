@@ -74,7 +74,20 @@ export function paintLair(g: Ctx, s: RunState): void {
   }
 }
 
-export function createRenderer(canvas: HTMLCanvasElement): Renderer {
+export interface RendererOptions {
+  /**
+   * What the top strip says once the wyrm is up.
+   *
+   * The engine knows how much health the thing has; it does not know how hard
+   * the crew hits, because that lives in the hideout roster. So the host — which
+   * does know — supplies the line, and a game that can win the fight stops being
+   * told to run from it. Default is the honest answer for most crews.
+   */
+  huntLine?: () => string;
+}
+
+export function createRenderer(canvas: HTMLCanvasElement, opts: RendererOptions = {}): Renderer {
+  const huntLine = opts.huntLine ?? (() => '☠ IT HUNTS — get your crew to the exit and EXTRACT');
   const C = canvas.getContext('2d') as Ctx;
   C.imageSmoothingEnabled = false;
   let rockCv: HTMLCanvasElement | null = null;
@@ -720,7 +733,7 @@ export function createRenderer(canvas: HTMLCanvasElement): Renderer {
     C.textAlign = 'left';
     if (s.dragon.awake) {
       C.fillStyle = '#ff9aa6';
-      C.fillText('☠ IT HUNTS — get your crew to the green exit and EXTRACT', 10, 16);
+      C.fillText(huntLine(), 10, 16);
     } else {
       C.fillStyle = s.creep ? '#8fd4ff' : '#8affc0';
       C.fillText(

@@ -77,3 +77,46 @@ export function slayerReadiness(meta: Meta, depth: number): Readiness {
 
   return { ttk, dps, dragonHp, glass, grade, line };
 }
+
+/**
+ * The three things the game says when the wyrm is up.
+ *
+ * They used to be written in three different places — the strip across the
+ * canvas, the hint bar and the wake panel — and all three said "run", while the
+ * wyrm's own box said "your crew can take it". A player told two opposite things
+ * at once concludes the fight is simply not allowed, which is neither true nor
+ * the design: the wyrm is a wall you eventually break, and the game has to say
+ * which side of it you are standing on.
+ *
+ * One verdict in, three lines out, so they cannot drift apart again.
+ */
+export interface HuntLines {
+  /** the strip across the top of the lair */
+  strip: string;
+  /** the coach line under the canvas */
+  hint: string;
+  /** the one-liner in the wake panel */
+  wake: string;
+}
+
+export function huntLines(grade: Readiness['grade']): HuntLines {
+  if (grade === 'ready') {
+    return {
+      strip: '⚔ IT HUNTS — and it can be killed. Get everyone onto it.',
+      hint: '⚔ Your crew can kill it — put everyone on the wyrm and hold. Or take the gold and go.',
+      wake: 'IT HUNTS. And it can be killed.',
+    };
+  }
+  if (grade === 'risky') {
+    return {
+      strip: '⚔ IT HUNTS — you could take it, or lose everyone trying.',
+      hint: '⚔ Close either way — commit to the fight or run for the exit, but decide now',
+      wake: 'IT HUNTS. This one could go either way.',
+    };
+  }
+  return {
+    strip: '☠ IT HUNTS — get your crew to the exit and EXTRACT',
+    hint: '☠ Not with this crew — get everyone onto the exit tiles and press E',
+    wake: 'IT HUNTS. Get to the exit tiles.',
+  };
+}
