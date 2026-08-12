@@ -7,7 +7,6 @@
  * that collects it and any future API that accepts it agree.
  */
 import { describe, expect, it } from 'vitest';
-import { boardRows } from '../src/board.js';
 import { createMeta } from '../src/meta.js';
 import { NAME_MAX, cleanName, exportSave, importSave } from '../src/savecode.js';
 
@@ -34,22 +33,6 @@ describe('names', () => {
   it('keeps letters outside ASCII — plenty of players do not write in English', () => {
     expect(cleanName('  Ayu  ')).toBe('Ayu');
     expect(cleanName('naga日本')).toBe('naga日本');
-  });
-});
-
-describe('the board', () => {
-  it('puts the player on it under their own name', () => {
-    const rows = boardRows('2026-08-11', 1, 9_999_999, 'Alfa');
-    expect(rows[0]?.n).toBe('Alfa');
-    expect(rows[0]?.you).toBe(true);
-  });
-
-  it('falls back to "you" for a hideout that has not been named yet', () => {
-    expect(boardRows('2026-08-11', 1, 9_999_999)[0]?.n).toBe('you');
-  });
-
-  it('does not mistake a whitespace name for a real one', () => {
-    expect(boardRows('2026-08-11', 1, 9_999_999, '   ')[0]?.n).toBe('you');
   });
 });
 

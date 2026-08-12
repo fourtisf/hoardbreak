@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   CREW_CAP,
   CREW_KINDS,
@@ -20,7 +20,6 @@ import {
   type UpgradeKey,
 } from '@dragonjob/engine';
 import {
-  boardRows,
   exportSave,
   importSave,
   slayerPlan,
@@ -37,6 +36,7 @@ import {
 import { getMeta, mutate, replaceMeta, resetMeta, useLastRun, useMeta } from '@/lib/store';
 import { armRaid } from '@/lib/entry';
 import { toast } from '@/lib/toast';
+import { fetchBoard, type BoardState } from '@/lib/board';
 import SpriteCanvas from './SpriteCanvas';
 import Toast from './Toast';
 
@@ -48,7 +48,17 @@ export default function Hideout() {
   const date = useMemo(() => todayUTC(), []);
   const mod = modFor(date, meta.depth);
   const unlocked = unlockedDepth(meta);
-  const rows = boardRows(date, meta.depth, meta.todayBestByDepth[meta.depth] ?? 0, meta.name);
+  // the real board, or an honest silence — never invented rivals
+  const [board, setBoard] = useState<BoardState>({ k: 'loading' });
+  useEffect(() => {
+    let live = true;
+    void fetchBoard(date, meta.depth, meta.pid).then((s) => {
+      if (live) setBoard(s);
+    });
+    return () => {
+      live = false;
+    };
+  }, [date, meta.depth, meta.pid]);
   const bestHere = meta.bestByDepth[meta.depth] ?? 0;
   const stranded = needsConscript(meta);
   const ready = slayerReadiness(meta, meta.depth);
@@ -323,14 +333,25 @@ export default function Hideout() {
               <div className="lbl" style={{ marginBottom: 6 }}>
                 TODAY&apos;S BOARD — DEPTH {meta.depth}
               </div>
-              <div id="board">
-                {rows.map((r, i) => (
-                  <div className={`r${r.you ? ' you' : ''}`} key={`${r.n}-${i}`}>
-                    <span>{i + 1}</span>
-                    <b>{r.n}</b>
-                    <span>{fmt(r.s)}g</span>
+              <div className="rows">
+                {board.k === 'loading' && <div className="r">reading the board…</div>}
+                {board.k === 'down' && <div className="r">nobody is answering the board tonight</div>}
+                {board.k === 'empty' && <div className="r">nobody has come back from this one yet</div>}
+                {board.k === 'ok' &&
+                  board.standing.top.slice(0, 5).map((r, i) => (
+                    <div className={`r${r.you ? ' you' : ''}`} key={`${r.n}-${i}`}>
+                      <span>{i + 1}</span>
+                      <b>{r.n}</b>
+                      <span>{fmt(r.s)}g</span>
+                    </div>
+                  ))}
+                {board.k === 'ok' && board.standing.me && !board.standing.top.slice(0, 5).some((r) => r.you) && (
+                  <div className="r you">
+                    <span>{board.standing.rank}</span>
+                    <b>{board.standing.me.n}</b>
+                    <span>{fmt(board.standing.me.s)}g</span>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>

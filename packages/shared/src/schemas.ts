@@ -57,6 +57,8 @@ export const zBoardRow = z.object({
   s: z.number().int().nonnegative(),
   you: z.boolean().optional(),
 });
+/** One row of the board. Derived from the schema so the two cannot drift. */
+export type BoardRow = z.infer<typeof zBoardRow>;
 
 /**
  * v0.3: the board is keyed by depth as well as date, because a single global

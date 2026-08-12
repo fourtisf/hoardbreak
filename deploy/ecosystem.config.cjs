@@ -34,5 +34,32 @@ module.exports = {
       out_file: '/var/log/dragonjob/out.log',
       time: true,
     },
+    /*
+     * The daily board.
+     *
+     * Its own process on purpose: the game is written to work with the board
+     * unreachable, so a crash here must not take the site down with it. Run
+     * through `tsx` for the same reason the web app is not pre-compiled — the
+     * engine ships TypeScript, and the board validates scores by generating the
+     * same lair the player raided. One source of truth beats a build step.
+     */
+    {
+      name: 'dragonjob-board',
+      cwd: `${__dirname}/../services/api`,
+      script: './node_modules/.bin/tsx',
+      interpreter: '/bin/sh',
+      args: 'src/server.ts',
+      instances: 1,
+      exec_mode: 'fork',
+      max_memory_restart: '256M',
+      env: {
+        NODE_ENV: 'production',
+        PORT: '3100',
+        DJ_DB: '/var/lib/dragonjob/board.db',
+      },
+      error_file: '/var/log/dragonjob/board-err.log',
+      out_file: '/var/log/dragonjob/board-out.log',
+      time: true,
+    },
   ],
 };

@@ -37,6 +37,7 @@ import { abandonRun, snapshotJSON } from '@dragonjob/engine';
 import { getMeta, markTutorialSeen, mutate, setLastRun, tutorialSeen } from '@/lib/store';
 import { disarmRaid, raidArmed } from '@/lib/entry';
 import { toast } from '@/lib/toast';
+import { postRun } from '@/lib/board';
 import SpriteCanvas from './SpriteCanvas';
 import Toast from './Toast';
 
@@ -59,6 +60,13 @@ interface OverCard {
   nextDepth: number;
   /** the pasteable result card */
   share: string;
+}
+
+/** 1st, 2nd, 3rd… — a rank reads as a placing, a bare number reads as a score. */
+function ordinal(n: number): string {
+  const rem100 = n % 100;
+  if (rem100 >= 11 && rem100 <= 13) return `${n}th`;
+  return `${n}${['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
 }
 
 /** Only touch the DOM when the text actually changed (the prototype's `setT`). */
@@ -394,6 +402,23 @@ export default function Raid() {
         setLastRun(
           `Depth ${m.depth} awaits · best depth cleared: ${m.best} · today’s biggest heist: ${fmt(m.todayBest)}g`,
         );
+
+        /* Post it to the shared board.
+           Deliberately after the payout is already applied and the card is
+           already up: the run belongs to the player whether or not a server
+           ever hears about it, and nothing on screen waits for this. A refusal
+           or a timeout is one quiet toast, never an interruption. */
+        void postRun({
+          pid: m.pid,
+          name: m.name,
+          date,
+          depth,
+          loot: Math.round(r.loot),
+          verdict: verdict.id,
+        }).then((res) => {
+          if (res.ok && res.rank) toast(`Posted to the board — ${ordinal(res.rank)} tonight at depth ${depth}.`);
+          else if (res.why && res.why !== 'nothing to post') toast(`The board did not hear that one: ${res.why}`);
+        });
       }
     };
 

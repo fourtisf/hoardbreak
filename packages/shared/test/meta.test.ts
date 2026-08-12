@@ -22,7 +22,6 @@ import {
 } from '@dragonjob/engine/headless';
 import {
   applyRunResult,
-  boardRows,
   buyItem,
   buyUpgrade,
   commitRunStart,
@@ -378,25 +377,6 @@ describe('v0.3 · choosing tonight’s depth', () => {
     expect(m.todayBestByDepth).toEqual({});
     expect(m.bestByDepth[1]).toBe(2000); // all-time survives the rollover
     expect(m.gold).toBe(300 + 2000);
-  });
-});
-
-describe('v0.3 · the board ranks within a depth', () => {
-  it('is deterministic per day and depth, and deeper boards score higher', () => {
-    const a = boardRows('2026-03-14', 3, 0);
-    expect(boardRows('2026-03-14', 3, 0)).toEqual(a);
-    expect(boardRows('2026-03-14', 4, 0)).not.toEqual(a);
-
-    const shallow = boardRows('2026-03-14', 1, 0).filter((r) => !r.you);
-    const deep = boardRows('2026-03-14', 6, 0).filter((r) => !r.you);
-    const top = (rows: typeof shallow): number => Math.max(...rows.map((r) => r.s));
-    expect(top(deep)).toBeGreaterThan(top(shallow));
-  });
-
-  it('puts you on the board and sorts you into place', () => {
-    const rows = boardRows('2026-03-14', 1, 999999);
-    expect(rows[0]!.you).toBe(true);
-    expect(rows).toHaveLength(5);
   });
 });
 

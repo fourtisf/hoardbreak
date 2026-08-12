@@ -6,7 +6,6 @@
  */
 
 export * from './meta.js';
-export * from './board.js';
 export * from './schemas.js';
 export * from './verdict.js';
 export * from './slayer.js';

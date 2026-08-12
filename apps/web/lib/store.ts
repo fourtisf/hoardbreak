@@ -45,6 +45,8 @@ function hydrate(raw: unknown): Meta {
     best: Math.max(0, num(p.best, base.best)),
     uid: Math.max(0, num(p.uid, base.uid)),
     name: typeof p.name === 'string' ? p.name : '',
+    // a save written before the board existed gets an id now, not never
+    pid: typeof p.pid === 'string' && p.pid ? p.pid : base.pid,
     muted: p.muted === true,
     day: typeof p.day === 'string' ? p.day : base.day,
     streak: Math.max(0, num(p.streak, 0)),

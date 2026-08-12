@@ -1,10 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { MODS, fmt, modFor, todayUTC } from '@dragonjob/engine';
-import { boardRows } from '@dragonjob/shared';
 import { useMeta } from '@/lib/store';
+import { fetchBoard, type BoardState } from '@/lib/board';
 
 const DAYS_BACK = 7;
 
@@ -22,7 +22,24 @@ export default function Board() {
   const [day, setDay] = useState(dates[0] as string);
   const [depth, setDepth] = useState(1);
   const isToday = day === dates[0];
-  const rows = boardRows(day, depth, isToday ? (meta.todayBestByDepth[depth] ?? 0) : 0, meta.name);
+
+  /**
+   * The board is a real thing on a real server now, which means it can be
+   * down. It used to be four invented rivals with plausible scores — worse than
+   * nothing, because it told players they were competing when they were alone.
+   */
+  const [state, setState] = useState<BoardState>({ k: 'loading' });
+  const load = useCallback(() => {
+    let live = true;
+    setState({ k: 'loading' });
+    void fetchBoard(day, depth, meta.pid).then((s) => {
+      if (live) setState(s);
+    });
+    return () => {
+      live = false;
+    };
+  }, [day, depth, meta.pid]);
+  useEffect(load, [load]);
 
   return (
     <div id="camp">
@@ -58,15 +75,51 @@ export default function Board() {
           <div className="panelBox" style={{ minWidth: 280 }}>
             <div className="lbl" style={{ marginBottom: 6 }}>
               LEADERBOARD — DEPTH {depth}
+              {state.k === 'ok' && (
+                <span style={{ color: 'var(--dim)', letterSpacing: 0 }}> · {state.standing.players} in tonight</span>
+              )}
             </div>
-            <div id="board">
-              {rows.map((r, i) => (
-                <div className={`r${r.you ? ' you' : ''}`} key={`${r.n}-${i}`}>
-                  <span>{i + 1}</span>
-                  <b>{r.n}</b>
-                  <span>{fmt(r.s)}g</span>
+            <div className="rows">
+              {state.k === 'loading' && <div className="r">reading the board…</div>}
+              {state.k === 'down' && (
+                <>
+                  <div className="r" style={{ color: 'var(--red)' }}>
+                    The board is out of reach.
+                  </div>
+                  <div className="r" style={{ color: 'var(--dim)' }}>
+                    {state.why} — your run is safe, it just has nobody to boast to yet.
+                  </div>
+                  <button className="btn" style={{ marginTop: 8, padding: '5px 12px', fontSize: 13 }} onClick={load}>
+                    TRY AGAIN
+                  </button>
+                </>
+              )}
+              {state.k === 'empty' && (
+                <div className="r" style={{ color: 'var(--dim)' }}>
+                  Nobody has come back from this one yet. Be the first name on it.
                 </div>
-              ))}
+              )}
+              {state.k === 'ok' &&
+                state.standing.top.map((r, i) => (
+                  <div className={`r${r.you ? ' you' : ''}`} key={`${r.n}-${i}`}>
+                    <span>{i + 1}</span>
+                    <b>{r.n}</b>
+                    <span>{fmt(r.s)}g</span>
+                  </div>
+                ))}
+              {/* somebody outside the top ten still deserves to know where they stand */}
+              {state.k === 'ok' && state.standing.me && !state.standing.top.some((r) => r.you) && (
+                <>
+                  <div className="r" style={{ color: 'var(--dim)' }}>
+                    ⋯
+                  </div>
+                  <div className="r you">
+                    <span>{state.standing.rank}</span>
+                    <b>{state.standing.me.n}</b>
+                    <span>{fmt(state.standing.me.s)}g</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -74,7 +127,7 @@ export default function Board() {
             <div className="lbl" style={{ marginBottom: 6 }}>
               PAST DAYS
             </div>
-            <div id="board">
+            <div className="rows">
               {dates.map((d) => (
                 <div
                   className={`r${d === day ? ' you' : ''}`}
@@ -129,8 +182,8 @@ export default function Board() {
       <div
         style={{ fontSize: 11, fontStyle: 'italic', color: 'var(--dim)', maxWidth: 520, textAlign: 'center' }}
       >
-        Phase 1 board — rivals are seeded from the day and depth, your score is this session&apos;s best. Phase 2
-        wires this to the real Redis board (`lb:&#123;date&#125;:&#123;depth&#125;`).
+        One row per player per night. Your best run of the night is the one that stands — a second run that went
+        badly does not take the first one away.
       </div>
     </div>
   );

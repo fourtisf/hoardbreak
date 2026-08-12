@@ -36,6 +36,15 @@ export interface Meta {
    * machine should not make you a stranger again.
    */
   name: string;
+  /**
+   * Who this save is on the board.
+   *
+   * Not a login and not a claim to anything — it exists so the board can keep
+   * one row per player instead of one per run, and so a player can find their
+   * own row on it. Generated once, travels with the save code, and the server
+   * shape-checks it and nothing more.
+   */
+  pid: string;
   /** sound off, remembered — a player who mutes once should stay muted */
   muted: boolean;
   gold: number;
@@ -110,9 +119,26 @@ export function newThief(meta: Meta, kind: CrewKind): RunThief {
 }
 
 /** A brand new hideout: 300 gold and four names you will get attached to. */
+/**
+ * A player id: 20 hex characters from the platform's CSPRNG.
+ *
+ * `crypto.randomUUID` would do, but this travels inside a save code that people
+ * paste around, so it is kept short and free of punctuation. Falls back to
+ * `Math.random` only where `crypto` is missing entirely — a duplicate id costs
+ * somebody a board row, not their hideout.
+ */
+export function newPid(): string {
+  const c = globalThis.crypto;
+  if (c && typeof c.getRandomValues === 'function') {
+    return [...c.getRandomValues(new Uint8Array(10))].map((b) => b.toString(16).padStart(2, '0')).join('');
+  }
+  return Array.from({ length: 20 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+}
+
 export function createMeta(day = ''): Meta {
   const meta: Meta = {
     name: '',
+    pid: newPid(),
     muted: false,
     gold: 300,
     tok: 0,

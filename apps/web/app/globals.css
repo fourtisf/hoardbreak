@@ -63,10 +63,12 @@ border-radius:10px;padding:7px 11px;cursor:pointer;margin-bottom:7px}
 .ud{font-size:9px;color:var(--dim);font-style:italic}
 .uc{margin-left:auto;font-family:Consolas,monospace;font-size:12px;color:var(--goldhi);white-space:nowrap}
 .ul{font-family:Consolas,monospace;font-size:10px;color:var(--dim)}
-#board{font-family:Consolas,monospace;font-size:11px}
-#board .r{display:flex;gap:8px;padding:2.5px 0;color:var(--dim)}
-#board .r b{color:var(--bone);font-weight:400;flex:1}
-#board .r.you{color:var(--gold)}#board .r.you b{color:var(--goldhi)}
+/* a class, not an id: three different lists on the board page use this, and an
+   id that appears three times is not an id */
+.rows{font-family:Consolas,monospace;font-size:11px}
+.rows .r{display:flex;gap:8px;padding:2.5px 0;color:var(--dim)}
+.rows .r b{color:var(--bone);font-weight:400;flex:1}
+.rows .r.you{color:var(--gold)}.rows .r.you b{color:var(--goldhi)}
 
 #app{position:fixed;inset:0;display:grid;grid-template-rows:48px 1fr;grid-template-columns:1fr 248px;
 grid-template-areas:'hd hd' 'main side'}
