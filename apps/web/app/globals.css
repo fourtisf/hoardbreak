@@ -167,13 +167,18 @@ opacity:0;transition:.25s;pointer-events:none;font-style:italic;white-space:nowr
 .depthRow{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
 .dbtn{background:#0f1d15;border:1px solid var(--line2);border-radius:10px;
   padding:5px 9px 6px;min-width:74px;display:flex;flex-direction:column;align-items:center;gap:1px;
-  color:var(--bone);cursor:pointer}
+  color:var(--bone);cursor:pointer;position:relative}
 .dbtn:hover{border-color:var(--em)}
 .dbtn b{font-family:'Pirata One',serif;font-size:16px;color:var(--gold);line-height:1}
 .dbtn span{font-family:Consolas,monospace;font-size:8px;letter-spacing:.04em;color:var(--dim);white-space:nowrap}
 .dbtn.on{border-color:var(--gold);background:#241f0e;box-shadow:0 0 12px rgba(255,215,94,.2)}
 .dbtn.on span{color:var(--goldhi)}
 .depthNote{font-size:10px;font-style:italic;color:var(--dim);text-align:center;max-width:460px}
+/* the rules a depth brings with it, named before it is chosen */
+.depthRules{margin-top:6px;display:flex;flex-direction:column;gap:2px;font-size:10.5px;font-style:italic;
+  color:var(--red);text-align:center;max-width:520px}
+.dbtn .dRules{position:absolute;top:2px;right:4px;font-style:normal;font-family:Consolas,monospace;
+  font-size:8px;color:var(--red);background:#2a0f14;border:1px solid #5a1f28;border-radius:3px;padding:0 3px}
 
 /* --- the guild fronts you a body when you have nothing left --- */
 .stranded{display:flex;align-items:center;gap:12px;background:#241010;border:1px solid #6b2424;

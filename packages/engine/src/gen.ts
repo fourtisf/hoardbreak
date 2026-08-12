@@ -21,6 +21,7 @@ import {
   TUNING,
   type GuardKind,
 } from './defs.js';
+import { depthRules } from './depth.js';
 import { carve, corridor, gi, revealAround } from './grid.js';
 import type { Guard, PathNode, RunState, RunThief } from './types.js';
 
@@ -188,6 +189,20 @@ export function genLair(s: RunState): void {
   };
 
   revealAround(s.revealed, 4 * T, 17 * T, s.mod.rev || TUNING.REVEAL_R_START);
+
+  /* What depth changes about the rules, rather than about the numbers.
+     Applied after everything is placed and *without* touching the generator's
+     rng stream — alerting a guard and setting the wake meter are states, not
+     rolls, so a lair at any depth is still byte-identical to the prototype's
+     (see `test/parity.test.ts`). */
+  const rules = depthRules(depth);
+  s.wake = rules.startWake;
+  if (rules.startWake >= TUNING.STAGE1_WAKE) s.stage = 1;
+  // the ones nearest the door: a garrison that is expecting you meets you at it
+  const byExit = s.guards
+    .map((g, i) => ({ i, d: Math.hypot(g.x - s.exitCtr.x, g.y - s.exitCtr.y) }))
+    .sort((a, b) => a.d - b.d);
+  for (const { i } of byExit.slice(0, rules.awakeGuards)) (s.guards[i] as Guard).alert = true;
 }
 
 /**

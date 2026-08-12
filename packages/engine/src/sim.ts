@@ -37,6 +37,7 @@ import {
 import { bfs, blockedPx, gi, revealAround, tileOf, walk } from './grid.js';
 import { createRng } from './rng.js';
 import { simSeedFrom } from './daily.js';
+import { depthRules } from './depth.js';
 import { genLair, spawnGuard } from './gen.js';
 import { clamp, dist } from './util.js';
 import type {
@@ -1229,7 +1230,7 @@ function update(s: RunState, dt: number, input: InputFrame): void {
       }
     }
   }
-  if (!s.sealed && hh.pool <= hh.pool0 * (1 - TUNING.SEAL_AT)) sealTheDoor(s);
+  if (!s.sealed && hh.pool <= hh.pool0 * (1 - depthRules(s.depth).sealAt)) sealTheDoor(s);
 
   /* guard deaths */
   for (let i = s.guards.length - 1; i >= 0; i--) {

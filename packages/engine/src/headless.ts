@@ -10,6 +10,7 @@ export * from './defs.js';
 export * from './types.js';
 export * from './rng.js';
 export * from './daily.js';
+export * from './depth.js';
 export * from './grid.js';
 export * from './util.js';
 export { genLair, spawnGuard, maxLootFor } from './gen.js';

@@ -11,6 +11,7 @@ import {
   UD,
   UPGRADES,
   UPGRADE_KEYS,
+  depthRules,
   fmt,
   lvlOf,
   modFor,
@@ -169,14 +170,26 @@ export default function Hideout() {
                   key={d}
                   className={`dbtn${d === meta.depth ? ' on' : ''}`}
                   onClick={() => pickDepth(d)}
-                  title={`${m.n} — ${m.d}`}
+                  title={[`${m.n} — ${m.d}`, ...depthRules(d).lines].join('\n')}
                 >
                   <b>{d}</b>
                   <span>{m.n}</span>
+                  {/* a rule that only shows up mid-run is an unfair rule */}
+                  {depthRules(d).lines.length > 0 && <i className="dRules">{depthRules(d).lines.length}</i>}
                 </button>
               );
             })}
           </div>
+          {/* Whatever is different about *this* lair, said before it is entered.
+              Depth used to be more health and more gold and nothing else; these
+              are rules, and a player choosing a depth is choosing them. */}
+          {depthRules(meta.depth).lines.length > 0 && (
+            <div className="depthRules">
+              {depthRules(meta.depth).lines.map((l) => (
+                <div key={l}>☠ {l}</div>
+              ))}
+            </div>
+          )}
           <div className="depthNote">
             Everyone who picks the same depth tonight raids the same lair — that is what the board ranks.
             {unlocked === 1 && ' Clear depth 1 to unlock deeper lairs.'}
@@ -205,6 +218,17 @@ export default function Hideout() {
               {meta.streak >= 2 ? ' days' : ' day'}
             </span>
           )}
+          {/* the streak used to be a number in a corner. Say what it is worth,
+              and say it beside the gold it pays into. */}
+          <span title="Paid once a night, for turning up — win or lose">
+            RETAINER{' '}
+            <b style={{ color: 'var(--gold)' }}>
+              {meta.retainerPaid === date
+                ? 'paid'
+                : `${fmt(retainerFor(Math.min(meta.streak + 1, RETAINER_CAP_DAYS)))}g`}
+            </b>
+            {meta.retainerPaid === date ? ' tonight' : ' next run'}
+          </span>
         </div>
 
         {/* The question every wipe against the dragon raises, answered before
