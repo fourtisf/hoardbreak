@@ -376,6 +376,8 @@ export interface RunState {
   cmdT: number;
   /** whether the crew is creeping this tick (v0.3) */
   creep: boolean;
+  /** what the wake banner shouts, decided by the host from the crew's readiness */
+  wakeCall: string;
   /** true the moment any guard first notices the crew — a clean run is a GHOST */
   everSpotted: boolean;
   /**

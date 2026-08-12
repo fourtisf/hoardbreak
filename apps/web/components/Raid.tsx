@@ -277,19 +277,22 @@ export default function Raid() {
        the prototype. Phase 2 swaps these three lines for POST /runs/start. --- */
     const date = todayUTC();
     const depth = meta.depth;
+    // the roster cannot change mid-raid, so the verdict is settled here and
+    // every line the game says about the wyrm is drawn from it
+    const ready = slayerReadiness(meta, depth);
     const run = createRun({
       seed: dailySeed(date, depth),
       depth,
       mod: modFor(date, depth),
       meta: snapshotRunMeta(meta),
       date,
+      wakeCall: huntLines(ready.grade).call,
     });
     // a generated prisoner burns a thief id whether or not anyone frees them
     if (run.freshPrisonerTid !== null) meta.uid = Math.max(meta.uid, run.freshPrisonerTid);
     runRef.current = run;
 
-    // computed once: the roster cannot change mid-raid, so neither can the answer
-    readyRef.current = slayerReadiness(meta, depth);
+    readyRef.current = ready;
     // the fallen are gone from the roster by the time the card is built, so
     // their names are taken now, while they are still on it
     const crewAtStart = meta.crew.length;

@@ -97,6 +97,8 @@ export interface HuntLines {
   hint: string;
   /** the one-liner in the wake panel */
   wake: string;
+  /** the second line of the banner the moment it opens its eyes */
+  call: string;
 }
 
 export function huntLines(grade: Readiness['grade']): HuntLines {
@@ -105,6 +107,7 @@ export function huntLines(grade: Readiness['grade']): HuntLines {
       strip: '⚔ IT HUNTS — and it can be killed. Get everyone onto it.',
       hint: '⚔ Your crew can kill it — put everyone on the wyrm and hold. Or take the gold and go.',
       wake: 'IT HUNTS. And it can be killed.',
+      call: 'KILL IT.',
     };
   }
   if (grade === 'risky') {
@@ -112,11 +115,13 @@ export function huntLines(grade: Readiness['grade']): HuntLines {
       strip: '⚔ IT HUNTS — you could take it, or lose everyone trying.',
       hint: '⚔ Close either way — commit to the fight or run for the exit, but decide now',
       wake: 'IT HUNTS. This one could go either way.',
+      call: 'FIGHT, OR RUN. NOW.',
     };
   }
   return {
     strip: '☠ IT HUNTS — get your crew to the exit and EXTRACT',
     hint: '☠ Not with this crew — get everyone onto the exit tiles and press E',
     wake: 'IT HUNTS. Get to the exit tiles.',
+    call: 'RUN.',
   };
 }

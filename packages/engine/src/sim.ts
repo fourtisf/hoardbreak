@@ -102,7 +102,7 @@ function wakeDragon(s: RunState): void {
   if (D.awake) return;
   D.awake = true;
   emit(s, 'WAKE_MILESTONE', 100);
-  s.banner = { t1: 'THE WYRM WAKES', t2: 'RUN.', l: TUNING.BANNER_WAKE, l0: TUNING.BANNER_WAKE };
+  s.banner = { t1: 'THE WYRM WAKES', t2: s.wakeCall, l: TUNING.BANNER_WAKE, l0: TUNING.BANNER_WAKE };
   s.shake = 10;
   feed(s, 'The mountain itself opens its eyes.', 'e');
   snd(s, 35, 1.2, 'sawtooth', 0.13, 30);
@@ -1354,6 +1354,15 @@ export interface CreateRunOptions {
   date: string;
   /** override the combat/fx stream seed (defaults to `simSeedFrom(seed)`) */
   simSeed?: number;
+  /**
+   * The second line of the banner when the wyrm wakes.
+   *
+   * It said "RUN." to everybody, including a crew the game's own numbers say
+   * can kill the thing in seven seconds — the loudest text in the game, telling
+   * a third of the roster's worth of players something false. The sim knows the
+   * wyrm's health but not how hard this crew hits, so the host decides.
+   */
+  wakeCall?: string;
 }
 
 export function createRun(opts: CreateRunOptions): RunState {
@@ -1402,6 +1411,7 @@ export function createRun(opts: CreateRunOptions): RunState {
     cmdOnly: null,
     cmdT: 0,
     creep: false,
+    wakeCall: opts.wakeCall ?? 'RUN.',
     everSpotted: false,
     sealed: false,
     deepTold: false,

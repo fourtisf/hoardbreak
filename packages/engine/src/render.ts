@@ -338,11 +338,33 @@ export function createRenderer(canvas: HTMLCanvasElement, opts: RendererOptions 
       C.fillRect(21, -13, 4, 2);
     }
     C.restore();
-    if (D.awake && D.hp < D.max) {
-      C.fillStyle = '#0a120d';
-      C.fillRect(dx - 34, dy - 34, 68, 5);
+    /* The wyrm's health, on the wyrm.
+       It used to appear only once the thing had already been hurt — so for the
+       whole opening of the fight there was nothing on screen saying it had
+       health at all, and players reasonably concluded it could not be damaged.
+       It now shows from the moment it opens its eyes, framed and numbered,
+       because "how much is left" is the only question during that fight.
+       A sleeping wyrm shows one too if something (a bear trap) has hurt it, but
+       only where the crew can see — a bar floating in unexplored dark would
+       give away where it sleeps. */
+    if (D.awake || (D.hp < D.max && s.revealed[tileOf(D.x, D.y)])) {
+      const bw = 78;
+      const bh = 7;
+      const bx = dx - bw / 2;
+      const by = dy - 44;
+      const frac = Math.max(0, D.hp) / D.max;
+      C.fillStyle = 'rgba(4,10,7,.88)';
+      C.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
+      C.strokeStyle = '#2c4a38';
+      C.lineWidth = 1;
+      C.strokeRect(bx - 0.5, by - 0.5, bw + 1, bh + 1);
       C.fillStyle = '#ff5a6e';
-      C.fillRect(dx - 34, dy - 34, (68 * Math.max(0, D.hp)) / D.max, 5);
+      C.fillRect(bx, by, bw * frac, bh);
+      C.font = 'bold 8px Consolas,monospace';
+      C.textAlign = 'center';
+      C.fillStyle = '#ffd0d6';
+      C.fillText(`WYRM ${Math.ceil(frac * 100)}%`, dx, by - 3);
+      C.textAlign = 'left';
     }
   }
 

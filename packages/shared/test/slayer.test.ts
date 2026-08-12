@@ -131,6 +131,13 @@ describe('what it says when the wyrm hunts', () => {
     expect(new Set(strips).size).toBe(3);
   });
 
+  it('does not shout RUN at a crew it has just told can win', () => {
+    // the banner is the loudest text in the game; it said RUN. to everybody
+    expect(huntLines('ready').call).not.toMatch(/RUN/);
+    expect(huntLines('ready').call).toMatch(/KILL IT/);
+    expect(huntLines('flee').call).toBe('RUN.');
+  });
+
   it('matches the verdict a real starting crew gets', () => {
     // the four everyone begins with, at depth 1: the engine's balance test
     // measures that fight as unwinnable, so the copy has to send them home
