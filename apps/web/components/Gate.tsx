@@ -9,22 +9,31 @@ import LairCanvas from './LairCanvas';
  * Invitation gate.
  *
  * This is a doorman, NOT security. The code ships in the client bundle, so
- * anyone who opens devtools can read it and anyone who sets one localStorage
- * key walks straight past. It exists to keep a closed beta closed, and it is
- * worth exactly that much. Anything that actually needs protecting has to be
- * checked on the server.
+ * anyone who opens devtools can read it and walks straight past. It exists to
+ * keep a closed beta closed, and it is worth exactly that much. Anything that
+ * actually needs protecting has to be checked on the server.
  *
- * It also takes a name, because the board was calling everybody "you" — which
- * is nobody. The name is asked for once, here, at the only moment the player is
- * already stopped and typing.
+ * The code is asked for on **every page load**, on purpose. It used to be
+ * remembered in localStorage, which meant a player saw the door exactly once
+ * and never again — including on a reload — so the door was invisible to the
+ * only people who had already been let in. Being asked again is the point of a
+ * closed beta. Walking between pages inside the app does not re-ask: this sits
+ * in the root layout, so only a real reload remounts it.
+ *
+ * The name is different, and stays remembered: it is who you are on the board,
+ * not a key to the door. Someone who has already given one is only asked for
+ * the code.
  */
-const KEY = 'dragonjob.access';
+/** the old "you are through" key, from when this was remembered — cleared on sight */
+const STALE_KEY = 'dragonjob.access';
 const CODE = process.env.NEXT_PUBLIC_ACCESS_CODE ?? '1998';
 
 export default function Gate({ children }: { children: React.ReactNode }): JSX.Element | null {
-  // null = we have not read localStorage yet; rendering the gate before we
-  // know would flash a locked door at people who are already through it
-  const [open, setOpen] = useState<boolean | null>(null);
+  const [open, setOpen] = useState(false);
+  // whether we have read the save yet. It decides if the name field belongs on
+  // the form, and a field that appears a tick late can tell someone off for
+  // leaving blank a box that was not on screen when they hit ENTER.
+  const [ready, setReady] = useState(false);
   const [needName, setNeedName] = useState(false);
   const [name, setName] = useState('');
   const [value, setValue] = useState('');
@@ -32,24 +41,25 @@ export default function Gate({ children }: { children: React.ReactNode }): JSX.E
   const first = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    let through = false;
+    // the name survives; the code never does
+    setNeedName(getMeta().name.trim().length === 0);
     try {
-      through = window.localStorage.getItem(KEY) === CODE;
+      window.localStorage.removeItem(STALE_KEY);
     } catch {
-      through = false; // private mode with storage blocked — ask every time
+      /* nothing to clear if storage is blocked */
     }
-    const named = getMeta().name.trim().length > 0;
-    setNeedName(!named);
-    // someone who is through the door but has no name yet still gets asked
-    setOpen(through && named);
+    setReady(true);
   }, []);
 
+  // `needName` is resolved after mount, and it decides which field `first`
+  // points at — without it in the deps, a first-ever visitor gets the caret in
+  // INVITE CODE while an empty name box sits above it
   useEffect(() => {
-    if (open === false) first.current?.focus();
-  }, [open]);
+    if (ready && !open) first.current?.focus();
+  }, [open, needName, ready]);
 
-  if (open === null) return null;
   if (open) return <>{children}</>;
+  if (!ready) return null;
 
   const knock = (e: React.FormEvent): void => {
     e.preventDefault();
@@ -63,11 +73,6 @@ export default function Gate({ children }: { children: React.ReactNode }): JSX.E
       setWrong(true);
       setValue('');
       return;
-    }
-    try {
-      window.localStorage.setItem(KEY, CODE);
-    } catch {
-      /* storage blocked — let them in for this session anyway */
     }
     if (who) mutate((m) => (m.name = who));
     setOpen(true);
