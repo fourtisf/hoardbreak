@@ -18,12 +18,14 @@ import {
   createLoop,
   createRenderer,
   createRun,
+  crewFocus,
   dailySeed,
   drainOutput,
   extractReady,
   fmt,
   modFor,
   todayUTC,
+  viewFor,
   type CrewKind,
   type FeedLine,
   type InputController,
@@ -348,8 +350,45 @@ export default function Raid() {
     const crewAtStart = meta.crew.length;
     const nameOf = new Map(meta.crew.map((t) => [t.tid, t.name]));
 
+    /* ── the camera ──────────────────────────────────────────────────────
+     * The lair is a fixed 768×528 surface and every screen used to show all
+     * of it, scaled to fit. On a 390px phone that is 49.5%: an 11.9px tile, a
+     * 7px thief, unit names under 4px. No amount of layout fixes that — the
+     * canvas is width-bound and cannot grow.
+     *
+     * So a canvas too small to read the whole lair gets a window on it
+     * instead, kept on the crew. `viewFor` decides which, from pixels per
+     * tile rather than from a guess about the device, so a small desktop
+     * window gets the same help and a tablet held sideways does not need it.
+     *
+     * One `viewRef` feeds both the renderer and the input layer: a tap is
+     * mapped back through the exact numbers the frame was drawn with. */
+    const viewRef = { current: { k: 1, ox: 0, oy: 0 } };
+    const readView = (): { k: number; ox: number; oy: number } => viewRef.current;
+
+    /* The backing store follows the element's real size in device pixels.
+       Left at a fixed 768×528 it composited into 1140 device px on a DPR-3
+       phone — a 1.484× non-integer upscale forced through nearest-neighbour,
+       which makes sprite edges crawl as a thief walks. */
+    const fitCanvas = (): void => {
+      const dpr = Math.min(3, window.devicePixelRatio || 1);
+      const w = Math.max(1, Math.round(canvas.clientWidth * dpr));
+      const h = Math.max(1, Math.round(canvas.clientHeight * dpr));
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+        // the context resets on resize, and the smoothing flag with it
+        const ctx = canvas.getContext('2d');
+        if (ctx) ctx.imageSmoothingEnabled = false;
+      }
+    };
+    fitCanvas();
+    const ro = new ResizeObserver(fitCanvas);
+    ro.observe(canvas);
+
     const renderer = createRenderer(canvas, {
       huntLine: () => huntLines(readyRef.current?.grade ?? 'flee').strip,
+      view: readView,
     });
     renderer.buildRockCache(run);
     const audio = createAudio();
@@ -357,6 +396,7 @@ export default function Raid() {
     audioRef.current = audio;
     const input = createInput({
       canvas,
+      view: readView,
       stick: stickRef.current,
       knob: knobRef.current,
       enabled: () => !pausedRef.current,
@@ -596,6 +636,8 @@ export default function Raid() {
       paused: () => pausedRef.current,
       afterStep: drain,
       render: (s, alpha, t, dt) => {
+        const f = crewFocus(s.units.length ? s.units : [s.dragon]);
+        viewRef.current = viewFor(canvas.clientWidth, canvas.clientHeight, f.x, f.y);
         renderer.render(s, alpha, t, dt);
         paintHud(s);
       },
@@ -603,6 +645,7 @@ export default function Raid() {
     loop.start();
 
     return () => {
+      ro.disconnect();
       window.removeEventListener('pagehide', drop);
       // deliberately NOT disarming here: React StrictMode runs this cleanup
       // between two mounts in development, and tearing the ticket up in the
@@ -704,7 +747,7 @@ export default function Raid() {
 
         <main>
           <div id="cwrap">
-            <canvas id="cv" ref={cvRef} width={W} height={H} />
+            <canvas id="cv" ref={cvRef} />
             <div id="stick" ref={stickRef}>
               <div id="knob" ref={knobRef} />
             </div>
@@ -728,7 +771,7 @@ export default function Raid() {
             <div className="wyrmCall" ref={wyrmCall} />
           </div>
 
-          <div className="wakeBox">
+          <div className="wakeBox wakeMeter">
             <div className="row">
               <span className="lbl">WYRM WAKE</span>
               <b id="wakePct" ref={wakePct}>
@@ -755,7 +798,7 @@ export default function Raid() {
             <span style={{ color: 'var(--dim)', fontSize: 11 }}>this run</span>
           </div>
 
-          <div className="wakeBox">
+          <div className="wakeBox hoardMeter">
             <div className="row">
               <span className="lbl">HOARD STOLEN</span>
               <b id="stolenPct" ref={stolenPct}>

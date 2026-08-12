@@ -88,7 +88,11 @@ border:1px solid var(--line2);border-radius:20px;padding:4px 11px;color:var(--em
 #muteBtn:focus-visible{outline:2px solid var(--em);outline-offset:2px}
 main{grid-area:main;display:flex;flex-direction:column;background:#040806;min-width:0;min-height:0;overflow:hidden}
 #cwrap{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;padding:8px;position:relative}
-#cv{max-width:100%;max-height:100%;border:1px solid var(--line);border-radius:4px;background:#060b08}
+/* The element has no width/height attributes any more — the backing store is
+   sized from this box in device pixels, and the camera is computed from it. An
+   explicit aspect keeps the whole-lair view exactly as it was wherever there is
+   room for it. */
+#cv{width:100%;height:100%;aspect-ratio:auto;border:1px solid var(--line);border-radius:4px;background:#060b08}
 #hintBar{font-size:11px;font-style:italic;color:var(--dim);text-align:center;padding:3px 8px 6px}
 #stick{position:absolute;left:16px;bottom:16px;width:108px;height:108px;border-radius:50%;
 background:rgba(14,23,18,.55);border:1px solid var(--line2);touch-action:none;z-index:6;
@@ -285,27 +289,39 @@ header{min-width:0;overflow:hidden}
    * where the eyes and the thumbs already are, and the stick below that
    * again in a band of its own — so nothing is ever covering the lair.
    */
-  #app{grid-template-rows:44px minmax(0,1fr) auto;grid-template-areas:'hd' 'side' 'main'}
-  #cwrap{padding:0 4px 2px;flex:0 0 auto}
+  /* the readouts take what they need, the lair takes the rest — the opposite
+     of before, and the reason the camera exists */
+  #app{grid-template-rows:44px auto minmax(0,1fr);grid-template-areas:'hd' 'side' 'main'}
+  #side{max-height:38vh}
+  /* the lair gets the row, and the camera fills it — this is the whole point
+     of the sheet losing 200px */
+  #cwrap{padding:0 4px 2px;flex:1;min-height:0}
   #hintBar{order:-1;padding:3px 6px 2px}
   #side{border-left:none;border-bottom:1px solid var(--line);padding:8px 10px;
     border-radius:0 0 14px 14px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
   #feed{min-height:34px;max-height:56px}
 
-  /* the canvas row is `auto`, so `#cv{max-height:100%}` has no definite basis
-     to resolve against and behaves as `none`. In portrait the canvas is
-     width-bound and that is harmless; in landscape it would grow to 580px in a
-     390px viewport, collapse the sheet row to nothing and overflow a fixed
-     `#app`. Cap it explicitly rather than relying on which axis happens to bind. */
-  #cv{max-height:calc(100dvh - 236px)}
 
   /* ── density ─────────────────────────────────────────────────────────
    * The sheet is 390px wide where the desktop rail is 248, so the same
-   * padding and type that reads as a compact rail reads as a poster. None
-   * of this is smaller than the desktop values by accident — it is smaller
-   * because the panel is wider and the phone is held closer.
+   * padding and type that reads as a compact rail reads as a poster. It was
+   * taking 394px of an 844px screen — nearly half the phone — for numbers a
+   * player glances at twice a minute, while the game itself got 263.
+   *
+   * A grid rather than a column: the two meters are the same shape and read
+   * as a pair, and side by side they cost one row instead of two. `order`
+   * puts them next to each other without moving anything in the markup.
    */
-  #side{gap:6px}
+  /* A column, not a grid. Pairing the two meters side by side needed `order`,
+     and `order` on a bare `.lbl` reached the labels *inside* each meter row —
+     which is how "WYRM WAKE 1%" became "1% WYRM WAKE" and how RELICS, THE CREW
+     and WHISPERS ended up stacked away from the lists they name. Losing the
+     explainer paragraphs saves more than the pairing would have. */
+  #side{gap:5px}
+  /* the explainer under each meter is a sentence of tutorial that never
+     changes length; on a phone it is two wrapped lines per meter, four lines
+     of the sheet spent saying what the bar already shows */
+  #wakeHint,#stolenHint{display:none}
   #side .lbl{font-size:10px;letter-spacing:.12em}
   .wakeBox{padding:6px 9px;border-radius:8px}
   .wakeBox .row{font-size:10px;margin-bottom:4px}
@@ -417,7 +433,9 @@ header{min-width:0;overflow:hidden}
   #btnExtract{position:fixed;z-index:20;right:12px;bottom:calc(18px + env(safe-area-inset-bottom));
     width:auto;max-width:calc(100vw - 172px);min-height:50px;font-size:15px;padding:13px 18px;
     box-shadow:0 6px 20px rgba(0,0,0,.6)}
-  #toast{bottom:calc(148px + env(safe-area-inset-bottom));max-width:calc(100vw - 40px)}
+  /* the bottom of the screen is the lair now — a toast there covers the thing
+     it is commenting on */
+  #toast{top:calc(52px + env(safe-area-inset-top));bottom:auto;max-width:calc(100vw - 40px)}
 
   .itb .key,.creepBtn .key{display:none}
   /* a 13px line of text is a link on a desktop and a dare on a phone; the
@@ -439,10 +457,10 @@ header{min-width:0;overflow:hidden}
     padding:6px 8px calc(6px + env(safe-area-inset-bottom))}
   #side::before{display:none}
   #cv{max-height:100%}
-  /* pinned left rather than centred: centring splits the leftover width into
-     two useless 70px margins, and pushed against one side it becomes a single
-     band wide enough to hold the dock clear of the lair entirely */
-  #cwrap{justify-content:flex-start;padding:4px}
+  /* the camera fills whatever box it is given, so the band for the dock has to
+     be reserved rather than left over — without this the lair grows under the
+     stick again */
+  #cwrap{justify-content:flex-start;padding:4px 122px 4px 4px}
   #stick{left:auto;right:calc(228px + env(safe-area-inset-right));width:96px;height:96px;
     bottom:calc(10px + env(safe-area-inset-bottom))}
   #knob{left:29px;top:29px}

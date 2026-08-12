@@ -14,6 +14,14 @@ export interface InputOptions {
   /** joystick base + knob; omit on desktop-only mounts */
   stick?: HTMLElement | null;
   knob?: HTMLElement | null;
+  /**
+   * The camera, if there is one.
+   *
+   * Read at the moment of the tap, from the same function the renderer draws
+   * with. If these two ever disagree the crew walks somewhere other than where
+   * the player pointed — a bug that feels like the game ignoring you.
+   */
+  view?: () => { k: number; ox: number; oy: number };
   /** key/pointer events are ignored while this returns false */
   enabled?: () => boolean;
 }
@@ -80,8 +88,10 @@ export function createInput(opts: InputOptions): InputController {
     if (Math.hypot(e.clientX - tap.x, e.clientY - tap.y) > TAP_SLOP) return;
     if (performance.now() - tap.t > TAP_MS) return;
     const r = canvas.getBoundingClientRect();
-    const x = (e.clientX - r.left) * (W / r.width);
-    const y = (e.clientY - r.top) * (H / r.height);
+    const v = opts.view?.() ?? { k: r.width / W, ox: 0, oy: 0 };
+    // screen → world, through the camera the renderer used for this frame
+    const x = v.ox + (e.clientX - r.left) / v.k;
+    const y = v.oy + (e.clientY - r.top) / v.k;
     const cmd: RunCommand =
       solo === null
         ? { c: 'move', x: clamp((x / T) | 0, 0, TC - 1), y: clamp((y / T) | 0, 0, TR - 1) }

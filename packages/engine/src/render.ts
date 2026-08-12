@@ -14,6 +14,7 @@ import { gi, inb, tileOf } from './grid.js';
 import { SPRITES, drawSprite } from './sprites.js';
 import { dist } from './util.js';
 import type { Dragon, Guard, RunState, Unit } from './types.js';
+import type { View } from './view.js';
 
 type Ctx = CanvasRenderingContext2D;
 
@@ -76,6 +77,15 @@ export function paintLair(g: Ctx, s: RunState): void {
 
 export interface RendererOptions {
   /**
+   * Where the camera is, in world units, and how hard it is zoomed.
+   *
+   * Supplied by the host rather than computed here because the input layer has
+   * to agree with it exactly — a tap is mapped back through the same numbers,
+   * and a disagreement puts the crew somewhere other than where the player
+   * pointed. Omit it and the whole lair is drawn at natural size, as before.
+   */
+  view?: () => View;
+  /**
    * What the top strip says once the wyrm is up.
    *
    * The engine knows how much health the thing has; it does not know how hard
@@ -88,6 +98,7 @@ export interface RendererOptions {
 
 export function createRenderer(canvas: HTMLCanvasElement, opts: RendererOptions = {}): Renderer {
   const huntLine = opts.huntLine ?? (() => '☠ IT HUNTS — get your crew to the exit and EXTRACT');
+  const view = opts.view ?? ((): View => ({ k: 1, ox: 0, oy: 0 }));
   const C = canvas.getContext('2d') as Ctx;
   C.imageSmoothingEnabled = false;
   let rockCv: HTMLCanvasElement | null = null;
@@ -369,6 +380,17 @@ export function createRenderer(canvas: HTMLCanvasElement, opts: RendererOptions 
   }
 
   function render(s: RunState, a: number, t: number, dt: number): void {
+    /* One transform for the whole frame.
+       Everything below draws in world units exactly as it always has; the
+       camera is applied once, here, so no drawing code has to know about it.
+       `setTransform` rather than `scale`/`translate` because the backing store
+       is sized in device pixels and this is the only place that knows the
+       ratio — resetting rather than composing keeps that from accumulating. */
+    const v = view();
+    const dpr = canvas.width / Math.max(1, canvas.clientWidth || canvas.width);
+    // a window on the lair rather than all of it — the furniture adapts
+    const tight = v.ox > 0.5 || v.oy > 0.5;
+    C.setTransform(v.k * dpr, 0, 0, v.k * dpr, -v.ox * v.k * dpr, -v.oy * v.k * dpr);
     C.save();
     // `shake` is a render-only field: the sim raises it, the renderer spends it.
     if (s.shake > 0) shake = s.shake;
@@ -378,7 +400,8 @@ export function createRenderer(canvas: HTMLCanvasElement, opts: RendererOptions 
       C.translate((Math.random() * 2 - 1) * shake, (Math.random() * 2 - 1) * shake);
       shake = Math.max(0, shake - dt * 22);
     }
-    C.clearRect(-10, -10, W + 20, H + 20);
+    // clear the visible window, not the lair: zoomed in they are not the same
+    C.clearRect(v.ox - 10, v.oy - 10, canvas.clientWidth / v.k + 20, canvas.clientHeight / v.k + 20);
     if (rockCv) C.drawImage(rockCv, 0, 0);
 
     const hunting = s.dragon.awake;
@@ -738,57 +761,73 @@ export function createRenderer(canvas: HTMLCanvasElement, opts: RendererOptions 
       }
     }
 
+    C.restore();
+
+    /* ---- screen space ----
+       Everything above is the lair, drawn in world units under the camera.
+       Everything below is furniture painted on the glass: it belongs to the
+       viewport, not to the world, and drawing it in world units meant the
+       vignette, the strip and the banner all scrolled away with the map the
+       moment the camera moved. */
+    C.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const sw = canvas.clientWidth || W;
+    const sh = canvas.clientHeight || H;
+
     /* wake tension vignette */
     if (s.wake >= TUNING.HEARTBEAT_WAKE && !s.dragon.awake) {
       const vv = (s.wake - TUNING.HEARTBEAT_WAKE) / 30;
       const pulse = calm ? 0 : 0.03 * Math.sin(t * 4);
       C.fillStyle = 'rgba(255,60,60,' + (0.05 + 0.05 * vv + pulse) + ')';
-      C.fillRect(0, 0, W, H);
+      C.fillRect(0, 0, sw, sh);
     }
 
-    /* top strip */
-    C.fillStyle = 'rgba(4,10,7,.8)';
-    C.fillRect(0, 0, W, 24);
-    C.fillStyle = '#1e3427';
-    C.fillRect(0, 24, W, 1);
-    C.font = 'bold 12px Consolas,monospace';
-    C.textAlign = 'left';
-    if (s.dragon.awake) {
-      C.fillStyle = '#ff9aa6';
-      C.fillText(huntLine(), 10, 16);
-    } else {
-      C.fillStyle = s.creep ? '#8fd4ff' : '#8affc0';
-      C.fillText(
-        (s.creep ? '👣 CREEPING · ' : '🗝 ') +
-          s.mod.n +
-          ' · WAKE ' +
-          Math.floor(s.wake) +
-          '% · ' +
-          (s.creep ? 'slow feet, quiet feet' : 'greed feeds the beast'),
-        10,
-        16,
-      );
+    /* top strip. Skipped once the view is a window rather than the whole lair:
+       it is a band across the top of a screen the player is already short of,
+       and every word of it is in the HUD beside the canvas at a legible size. */
+    if (!tight) {
+      C.fillStyle = 'rgba(4,10,7,.8)';
+      C.fillRect(0, 0, sw, 24);
+      C.fillStyle = '#1e3427';
+      C.fillRect(0, 24, sw, 1);
+      C.font = 'bold 12px Consolas,monospace';
+      C.textAlign = 'left';
+      if (s.dragon.awake) {
+        C.fillStyle = '#ff9aa6';
+        C.fillText(huntLine(), 10, 16);
+      } else {
+        C.fillStyle = s.creep ? '#8fd4ff' : '#8affc0';
+        C.fillText(
+          (s.creep ? '👣 CREEPING · ' : '🗝 ') +
+            s.mod.n +
+            ' · WAKE ' +
+            Math.floor(s.wake) +
+            '% · ' +
+            (s.creep ? 'slow feet, quiet feet' : 'greed feeds the beast'),
+          10,
+          16,
+        );
+      }
     }
 
     if (s.banner) {
       const al = Math.min(1, s.banner.l / 0.4);
       if (!calm) {
         C.fillStyle = 'rgba(255,70,80,' + 0.12 * (s.banner.l / s.banner.l0) + ')';
-        C.fillRect(0, 0, W, H);
+        C.fillRect(0, 0, sw, sh);
       }
       C.textAlign = 'center';
-      C.font = '44px "Pirata One",Georgia,serif';
+      // the banner is set for a 768px stage; on a phone it has to give
+      const bs = Math.min(1, sw / 560);
+      C.font = `${Math.round(44 * bs)}px "Pirata One",Georgia,serif`;
       C.fillStyle = 'rgba(6,10,8,' + 0.9 * al + ')';
-      C.fillText(s.banner.t1, W / 2 + 2, H / 2 - 2);
+      C.fillText(s.banner.t1, sw / 2 + 2, sh / 2 - 2);
       C.fillStyle = 'rgba(255,215,94,' + al + ')';
-      C.fillText(s.banner.t1, W / 2, H / 2 - 4);
-      C.font = '16px "Pirata One",Georgia,serif';
+      C.fillText(s.banner.t1, sw / 2, sh / 2 - 4);
+      C.font = `${Math.round(16 * bs)}px "Pirata One",Georgia,serif`;
       C.fillStyle = 'rgba(213,230,218,' + 0.95 * al + ')';
-      C.fillText(s.banner.t2, W / 2, H / 2 + 24);
+      C.fillText(s.banner.t2, sw / 2, sh / 2 + 24 * bs);
       C.textAlign = 'left';
     }
-
-    C.restore();
   }
 
   return { render, buildRockCache, canvas };
