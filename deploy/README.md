@@ -125,12 +125,18 @@ pnpm install --frozen-lockfile
 pnpm build                                # ~1 min; fails loudly if anything is wrong
 
 mkdir -p /var/log/dragonjob
-pm2 start deploy/ecosystem.config.cjs
+mkdir -p /var/lib/dragonjob               # the board's database lives here
+pm2 start deploy/ecosystem.config.cjs     # starts the site AND the board
 pm2 save
 pm2 startup systemd -u root --hp /root    # run the line it prints back
 
-curl -sI http://127.0.0.1:3000 | head -1  # expect: HTTP/1.1 200 OK
+curl -sI http://127.0.0.1:3000 | head -1  # the site  — expect: HTTP/1.1 200 OK
+curl -s  http://127.0.0.1:3100/health     # the board — expect: {"ok":true,...}
 ```
+
+Two processes, on purpose. The game is written to work with the board
+unreachable, so a board that falls over must not take the site down with it.
+`pm2 list` should show both `dragonjob` and `dragonjob-board` online.
 
 ## 5. Put nginx in front of it
 
@@ -170,6 +176,45 @@ downloads, so anyone who opens devtools can read it, and anyone who sets one
 localStorage key walks past it. It keeps a closed beta closed and nothing more —
 never put anything behind it that would actually hurt to lose.
 
+---
+
+## The daily board
+
+`services/api` — one number per player, per night, per depth. It knows nothing
+about the hideout, the crew or the gold; those never leave the player's machine.
+
+No runtime dependencies: `node:http` and `node:sqlite` both ship with Node 22.
+The database is a single file, `/var/lib/dragonjob/board.db`, holding thirty
+nights and pruning itself.
+
+**What it refuses.** The lair is a pure function of `date:depth`, so the server
+generates the same one the player raided and checks the claim against what that
+lair actually contains:
+
+```bash
+curl -s -X POST http://127.0.0.1:3100/board -H 'content-type: application/json' \
+  -d '{"pid":"aaaaaaaa1111","name":"Test","date":"'"$(date -u +%F)"'","depth":1,"loot":999999999,"verdict":"CLEAN"}'
+# {"error":"that lair holds 5701"}
+```
+
+That is not anti-cheat and is not called it — anyone who reads the client can
+submit the ceiling exactly. It stops the top of the board being nonsense inside
+a day, which is what an unchecked endpoint gets. Replay verification is the real
+answer and the engine already records the log for it.
+
+Back it up like anything else you would miss:
+
+```bash
+sqlite3 /var/lib/dragonjob/board.db ".backup '/root/board-$(date -u +%F).db'"
+```
+
+If the board is misbehaving, restarting it cannot hurt the site:
+
+```bash
+pm2 restart dragonjob-board
+pm2 logs dragonjob-board --lines 40 --nostream
+```
+
 ## Updating later
 
 ```bash
@@ -177,7 +222,23 @@ cd /srv/dragonjob
 git pull
 pnpm install --frozen-lockfile
 pnpm build
-pm2 reload dragonjob
+pm2 reload dragonjob dragonjob-board
+```
+
+If the update touched `deploy/nginx.conf` — the `/api` route did — put the new
+one in place too:
+
+```bash
+cp /srv/dragonjob/deploy/nginx.conf /etc/nginx/sites-available/thedragonjob
+nginx -t && systemctl reload nginx
+```
+
+Careful: certbot rewrote that file with the TLS block when you ran step 6.
+Copying the repo's version over it drops those lines, so re-run certbot after —
+it is idempotent and will put them back without reissuing the certificate:
+
+```bash
+certbot --nginx -d thedragonjob.com -d www.thedragonjob.com
 ```
 
 ## When something is wrong
