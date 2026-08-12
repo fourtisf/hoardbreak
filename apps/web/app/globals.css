@@ -292,7 +292,7 @@ header{min-width:0;overflow:hidden}
   /* the readouts take what they need, the lair takes the rest — the opposite
      of before, and the reason the camera exists */
   #app{grid-template-rows:44px auto minmax(0,1fr);grid-template-areas:'hd' 'side' 'main'}
-  #side{max-height:38vh}
+  #side{max-height:42vh}
   /* the lair gets the row, and the camera fills it — this is the whole point
      of the sheet losing 200px */
   #cwrap{padding:0 4px 2px;flex:1;min-height:0}
@@ -328,7 +328,8 @@ header{min-width:0;overflow:hidden}
   #wakePct,#wyrmPct,#stolenPct{font-size:12px}
   .wbar{height:7px}
   #wakeHint,#stolenHint,.wyrmCall{font-size:9px!important;line-height:1.4;margin-top:3px!important}
-  .lootRow{font-size:12px}
+  /* the header already carries LOOT, two centimetres above this */
+  .lootRow{display:none}
   .itb{padding:5px 4px 4px}
   .itb .em{font-size:13px}
   .itb .tn{font-size:9px}
@@ -338,10 +339,19 @@ header{min-width:0;overflow:hidden}
      still needs one line's worth of room even when it holds nothing */
   #relicRow{min-height:15px}
 
-  /* nine thieves stacked one per row is 300px of sheet; two-up halves it and
-     the row was never using the width anyway */
-  .squadList{display:grid;grid-template-columns:1fr 1fr;gap:4px}
-  .sq{padding:2px 5px;gap:4px;border-radius:7px}
+  /* ── the crew, sideways ──────────────────────────────────────────────
+   * The one part of the sheet that grows: four thieves or nine, and stacked
+   * or two-up it pushed RELICS, WHISPERS and everything after it below the
+   * fold. Capping the sheet only hid them more politely.
+   *
+   * One row that swipes instead. Any roster costs the same 36px, nothing
+   * below it moves, and sideways is a gesture a thumb already makes.
+   */
+  .squadList{display:flex;flex-direction:row;gap:5px;overflow-x:auto;overflow-y:hidden;
+    padding-bottom:2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .squadList::-webkit-scrollbar{display:none}
+  .sq{padding:2px 7px;gap:5px;border-radius:7px;flex:0 0 auto}
+  .sq .sn{white-space:nowrap}
   .sq canvas{width:16px;height:18px}
   .sq .sn{font-size:9.5px}
   .sq .sl{font-size:8px}
