@@ -31,6 +31,8 @@ import {
   buyUpgrade,
   conscript,
   needsConscript,
+  raidsOf,
+  rankOf,
   recruit,
   rollDay,
   selectDepth,
@@ -291,7 +293,11 @@ export default function Hideout() {
                 ) : (
                   meta.crew.map((t) => (
                     <div key={t.tid}>
-                      {t.name} · {UD[t.kind].n} <span className="lv">Lv.{lvlOf(t)}</span>
+                      {t.name} · {UD[t.kind].n} <span className="lv">Lv.{lvlOf(t)}</span>{' '}
+                      {/* what they have earned by surviving — a veteran should not
+                          read the same as this morning's conscript */}
+                      <span className="rank">{rankOf(t)}</span>
+                      {raidsOf(t) > 0 && <span className="raids"> · {raidsOf(t)} raids</span>}
                     </div>
                   ))
                 )}
@@ -307,6 +313,33 @@ export default function Hideout() {
                 )}
               </div>
             </div>
+
+            {/* The memorial — the ones no cage ever gave back. Only shown once
+                there is a name on it, because an empty wall is a promise the
+                game has not made yet. */}
+            {meta.fallen.length > 0 && (
+              <div className="panelBox memorial">
+                <div className="lbl" style={{ marginBottom: 6 }}>
+                  THE FALLEN
+                </div>
+                <div className="manif">
+                  {meta.fallen.slice(0, 8).map((f, i) => (
+                    <div key={`${f.name}-${i}`} className="fallenRow">
+                      <span className="fn">{f.name}</span> · {UD[f.kind].n}
+                      <span className="fd">
+                        {' '}
+                        — {f.raids > 0 ? `${f.raids} raids, then` : 'lost'} depth {f.depth}
+                      </span>
+                    </div>
+                  ))}
+                  {meta.fallen.length > 8 && (
+                    <div className="fd" style={{ marginTop: 4 }}>
+                      …and {meta.fallen.length - 8} more the dark still keeps.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="col">

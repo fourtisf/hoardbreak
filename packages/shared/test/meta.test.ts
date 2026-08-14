@@ -33,6 +33,8 @@ import {
   markPlayed,
   needsConscript,
   payRetainer,
+  raidsOf,
+  rankOf,
   recruit,
   retainerFor,
   rollDay,
@@ -233,8 +235,11 @@ describe('applying a failed run', () => {
     expect(m.depth).toBe(1); // no progress
     expect(m.tok).toBe(0);
     expect(m.crew).toHaveLength(0);
+    // the cages keep six — the most recent losses, still rescuable
     expect(m.lost).toHaveLength(LOST_CAP);
-    expect(m.lost.map((t) => t.tid).slice(5)).toEqual([4]); // only one more fit
+    expect(m.lost.map((t) => t.tid)).toEqual([53, 54, 4, 3, 2, 1]);
+    // and the three who waited longest pass onto the memorial, newest first
+    expect(m.fallen.map((f) => f.name)).toEqual(['L2', 'L1', 'L0']);
   });
 
   it('frees a queue slot before a later death claims it', () => {
@@ -256,6 +261,69 @@ describe('applying a failed run', () => {
     );
 
     expect(m.lost.map((t) => t.tid)).toEqual([50, 51, 52, 53, 54, 1]);
+  });
+});
+
+describe('crew memory', () => {
+  it('a survivor comes home one raid the wiser', () => {
+    const m = createMeta();
+    const tid = m.crew[0]!.tid;
+    expect(raidsOf(m.crew[0]!)).toBe(0);
+    applyRunResult(m, result({ success: true, survivorsTids: [tid] }));
+    expect(raidsOf(m.crew.find((t) => t.tid === tid)!)).toBe(1);
+  });
+
+  it('does not credit a raid to a thief who did not come out', () => {
+    const m = createMeta();
+    const tid = m.crew[0]!.tid;
+    // in-zone survivors earn it; someone merely alive but not extracted does not
+    applyRunResult(m, result({ success: true, survivorsTids: [] }));
+    expect(raidsOf(m.crew.find((t) => t.tid === tid)!)).toBe(0);
+  });
+
+  it('ranks a thief by the runs they have seen', () => {
+    expect(rankOf({ raids: 0 })).toBe('Rookie');
+    expect(rankOf({ raids: 3 })).toBe('Blooded');
+    expect(rankOf({ raids: 10 })).toBe('Seasoned');
+    expect(rankOf({ raids: 20 })).toBe('Veteran');
+    expect(rankOf({ raids: 40 })).toBe('Legend');
+    expect(rankOf({})).toBe('Rookie'); // a missing count reads as none
+  });
+
+  it('remembers a veteran on the memorial with the raids they saw', () => {
+    const m = createMeta();
+    // fill the cages, then lose a decorated thief so the oldest is bumped out
+    for (let i = 0; i < LOST_CAP; i++) m.lost.push(thief(50 + i, `L${i}`, 'picklock'));
+    m.crew = [thief(1, 'Vale', 'picklock', 0)];
+    m.crew[0]!.raids = 14;
+    m.day = '2026-03-14';
+    m.depth = 5;
+    applyRunResult(m, result({ success: false, crewOps: [{ op: 'lose', tid: 1 }] }));
+    // Vale is now in the cages; L0 — longest abandoned — is on the wall
+    const wall = m.fallen[0]!;
+    expect(wall.name).toBe('L0');
+    expect(wall.depth).toBe(5);
+    expect(wall.day).toBe('2026-03-14');
+    expect(m.lost.map((t) => t.name)).toContain('Vale');
+  });
+
+  it('carries a rescued veteran back with their raids intact', () => {
+    const m = createMeta();
+    const vet = thief(9, 'Rook', 'hexer', 0);
+    vet.raids = 8;
+    m.lost = [vet];
+    applyRunResult(
+      m,
+      result({
+        success: true,
+        rescuedTid: 9,
+        rescue: { thief: vet, fromQueue: true, extracted: true },
+        crewOps: [{ op: 'freeFromQueue', tid: 9 }],
+      }),
+    );
+    const back = m.crew.find((t) => t.name === 'Rook');
+    expect(back).toBeTruthy();
+    expect(raidsOf(back!)).toBe(8);
   });
 });
 

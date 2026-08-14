@@ -61,6 +61,15 @@ display:flex;flex-direction:column;align-items:center;gap:3px;position:relative}
 .panelBox{background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:10px 13px;min-width:250px}
 .manif{font-family:Consolas,monospace;font-size:11px;line-height:1.8;max-height:120px;overflow:auto}
 .manif .lv{color:var(--gold)}
+/* what a thief has earned by surviving — cosmetic, but it is why a name matters */
+.manif .rank{color:var(--em);font-size:9.5px;letter-spacing:.04em}
+.manif .raids{color:var(--dim);font-size:9.5px}
+/* the memorial reads colder than the roster above it */
+.memorial{border-color:#3a2430;background:#160e12}
+.memorial .lbl{color:#c98a97}
+.fallenRow{color:var(--dim)}
+.fallenRow .fn{color:#d5b0b8;font-family:'Pirata One',serif;font-size:12px;letter-spacing:.02em}
+.fallenRow .fd{color:var(--dim);font-style:italic;font-size:10px}
 .upg,.itemRow{display:flex;align-items:center;gap:9px;background:#0f1d15;border:1px solid var(--line2);
 border-radius:10px;padding:7px 11px;cursor:pointer;margin-bottom:7px}
 .upg:hover,.itemRow:hover{border-color:var(--em)}.upg.dis,.itemRow.dis{opacity:.4;cursor:default}

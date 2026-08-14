@@ -87,9 +87,53 @@ export interface Meta {
   bestByDepth: Record<number, number>;
   crew: RunThief[];
   lost: RunThief[];
+  /**
+   * The permanently gone (v0.4 — crew memory).
+   *
+   * A lost thief waits in the cages (`lost`) to be rescued. But the cages only
+   * hold `LOST_CAP`, and when a newer loss needs the room the one who has waited
+   * longest is bumped here — nobody ever came back for them. This is the
+   * memorial: names, what they were, and how many raids they saw before the dark
+   * kept them. It is what makes losing a veteran land.
+   */
+  fallen: FallenThief[];
   items: Record<ItemKey, number>;
   up: Record<UpgradeKey, number>;
   upCost: Record<UpgradeKey, number>;
+}
+
+/** A name on the memorial wall. */
+export interface FallenThief {
+  name: string;
+  kind: CrewKind;
+  /** runs they came home from before the one they did not */
+  raids: number;
+  /** the depth of the lair that finally kept them */
+  depth: number;
+  /** the UTC day they passed out of reach */
+  day: string;
+}
+
+/**
+ * What a thief has earned by surviving (v0.4 — crew memory).
+ *
+ * A name you have led home fourteen times is not the same as the one the guild
+ * fronted you this morning, and the roster should say so. Titles are cosmetic —
+ * they change no number — but they are why leaving the right thief behind hurts.
+ */
+export const RANKS: { at: number; title: string }[] = [
+  { at: 40, title: 'Legend' },
+  { at: 20, title: 'Veteran' },
+  { at: 10, title: 'Seasoned' },
+  { at: 3, title: 'Blooded' },
+  { at: 0, title: 'Rookie' },
+];
+
+export const raidsOf = (t: { raids?: number }): number => t.raids ?? 0;
+
+export function rankOf(t: { raids?: number }): string {
+  const n = raidsOf(t);
+  return (RANKS.find((r) => n >= r.at) as (typeof RANKS)[number]).title;
 }
 
 /** The deepest lair the player may enter — handoff §6's `unlocked`. */
@@ -117,7 +161,7 @@ export function rollDay(meta: Meta, today: string): boolean {
 
 export function newThief(meta: Meta, kind: CrewKind): RunThief {
   meta.uid++;
-  return { tid: meta.uid, name: NAMES[(meta.uid - 1) % NAMES.length] as string, kind, xp: 0 };
+  return { tid: meta.uid, name: NAMES[(meta.uid - 1) % NAMES.length] as string, kind, xp: 0, raids: 0 };
 }
 
 /** A brand new hideout: 300 gold and four names you will get attached to. */
@@ -157,6 +201,7 @@ export function createMeta(day = ''): Meta {
     bestByDepth: {},
     crew: [],
     lost: [],
+    fallen: [],
     items: { smoke: 0, lull: 0, trap: 0 },
     up: { dmg: 0, hp: 0, inc: 0 },
     upCost: { dmg: UPGRADES.dmg.base, hp: UPGRADES.hp.base, inc: UPGRADES.inc.base },
@@ -326,9 +371,10 @@ export function payRetainer(meta: Meta, today: string): number {
   return gold;
 }
 
-export function applyRunResult(meta: Meta, r: RunResult): RunPayout {
+export function applyRunResult(meta: Meta, r: RunResult, today = meta.day): RunPayout {
   const notes: FeedLine[] = [];
   const depthPlayed = meta.depth;
+  if (!meta.fallen) meta.fallen = [];
 
   for (const k of ITEM_KEYS) meta.items[k] = Math.max(0, meta.items[k] - r.itemsUsed[k]);
 
@@ -340,7 +386,20 @@ export function applyRunResult(meta: Meta, r: RunResult): RunPayout {
       const ix = meta.crew.findIndex((t) => t.tid === op.tid);
       if (ix >= 0) {
         const th = meta.crew.splice(ix, 1)[0] as RunThief;
-        if (meta.lost.length < LOST_CAP) meta.lost.push(th);
+        meta.lost.push(th);
+        // the cages only hold so many; whoever has waited longest and been left
+        // longest passes onto the memorial, gone for good
+        while (meta.lost.length > LOST_CAP) {
+          const gone = meta.lost.shift() as RunThief;
+          meta.fallen.unshift({
+            name: gone.name,
+            kind: gone.kind,
+            raids: raidsOf(gone),
+            depth: depthPlayed,
+            day: today,
+          });
+          notes.push({ msg: `${gone.name} the ${UD[gone.kind].n} is lost for good — ${raidsOf(gone)} raids remembered.`, cls: 'e' });
+        }
       }
     }
   }
@@ -351,7 +410,10 @@ export function applyRunResult(meta: Meta, r: RunResult): RunPayout {
   if (r.success) {
     for (const tid of r.survivorsTids) {
       const th = meta.crew.find((t) => t.tid === tid);
-      if (th) th.xp++;
+      if (th) {
+        th.xp++;
+        th.raids = raidsOf(th) + 1;
+      }
     }
 
     if (r.rescue?.extracted) {
@@ -393,6 +455,7 @@ export function cloneMeta(meta: Meta): Meta {
     ...meta,
     crew: meta.crew.map((t) => ({ ...t })),
     lost: meta.lost.map((t) => ({ ...t })),
+    fallen: (meta.fallen ?? []).map((f) => ({ ...f })),
     items: { ...meta.items },
     up: { ...meta.up },
     upCost: { ...meta.upCost },

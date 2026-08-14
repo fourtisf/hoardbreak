@@ -58,6 +58,7 @@ function hydrate(raw: unknown): Meta {
     bestByDepth: rec(p.bestByDepth),
     crew: Array.isArray(p.crew) ? p.crew : base.crew,
     lost: Array.isArray(p.lost) ? p.lost : [],
+    fallen: Array.isArray(p.fallen) ? p.fallen : [],
     items: { ...base.items, ...(p.items ?? {}) },
     up: { ...base.up, ...(p.up ?? {}) },
     upCost: { ...base.upCost, ...(p.upCost ?? {}) },

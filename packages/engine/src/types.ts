@@ -8,6 +8,14 @@ export interface RunThief {
   name: string;
   kind: CrewKind;
   xp: number;
+  /**
+   * Runs this thief has come home from (v0.4 — crew memory).
+   *
+   * Optional so old saves and the engine's own fixtures load without it; the
+   * meta layer treats a missing value as 0. The sim never reads it — it is
+   * hideout memory, carried through a run untouched.
+   */
+  raids?: number;
 }
 
 /**
