@@ -11,6 +11,9 @@ has a chance.
 | `dragonjob-signet.svg` / `-400.png` | vector / 400² | Dark wyrm struck into a gold blank. Best at the smallest sizes. |
 | `dragonjob-eclipse.svg` / `-400.png` | vector / 400² | Green wyrm around a solid gold disc. Best large. |
 | `dragonjob-x-header-{seal,signet,eclipse}-1500x500.png` | 1500×500 | Social header, one per finish. Use the one matching the avatar. |
+| `dragonjob-v04-banner-1600x900.png` | 1600×900 | The v0.4 update card, for a post. |
+| `dragonjob-v04-header-1500x500.png` | 1500×500 | The v0.4 profile header. |
+| `shots/v04-*.png` | — | The raw game captures the two above are built from. |
 
 All three are already cropped to a circle, so the square PNG and a circular crop
 show the same thing — nothing important sits in the corners. Content radius is
@@ -35,6 +38,36 @@ The lockup is centred rather than left-aligned, and kept inside the middle
 To swap the lair, regenerate the JSON from the engine (`createRun` with
 `dailySeed(date, depth)`) and dump `grid`, `piles` and `chests` — the shape the
 builder reads is `{cols, rows, grid, piles:[{x,y}], chests:[{x,y}]}`.
+
+## The v0.4 update art
+
+Different problem, different answer. The profile header sells a *mood*; an
+update card has to make a stranger understand what changed, and no amount of
+typography does that as fast as a picture of the thing running. So both v0.4
+pieces are built out of **real frames of the game** — driven by Playwright
+against a live build, with the run put into the state each feature is about (the
+wyrm awake, the Heart bare, a decorated roster on the wall). Nothing is mocked.
+
+Two rules learned the hard way while composing them:
+
+- **A screenshot shrunk past its type is worse than no screenshot.** The first
+  cut scaled whole panels down until their 11 px rows rendered at 5 px, which
+  neither reads nor sells. Each supporting capture is now shown at roughly 1:1,
+  cropped to the part that carries the point, and the words a viewer actually
+  needs are set large in Pirata One over the frame.
+- **Capture with `locator.screenshot()`, not a viewport clip.** A clip silently
+  truncates any panel sitting near the bottom of the window — the rival card lost
+  the line with the gap on it, which was the entire reason for the card.
+
+The captures live in `shots/`. To rebuild after a UI change, re-run the capture
+and compose scripts against a dev server (they need `HB`, the dev-only debug
+handle, to force the wyrm awake).
+
+Fonts: the banner sets the wordmark in **Pirata One** — the game's own display
+face — and body italics in **Gelasio**, which is metric-compatible with the
+Georgia the UI uses. Both must be installed locally; a headless browser will
+silently fall back to a generic serif otherwise, and the result looks like a
+different product. Verify with a measured width, not by eye.
 
 ## Editing
 
