@@ -158,7 +158,9 @@ export type ModId =
   /* v0.3 — three more nights, for daily variety */
   | 'hungry'
   | 'plunder'
-  | 'silent';
+  | 'silent'
+  /* v0.4 — the weekly event, one lair for the whole world on a Sunday */
+  | 'grand';
 
 export interface ModDef {
   id: ModId;
@@ -194,6 +196,30 @@ export const MODS: ModDef[] = [
   { id: 'plunder', n: 'PLUNDER SEASON', d: 'the gold is locked in the vaults', chestMul: 1.8, pileMul: 0.6 },
   { id: 'silent', n: 'SILENT HALLS', d: 'blind guards · a leaner hoard', alertAdd: -1.2, hoardMul: 0.8 },
 ];
+
+/**
+ * THE GRAND VAULT — the weekly event (v0.4).
+ *
+ * Kept out of the `MODS` rotation on purpose: it never comes up on the daily
+ * roll. `modFor` hands it to *everyone* on a Sunday instead, so once a week the
+ * whole world raids the same fat, well-watched vault — a shared spectacle the
+ * daily otherwise never has. It stacks the generator's existing knobs (a vast
+ * hoard, more and tougher guards, hotter breath, richer chests), so it costs
+ * the lair generator nothing and the loot ceiling accounts for it for free.
+ */
+export const GRAND_VAULT: ModDef = {
+  id: 'grand',
+  n: 'THE GRAND VAULT',
+  d: 'a vast hoard — and the whole cult stands on it',
+  hoardMul: 2.4,
+  pileMul: 1.5,
+  chestMul: 1.7,
+  extraG: 2,
+  gHp: 1.3,
+  breathMul: 1.3,
+  wakeMul: 1.15,
+  alertAdd: 1,
+};
 
 /* ---------------- items ---------------- */
 

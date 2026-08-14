@@ -14,6 +14,7 @@ import {
   depthRules,
   fmt,
   lvlOf,
+  isGrandVault,
   modFor,
   todayUTC,
   type CrewKind,
@@ -52,6 +53,7 @@ export default function Hideout() {
   const lastRun = useLastRun();
   const date = useMemo(() => todayUTC(), []);
   const mod = modFor(date, meta.depth);
+  const grandNight = isGrandVault(date);
   const unlocked = unlockedDepth(meta);
   // the real board, or an honest silence — never invented rivals
   const [board, setBoard] = useState<BoardState>({ k: 'loading' });
@@ -149,6 +151,18 @@ export default function Hideout() {
           <span className="mark markS" aria-hidden="true" />
           <h2>THE HIDEOUT</h2>
         </div>
+
+        {/* the weekly event, announced above the daily line so it reads as the
+            night it is, not just another modifier in the list */}
+        {grandNight && (
+          <div className="grandBanner">
+            <span className="gbTitle">🔥 THE GRAND VAULT</span>
+            <span className="gbSub">
+              Tonight the whole world raids one fat, well-watched vault — a hoard more than twice the usual,
+              and the cult standing on every coin of it. Once a week. Bring a crew that has seen a few nights.
+            </span>
+          </div>
+        )}
 
         <div id="daily">
           DAILY HEIST — <b>{date}</b> · same lairs for every player
@@ -463,7 +477,9 @@ export default function Hideout() {
           <button id="btnRaid" className="btn gold big" onClick={raid} disabled={meta.crew.length === 0}>
             {meta.crew.length === 0
               ? '⚔ HIRE SOMEONE FIRST — THE LAIR WON’T ROB ITSELF'
-              : `⚔ RAID THE LAIR — DEPTH ${meta.depth}`}
+              : grandNight
+                ? `🔥 RAID THE GRAND VAULT — DEPTH ${meta.depth}`
+                : `⚔ RAID THE LAIR — DEPTH ${meta.depth}`}
           </button>
         </div>
       </div>

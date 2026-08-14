@@ -7,12 +7,23 @@
  * the seed as a plain uint32, so nothing else has to change.
  */
 
-import { MODS, type ModDef } from './defs.js';
+import { GRAND_VAULT, MODS, type ModDef } from './defs.js';
 import { hashStr, mulberry32 } from './rng.js';
 
 /** Today's date in UTC, `YYYY-MM-DD`. Day rolls over at UTC midnight (§5). */
 export function todayUTC(now: Date = new Date()): string {
   return now.toISOString().slice(0, 10);
+}
+
+/**
+ * Is this a Grand Vault night?
+ *
+ * Sunday, UTC — the same answer for every player on earth, which is the whole
+ * point: the weekly event has to be shared to be an event. Read off the date
+ * string so it never depends on the machine's clock or timezone.
+ */
+export function isGrandVault(date: string): boolean {
+  return new Date(`${date}T00:00:00Z`).getUTCDay() === 0;
 }
 
 /** Phase 1 lair seed. Phase 2: `HMAC_SHA256(SEED_SECRET, "date:depth")[0..8]`. */
@@ -25,6 +36,9 @@ export function dailySeed(date: string, depth: number): number {
  * `GET /daily` will preview these server-side without handing out seeds.
  */
 export function modFor(date: string, depth: number): ModDef {
+  // one Sunday, one lair, everyone — the Grand Vault overrides the daily roll
+  // at every depth so the whole world is in the same fat vault together
+  if (isGrandVault(date)) return GRAND_VAULT;
   const rng = mulberry32(hashStr(`${date}:mod:${depth}`));
   return MODS[Math.floor(rng() * MODS.length)] as ModDef;
 }
