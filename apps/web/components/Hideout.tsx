@@ -43,6 +43,7 @@ import { getMeta, mutate, replaceMeta, resetMeta, useLastRun, useMeta } from '@/
 import { armRaid } from '@/lib/entry';
 import { toast } from '@/lib/toast';
 import { fetchBoard, fetchIntel, type BoardState, type IntelState } from '@/lib/board';
+import CaRow from './CaRow';
 import SpriteCanvas from './SpriteCanvas';
 import { SocialLinks } from './Social';
 import Toast from './Toast';
@@ -525,6 +526,13 @@ export default function Hideout() {
           </button>
           <span className="ul">·</span>
           <SocialLinks sep={<span className="ul">·</span>} />
+        </div>
+        {/* Most players now walk through the gate in seconds with a code they
+            were given, which means the gate's copy of this is one somebody
+            sees once and never finds again. The hideout is the screen they
+            come back to. */}
+        <div className="caWrap">
+          <CaRow />
         </div>
 
         {/* The one thing a player came here to do. It is the last element in the

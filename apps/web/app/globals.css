@@ -722,10 +722,20 @@ header{min-width:0;overflow:hidden}
 #gate .gateAsk .xlink:hover{color:var(--gold);border-bottom-color:var(--gold)}
 /* the contract address, or an honest note that there is not one yet. Monospace
    because it is a value to be checked character by character, not read. */
-.caRow{display:flex;align-items:center;gap:7px;font-family:Consolas,monospace;font-size:10px;letter-spacing:.1em}
-.caTag{color:var(--dim);letter-spacing:.22em}
+.caRow{display:flex;align-items:center;gap:7px;font-family:Consolas,monospace;font-size:10px;letter-spacing:.1em;
+  max-width:100%;border:1px solid var(--line);border-radius:8px;background:#0c1610;padding:5px 8px}
+.caTag{color:var(--dim);letter-spacing:.22em;flex:none}
 .caSoon{color:var(--line2)}
-.caVal{color:var(--bone);letter-spacing:.06em}
+/* one click takes the whole key, not the word under the cursor — the fallback
+   that matters on the day the clipboard API is blocked */
+.caVal{color:var(--bone);letter-spacing:.06em;user-select:all;-webkit-user-select:all;
+  min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* full where 44 characters fit, short where they do not. Both are in the DOM
+   and CSS chooses, so the row never changes shape after paint. */
+.caShort{display:none}
+@media (max-width:470px){.caFull{display:none}.caShort{display:inline}}
+/* the hideout footer is a left-aligned scroller; the row centres under it */
+.caWrap{display:flex;justify-content:center;margin-top:9px}
 .caCopy{background:#12251b;border:1px solid var(--line2);border-radius:5px;color:var(--em);
   font-family:Consolas,monospace;font-size:9px;letter-spacing:.12em;padding:3px 7px;cursor:pointer}
 .caCopy:hover{border-color:var(--em);color:#8affc0}

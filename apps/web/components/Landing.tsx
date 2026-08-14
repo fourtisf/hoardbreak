@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import LairCanvas from './LairCanvas';
+import CaRow from './CaRow';
 import { SocialLinks } from './Social';
 
 /** The landing page, ported from the prototype — copy included. */
@@ -28,6 +29,11 @@ export default function Landing() {
         <span className="ul">·</span>
         <span className="ul">a new lair every day at 00:00 UTC</span>
       </div>
+      {/* The address belongs on the page anyone can reach without a code. This
+          is the site a post points at, so it has to be the place someone can
+          check an address against — otherwise the only copy they can find is
+          whichever one a reply guy pasted at them. */}
+      <CaRow />
     </div>
   );
 }

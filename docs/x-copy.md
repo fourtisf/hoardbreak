@@ -382,7 +382,7 @@ $DJOB is live — the coin THE DRAGON JOB pays you for a run.
 
 Depth × 3, and double that past 60% of the hoard.
 
-CA: <paste the address>
+CA: HC6vSvrZb1Xrc1NeCSmmBEdSJDbAu42kty1vGmUQpump
 
 Code: 1998
 
@@ -396,7 +396,7 @@ THE DRAGON JOB is live. So is $DJOB.
 
 You do not have to buy it — four thieves and one lair pay it out.
 
-CA: <paste the address>
+CA: HC6vSvrZb1Xrc1NeCSmmBEdSJDbAu42kty1vGmUQpump
 
 Code: 1998
 
@@ -415,7 +415,7 @@ hour, and this is the single post that protects people.
 ```
 One address. This one.
 
-CA: <paste the address>
+CA: HC6vSvrZb1Xrc1NeCSmmBEdSJDbAu42kty1vGmUQpump
 
 Anything in your replies, your DMs or a screenshot
 is somebody robbing you.
@@ -468,18 +468,24 @@ It is an off-chain ledger until it is not.
 That is the whole state of it.
 ```
 
-### Before there is a token
+### ~~Before there is a token~~ — spent
 
-Post this **now**, before launch, and pin it until launch day. It is the
-cheapest protection a project can buy.
+**Do not post this.** It was the pre-launch holding post, and there is now an
+address, so posting it says something false about the project's own token in
+the project's own voice. It stays only so nobody writes it a second time.
 
 ```
 There is no $DJOB token yet.
+```
 
-When there is, the address goes on thedragonjob.com first,
-and here second.
+The promise it made has been kept, and this is the post that replaces it:
 
-Anyone offering you one before that is selling you something else.
+```
+The address is on thedragonjob.com, at the bottom of the page.
+
+That is the copy to trust. Not a reply, not a DM, not a screenshot.
+
+CA: HC6vSvrZb1Xrc1NeCSmmBEdSJDbAu42kty1vGmUQpump
 ```
 
 ---
