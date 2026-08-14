@@ -838,7 +838,7 @@ export default function Raid() {
               ref={stolenHint}
               style={{ fontSize: 9.5, color: 'var(--dim)', fontStyle: 'italic', marginTop: 5 }}
             >
-              60% or more pays double $LOOT for this depth.
+              60% or more pays double $DJOB for this depth.
             </div>
           </div>
 
@@ -1092,7 +1092,7 @@ export default function Raid() {
               <br />
               {over.success ? (
                 <>
-                  $LOOT earned: <b>+{over.tok}</b> · survivors gain XP · next: <b>Depth {over.nextDepth}</b>
+                  $DJOB earned: <b>+{over.tok}</b> · survivors gain XP · next: <b>Depth {over.nextDepth}</b>
                 </>
               ) : (
                 <>Your hideout gold is safe. The fallen wait in dragon prisons.</>

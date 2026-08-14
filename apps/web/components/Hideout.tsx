@@ -239,7 +239,7 @@ export default function Hideout() {
             GOLD <i className="ic g" /> <b>{fmt(meta.gold)}</b>
           </span>
           <span>
-            $LOOT <i className="ic t" /> <b>{fmt(meta.tok)}</b>
+            $DJOB <i className="ic t" /> <b>{fmt(meta.tok)}</b>
           </span>
           <span>
             DEPTH <b>{meta.depth}</b>

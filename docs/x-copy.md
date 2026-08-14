@@ -218,7 +218,7 @@ profile should look like the thing the timeline just showed.
 
 ## 8 · The token launch
 
-`$LOOT` is earned by playing: `depth × 3`, double that past 60% of the hoard,
+`$DJOB` is earned by playing: `depth × 3`, double that past 60% of the hoard,
 `+12` for a dead wyrm, `+1` per three guards. Top ten on the daily board split
 `100 · 70 · 50 · 40 · 30 · 25 · 20 · 15 · 10 · 10` at rollover. Runs are capped
 at **120 a day per wallet**, and a flagged run earns nothing.
@@ -249,13 +249,20 @@ Everything in the list at the top still applies. These are additional.
 
 Keep it flat. The excitement is the reader's job, not the copy's.
 
-> $LOOT is live.
+> $DJOB is live.
 >
 > CA: `<paste the address>`
 >
 > It is earned by robbing a dragon, not by being early.
 >
 > thedragonjob.com
+
+**On the ticker.** `$DJOB` is THE DRAGON JOB, contracted. It reads as an
+abbreviation rather than as treasure, so the copy should never make it carry
+the meaning on its own — always put the game's noun next to it the first time
+it appears in a post: *"$DJOB, what a run pays"*, not a bare `$DJOB`. Say it
+aloud as **"dee-jobb"** and use that spelling in any voice or video script, or
+half the room will say one thing and half the other.
 
 ### 2 · The address, immediately, as the first reply
 
@@ -271,7 +278,7 @@ hour, and this is the single post that protects people.
 
 ### 3 · What it actually pays
 
-> $LOOT is what a run pays out.
+> $DJOB is what a run pays out.
 >
 > Depth × 3. Double it if you take more than 60% of the hoard. Twelve more if
 > the wyrm dies. One for every three guards.
@@ -280,7 +287,7 @@ hour, and this is the single post that protects people.
 
 ### 4 · The cap, said as a feature — because it is
 
-> 120 $LOOT a day per wallet from runs. That is the ceiling and it is deliberate.
+> 120 $DJOB a day per wallet from runs. That is the ceiling and it is deliberate.
 >
 > A bot grinding all night earns what one person playing one good run earns.
 
@@ -309,7 +316,7 @@ Post this too. A launch that names what is not finished is the one people trust.
 Post this **now**, before launch, and pin it until launch day. It is the cheapest
 protection a project can buy.
 
-> There is no $LOOT token yet.
+> There is no $DJOB token yet.
 >
 > When there is, the address goes on thedragonjob.com first, and here second.
 >

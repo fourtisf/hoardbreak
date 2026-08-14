@@ -18,7 +18,7 @@ of truth for game feel: **the prototype wins any disagreement.**
 > loud, every word is basic English, and it cannot be misspelled.
 >
 > The tagline lost *"Be the exit liquidity"* with it — that framing aims at a
-> crypto audience and the product is aimed wider. `$LOOT` itself is unchanged;
+> crypto audience and the product is aimed wider. `$DJOB` itself is unchanged;
 > it is handoff §9 and Phase 3, not a naming decision.
 >
 > Renamed: every package (`@dragonjob/*`), all player-facing copy, the save key.
@@ -51,7 +51,7 @@ pnpm typecheck
 pnpm dev           # http://localhost:3000
 ```
 
-Phases 2–4 (accounts, server seeds, the real board, `$LOOT` ledger, replay
+Phases 2–4 (accounts, server seeds, the real board, `$DJOB` ledger, replay
 verification) are **not** started, per the handoff's instruction to finish a
 phase before opening the next.
 
@@ -249,7 +249,7 @@ five minutes:
 - **The hint bar coaches.** It used to repeat the controls forever; it now tells
   you the next thing to do — follow the arrow, you have been spotted, you are
   siphoning and it is loud, someone is in that cage, time to leave.
-- **Hoard progress is visible.** The 60% threshold doubles your `$LOOT` for the
+- **Hoard progress is visible.** The 60% threshold doubles your `$DJOB` for the
   depth and used to be invisible until the run was over.
 - **Runs get a verdict, not just win/lose** — GHOST (never spotted), BY A
   WHISKER (out above 90% wake), THE HOARD IS YOURS, WYRMSLAYER, EMPTY-HANDED.

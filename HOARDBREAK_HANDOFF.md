@@ -28,7 +28,7 @@ Tagline: *"Rob the dragon. Don't wake it. Be the exit liquidity."*
 
 Core loop: Hideout (recruit named thieves, buy items/upgrades) → raid a fog-of-war dragon lair → loot piles/chests, siphon the hoard, hit shrines/armories, rescue imprisoned crew → every noise fills the **WYRM WAKE** meter (staged dragon at 50/75/100%) → reach the EXIT tiles and extract, or lose everything.
 
-**The product hook:** *Daily Heist.* Lairs are generated from a `date:depth` seed — every player on earth raids the same lairs each day, competing on a daily leaderboard (biggest single heist) and earning **$LOOT**.
+**The product hook:** *Daily Heist.* Lairs are generated from a `date:depth` seed — every player on earth raids the same lairs each day, competing on a daily leaderboard (biggest single heist) and earning **$DJOB**.
 
 Prototype status: fully playable, 20/20 automated behavioral checks green (determinism, items, staged dragon, XP, prison rescue, extraction accounting), plus headless organic playthroughs clean. Joystick + WASD + click-move all verified.
 
@@ -42,7 +42,7 @@ Prototype status: fully playable, 20/20 automated behavioral checks green (deter
 
 **Change for production (specified below):**
 - Seed becomes **server-issued** (HMAC), not client-computed (§5).
-- Meta state (gold, crew, items, upgrades, $LOOT) moves **server-side** (§6–7). The prototype's in-memory `M` object becomes API-backed.
+- Meta state (gold, crew, items, upgrades, $DJOB) moves **server-side** (§6–7). The prototype's in-memory `M` object becomes API-backed.
 - `Math.random` inside the simulation is replaced by a per-run seeded stream (§4) so runs are replay-verifiable later.
 - Leaderboard becomes real (Redis + Postgres, §8).
 
@@ -50,7 +50,7 @@ Prototype status: fully playable, 20/20 automated behavioral checks green (deter
 
 - **Monorepo:** pnpm workspaces → `apps/web` (Next.js 14, App Router, TS), `apps/api` (Fastify, TS), `packages/engine` (framework-free game engine, TS), `packages/shared` (zod schemas, constants).
 - **DB:** PostgreSQL + Prisma. **Cache/boards:** Redis. **Deploy:** Hostinger VPS, PM2, Nginx (§13).
-- **Wallet:** Solana wallet adapter (Phantom/Backpack) for identity; Helius available if on-chain reads are ever needed. *(Chain for $LOOT claims is an open decision — §14.)*
+- **Wallet:** Solana wallet adapter (Phantom/Backpack) for identity; Helius available if on-chain reads are ever needed. *(Chain for $DJOB claims is an open decision — §14.)*
 - No game engine frameworks. The prototype's vanilla canvas engine ports to `packages/engine` almost as-is.
 
 ## 4 · Engine port (`packages/engine`)
@@ -67,14 +67,14 @@ Prototype status: fully playable, 20/20 automated behavioral checks green (deter
   `seed = HMAC_SHA256(SEED_SECRET, `${D}:${n}`)` → first 8 bytes → uint.
 - Clients can never predict tomorrow's lairs. `GET /daily` returns today's date, per-depth **modifier previews** (server runs `modFor` itself), and board snapshot — but seeds are only issued inside a run ticket (§6).
 - The API regenerates any lair on demand from `(date, depth)` to validate results — determinism is the anti-cheat backbone.
-- Day rollover: UTC midnight. Board freezes, yesterday's board archived to Postgres, $LOOT emissions settled (§9).
+- Day rollover: UTC midnight. Board freezes, yesterday's board archived to Postgres, $DJOB emissions settled (§9).
 
 ## 6 · API spec (Fastify) + validation tiers
 
 Auth: wallet connect → nonce sign → JWT session cookie. All below require auth unless noted.
 
 - `GET /daily` *(public)* — `{date, depths:[{n, mod}], board:{top:[...], me?}}`
-- `GET /me` — profile + meta: gold, $LOOT, depth, crew[] (named, xp), items, upgrades, lost[] (imprisoned).
+- `GET /me` — profile + meta: gold, $DJOB, depth, crew[] (named, xp), items, upgrades, lost[] (imprisoned).
 - `POST /camp/recruit {kind}` · `POST /camp/upgrade {key}` · `POST /camp/item {key}` — server enforces costs/caps from shared constants; returns updated meta. **All meta mutations are server-side.**
 - `POST /runs/start {depth}` — validates depth ≤ unlocked; issues `{runId, seed, mod, ticket}` (ticket = signed `{runId, wallet, date, depth, iat}`), snapshots the meta used (crew/items/upgrades) into the Run row, decrements consumables **at start** (they travel into the lair).
 - `POST /runs/complete {runId, ticket, result, events}` — result: `{success, loot, stolenPct, guardsSlain, crewLostTids[], rescuedTid?, survivorsTids[], slain, durationMs}`. Events: compact log `[t, code, value]` for LOOT_PILE, CHEST, SIPHON_TICK, GUARD_KILL, SHRINE, ARMORY, RESCUE, ITEM_USE, WAKE_MILESTONE(50/75/100), EXTRACT.
@@ -85,7 +85,7 @@ Auth: wallet connect → nonce sign → JWT session cookie. All below require au
 3. Duration floor: `durationMs ≥ 900 × loot / 60` sanity (can't siphon faster than 60 g/s/thief × crew) and ≥ shortest-path-to-hoard time estimate; reject sub-minimum.
 4. Event-sum consistency: Σ(loot events) ≈ result.loot (±2%); wake milestones present in order; ITEM_USE count ≤ items snapshotted at start.
 5. Rate limits: ≤ 40 runs/wallet/day; ≤ 1 concurrent open run; board submission = best success only.
-6. Heuristics → `flagged` runs excluded from board + $LOOT, wallet shadow-listed after 3 flags.
+6. Heuristics → `flagged` runs excluded from board + $DJOB, wallet shadow-listed after 3 flags.
 
 On success: apply meta changes atomically (gold+, xp+1 to in-zone survivors, crew removals→lost queue, rescued join, depth++), update boards (§8), append LootLedger (§9).
 
@@ -130,11 +130,11 @@ model LootLedger { id String @id @default(cuid())  userId String  user User @rel
 - `rl:{wallet}:{date}` — daily run counter.
 - Nightly job: persist `lb:{yesterday}` → `DailyBoard`, expire the ZSET after 48 h.
 
-## 9 · $LOOT v1 (off-chain ledger → periodic claim)
+## 9 · $DJOB v1 (off-chain ledger → periodic claim)
 
 - Earn per successful run (mirror prototype): `depth*3 + (stolenPct>=60 ? depth*2 : 0) + (slain?12:0) + floor(guardsSlain/3)`.
-- Daily bonus: board top 10 at rollover → `[100,70,50,40,30,25,20,15,10,10]` extra $LOOT.
-- Caps: ≤ 120 $LOOT/wallet/day from runs; flagged runs earn 0.
+- Daily bonus: board top 10 at rollover → `[100,70,50,40,30,25,20,15,10,10]` extra $DJOB.
+- Caps: ≤ 120 $DJOB/wallet/day from runs; flagged runs earn 0.
 - Balances live in `LootLedger`; UI shows total + claimable. **Claims:** weekly Merkle distribution on-chain (chain TBD — §14); build the ledger + `GET /loot/proof` endpoint now, contract later.
 - Never mint from client-reported numbers — only from validated runs.
 
@@ -167,7 +167,7 @@ model LootLedger { id String @id @default(cuid())  userId String  user User @rel
 
 **Meta:** start 300 g + crew Rats & Wick (Picklocks), Sable (Hexer), Fen (Bruiser). Crew cap 9; lost-queue cap 6. Upgrades: Sharpened Steel / Padded Leathers +15%/lvl (120 g ×1.7^lvl); Sleepy Incense (100 g ×1.7, max 3). XP: +1 per extraction to in-zone survivors; Lv=min(5,xp); +6% hp & dmg per level. Rescued thieves rejoin permanently only if they survive and extract (crew full → +150 g). Extraction: units outside the zone are left behind → lost queue. Wipe: run loot lost, hideout gold safe. Success: depth+1.
 
-**$LOOT formula:** see §9. Name pool (20): Rats, Wick, Sable, Fen, Moss, Briar, Kestrel, Ash, Vex, Onyx, Pip, Grim, Lark, Sorrel, Nix, Tarn, Vesper, Rook, Silt, Ember.
+**$DJOB formula:** see §9. Name pool (20): Rats, Wick, Sable, Fen, Moss, Briar, Kestrel, Ash, Vex, Onyx, Pip, Grim, Lark, Sorrel, Nix, Tarn, Vesper, Rook, Silt, Ember.
 
 ## 11 · Client (`apps/web`)
 
@@ -182,7 +182,7 @@ model LootLedger { id String @id @default(cuid())  userId String  user User @rel
 
 **Phase 2 — Accounts, server seeds, daily board.** Wallet auth, `/daily`, `/runs/start|complete` with validation tiers 1–5, Redis board, meta server-side. ✅ Accept: two browsers same day get identical lairs; forged `loot > maxLoot` rejected; board updates live; meta survives refresh.
 
-**Phase 3 — $LOOT ledger + polish.** Ledger, caps, top-10 rollover bonuses, `/board` history, PWA manifest, OG share card ("My heist: 2,340 g · Depth 4 · RESTLESS WYRM"). ✅ Accept: ledger math matches formulas; share card renders per run.
+**Phase 3 — $DJOB ledger + polish.** Ledger, caps, top-10 rollover bonuses, `/board` history, PWA manifest, OG share card ("My heist: 2,340 g · Depth 4 · RESTLESS WYRM"). ✅ Accept: ledger math matches formulas; share card renders per run.
 
 **Phase 4 — Replay verification + on-chain claims.** Input-log replay worker; Merkle claim contract on chosen chain. ✅ Accept: tampered event logs detected by re-simulation on seeded fixtures.
 
@@ -190,11 +190,11 @@ model LootLedger { id String @id @default(cuid())  userId String  user User @rel
 
 - PM2 apps: `hoardbreak-web` (next start, :3000) · `hoardbreak-api` (:4000) · `hoardbreak-jobs` (rollover cron worker). Nginx: web at `/`, API at `/api/` proxy, gzip on, HTML no-cache / assets immutable.
 - Postgres + Redis local to VPS (existing pattern). Env: `DATABASE_URL, REDIS_URL, SEED_SECRET, JWT_SECRET, NODE_ENV`.
-- Nightly cron (UTC 00:01): freeze board → DailyBoard, settle top-10 $LOOT, expire Redis keys.
+- Nightly cron (UTC 00:01): freeze board → DailyBoard, settle top-10 $DJOB, expire Redis keys.
 
 ## 14 · Open decisions for ALFA (don't block Phase 1–2)
 
-1. Chain for $LOOT claims (Solana default vs Robinhood Chain) — affects Phase 4 only.
+1. Chain for $DJOB claims (Solana default vs Robinhood Chain) — affects Phase 4 only.
 2. Domain + brand lock (`hoardbreak.fun`?), logo pass.
 3. Monetization v1: cosmetic name colors? extra daily runs? (Nothing pay-to-win on the daily board.)
 4. Depth cap / prestige loop for week-2 retention.

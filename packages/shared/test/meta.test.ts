@@ -130,7 +130,7 @@ describe('the black market', () => {
   });
 });
 
-describe('$LOOT', () => {
+describe('$DJOB', () => {
   it('pays out exactly the §9 formula', () => {
     expect(lootTokens({ depth: 1, stolenPct: 0, slain: false, guardsSlain: 0 })).toBe(3);
     expect(lootTokens({ depth: 4, stolenPct: 60, slain: false, guardsSlain: 0 })).toBe(20);

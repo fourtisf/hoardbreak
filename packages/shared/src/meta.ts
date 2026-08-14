@@ -48,7 +48,14 @@ export interface Meta {
   /** sound off, remembered — a player who mutes once should stay muted */
   muted: boolean;
   gold: number;
-  /** $LOOT balance (Phase 3 moves this to the ledger) */
+  /**
+   * $DJOB balance (Phase 3 moves this to the ledger).
+   *
+   * The field stays `tok` and the earner stays `lootTokens` on purpose: this
+   * name is persisted in every save already written, and the ticker is a brand
+   * decision that may move again. Renaming the field would break saves to buy
+   * nothing — the token's name belongs in the strings the player reads.
+   */
   tok: number;
   /**
    * The depth the player has *chosen* to raid next (v0.3).
@@ -281,7 +288,7 @@ export function commitRunStart(meta: Meta, run: { freshPrisonerTid: number | nul
   if (run.freshPrisonerTid !== null) meta.uid = Math.max(meta.uid, run.freshPrisonerTid);
 }
 
-/** $LOOT earned by a successful run (handoff §9). */
+/** $DJOB earned by a successful run (handoff §9). */
 export function lootTokens(r: {
   depth: number;
   stolenPct: number;
