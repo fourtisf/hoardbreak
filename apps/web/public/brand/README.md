@@ -11,9 +11,9 @@ has a chance.
 | `dragonjob-signet.svg` / `-400.png` | vector / 400² | Dark wyrm struck into a gold blank. Best at the smallest sizes. |
 | `dragonjob-eclipse.svg` / `-400.png` | vector / 400² | Green wyrm around a solid gold disc. Best large. |
 | `dragonjob-x-header-{seal,signet,eclipse}-1500x500.png` | 1500×500 | Social header, one per finish. Use the one matching the avatar. |
-| `dragonjob-v04-banner-1600x900.png` | 1600×900 | The v0.4 update card, for a post. |
-| `dragonjob-v04-header-1500x500.png` | 1500×500 | The v0.4 profile header. |
-| `shots/v04-*.png` | — | The raw game captures the two above are built from. |
+| `v04/v04-{1-heart,2-twelve,3-vault,4-crew}-1600x900.png` | 1600×900 | The v0.4 post cards, one per beat. |
+| `v04/v04-header-1500x500.png` | 1500×500 | The v0.4 profile header. |
+| `v04/plates/z-*.png` | — | The art plates the suite is cut from. |
 
 All three are already cropped to a circle, so the square PNG and a circular crop
 show the same thing — nothing important sits in the corners. Content radius is
@@ -39,29 +39,42 @@ To swap the lair, regenerate the JSON from the engine (`createRun` with
 `dailySeed(date, depth)`) and dump `grid`, `piles` and `chests` — the shape the
 builder reads is `{cols, rows, grid, piles:[{x,y}], chests:[{x,y}]}`.
 
-## The v0.4 update art
+## The v0.4 suite
 
-Different problem, different answer. The profile header sells a *mood*; an
-update card has to make a stranger understand what changed, and no amount of
-typography does that as fast as a picture of the thing running. So both v0.4
-pieces are built out of **real frames of the game** — driven by Playwright
-against a live build, with the run put into the state each feature is about (the
-wyrm awake, the Heart bare, a decorated roster on the wall). Nothing is mocked.
+`tools/capture-v04-plates.mjs` makes the art, `tools/build-v04-suite.mjs`
+composes it. Both need a dev server, because they drive the real game through
+`HB`, the development-only debug handle.
 
-Two rules learned the hard way while composing them:
+The images are the game's own canvas, and getting them to look like key art
+rather than like screenshots took three rules that are easy to get wrong:
 
-- **A screenshot shrunk past its type is worse than no screenshot.** The first
-  cut scaled whole panels down until their 11 px rows rendered at 5 px, which
-  neither reads nor sells. Each supporting capture is now shown at roughly 1:1,
-  cropped to the part that carries the point, and the words a viewer actually
-  needs are set large in Pirata One over the frame.
-- **Capture with `locator.screenshot()`, not a viewport clip.** A clip silently
-  truncates any panel sitting near the bottom of the window — the rival card lost
-  the line with the gap on it, which was the entire reason for the card.
+- **Zoom the camera, not the image.** The renderer draws the world at the camera
+  scale and the labels at a fixed CSS size, so blowing a capture up magnifies
+  both — at 4× the wyrm looked magnificent and `THE ROOF IS COMING DOWN` became a
+  60 px wall of noise. `viewFor()` takes `k = max(cw/768, ch/528, cw/456)`, so a
+  deliberately **tall, narrow viewport** drives `k` far past what a wide window
+  gives: tiles land near 40 px while the labels stay at 8–12 px.
+- **Strip the HUD at the source.** Names come from `unit.name`, so the capture
+  blanks them; the stick, hint bar and toast are hidden with a style tag; the
+  guards are removed and the crew made unkillable so no damage numbers print and
+  nobody dies while the camera is still setting up. What cannot be removed —
+  the wyrm's health bar, which is always drawn above an awake dragon — is hidden
+  under the card's top gradient instead.
+- **Pose on the last tick before the shutter.** Setting positions in the setup
+  step let the sim run for seconds afterwards, which was long enough for the
+  seize order to walk the whole crew onto the wyrm's back.
 
-The captures live in `shots/`. To rebuild after a UI change, re-run the capture
-and compose scripts against a dev server (they need `HB`, the dev-only debug
-handle, to force the wyrm awake).
+The plates come out at exactly 16:9, and that is what holds the layouts
+together: `background-size: cover` lays a plate onto a 1600×900 card one-to-one,
+so the wyrm lands top-right and the crew bottom-centre *by construction*, with
+the quiet left third free for type. No hand-nudged offsets, nothing to re-tune
+when a plate is recaptured.
+
+Treatment: warm bloom over the gold, a raking light shaft, drifting dust, a hard
+vignette, and real film grain from an SVG turbulence — all generated. Titles are
+gold foil, a gradient clipped to the glyphs over a letterpress shadow. Plates are
+scaled with `image-rendering: pixelated`; a bilinear upscale turns crisp 24 px
+tiles to mush, and mush is the fastest way to make a game look cheap.
 
 Fonts: the banner sets the wordmark in **Pirata One** — the game's own display
 face — and body italics in **Gelasio**, which is metric-compatible with the
