@@ -94,7 +94,7 @@ const W = 1600, H = 900;
 
 const card = (c) => `<style>${CHROME}
 .stage{width:${W}px;height:${H}px}
-.plate{background-image:url('${c.plate}')}
+.plate{background-image:url('${c.plate}');background-size:${c.bg || 'cover'};background-position:${c.pos || 'center'}}
 /* the top band hides the wyrm's health bar, which the renderer always draws
    above an awake dragon and no game state will suppress */
 #sky{position:absolute;left:0;right:0;top:0;height:230px;pointer-events:none;
@@ -151,38 +151,58 @@ const RED = 'color:#ffd0d6;background:rgba(58,10,16,.66);border:1px solid rgba(2
 const AMBER = 'color:#ffd9b0;background:rgba(58,30,10,.66);border:1px solid rgba(255,156,60,.5)';
 const GREEN = 'color:#bff5d6;background:rgba(10,40,24,.66);border:1px solid rgba(61,220,132,.45)';
 
+/* The four cards are an *introduction*, not patch notes.
+   The first version of this copy opened with "the wyrm wakes and leaves its bed"
+   — which lands only if you already know there is a wyrm, that it sleeps, and
+   that it has a bed. To a stranger scrolling past, that is noise. So the set
+   now runs: what the game is, why it is tense, what is new, and what it costs
+   you. Only the third card is about v0.4 at all. */
+/* The four cards are an *introduction*, not patch notes.
+   The first version opened with "the wyrm wakes and leaves its bed" — which
+   lands only if you already know there is a wyrm, that it sleeps, and that it
+   has a bed. To a stranger scrolling past that is noise. The set now runs: what
+   the game is, why it is tense, what is new, what it costs you. Only the third
+   card is about v0.4 at all.
+
+   Both plates are the *awake* wyrm on purpose. The sleeping plate carries the
+   game's own DEEP GOLD and HOARD labels, and at card scale they blow up into
+   billboards over the art; an awake dragon draws neither. Variety comes from
+   framing instead — two plates, four crops. */
 const CARDS = [
   {
-    file: 'v04-1-heart', plate: P.heart, seed: 7, titleCls: 'foil', size: 74,
-    blooms: [bloom(80, 26, 52, '255,190,90', 0.42), bloom(86, 22, 22, '255,150,60', 0.3)],
-    badge: '<i style="background:#ff5a6e;box-shadow:0 0 10px #ff5a6e"></i>new in v0.4',
-    badgeCss: RED, title: 'TAKE THE HEART',
-    lede: 'The wyrm wakes and leaves its bed, and the Heart of the hoard lies bare. Everything you have banked doubles the moment you touch it — and then you have twelve seconds.',
+    file: 'v04-1-heart', plate: P.heart, seed: 7, titleCls: 'foil', size: 76,
+    blooms: [bloom(80, 26, 52, '255,196,90', 0.46), bloom(86, 22, 22, '255,150,60', 0.3)],
+    badge: '<i style="background:#ffd75e;box-shadow:0 0 10px #ffd75e"></i>a daily heist',
+    badgeCss: AMBER, title: 'ROB THE DRAGON',
+    lede: 'Lead four named thieves into a sleeping wyrm’s lair and steal what you can carry. One lair a day — the same one for every player on earth.',
     foot: 'new lair every day · 00:00 utc',
   },
   {
-    file: 'v04-2-twelve', plate: P.collapse, seed: 19, titleCls: 'bone', size: 72,
-    blooms: [bloom(78, 24, 48, '255,120,80', 0.4), bloom(50, 60, 40, '255,80,80', 0.16)],
-    badge: '<i style="background:#ff5a6e;box-shadow:0 0 10px #ff5a6e"></i>the collapse',
-    badgeCss: RED, title: 'TWELVE&nbsp;SECONDS',
-    lede: 'Take the Heart and the mountain starts coming down. The wyrm flies. You do not. From here, the door is the whole game.',
+    file: 'v04-2-twelve', plate: P.heart, seed: 19, titleCls: 'bone', size: 62,
+    bg: '158%', pos: '26% 88%',
+    blooms: [bloom(72, 34, 44, '255,190,90', 0.34), bloom(40, 70, 34, '120,220,150', 0.14)],
+    badge: '<i style="background:#3ddc84;box-shadow:0 0 10px #3ddc84"></i>how it works',
+    badgeCss: GREEN, title: 'THE LOOT IS THE TIMER',
+    lede: 'Every coin, every cracked chest, every guard you put down stirs it further awake. There is no clock in the corner. The clock is the animal, and greed is what winds it.',
+    foot: 'steal · stir · get out',
+  },
+  {
+    file: 'v04-3-vault', plate: P.collapse, seed: 33, titleCls: 'foil', size: 74,
+    blooms: [bloom(78, 24, 48, '255,120,80', 0.42), bloom(52, 58, 40, '255,80,80', 0.18)],
+    badge: '<i style="background:#ff5a6e;box-shadow:0 0 10px #ff5a6e"></i>new in v0.4',
+    badgeCss: RED, title: 'TAKE THE HEART',
+    lede: 'When it wakes it leaves its bed, and the Heart of the hoard lies bare. Take it and everything you have banked doubles — then you have twelve seconds to reach the door.',
     foot: 'seize · run · extract',
   },
   {
-    file: 'v04-3-vault', plate: P.sleeping, seed: 33, titleCls: 'foil', size: 66,
-    blooms: [bloom(84, 22, 58, '255,196,90', 0.5), bloom(88, 20, 24, '255,150,60', 0.34)],
-    badge: '<i style="background:#ff9c3c;box-shadow:0 0 10px #ff9c3c"></i>every sunday',
-    badgeCss: AMBER, title: 'THE GRAND VAULT',
-    lede: 'One night a week the whole world robs the same lair. Two and a half times the hoard, and the entire cult standing on it.',
-    foot: 'sundays · 00:00 utc',
-  },
-  {
-    file: 'v04-4-crew', plate: P.sleeping, seed: 51, titleCls: 'bone', size: 70,
-    blooms: [bloom(84, 22, 46, '255,190,90', 0.34), bloom(46, 74, 34, '120,220,150', 0.16)],
-    badge: '<i style="background:#3ddc84;box-shadow:0 0 10px #3ddc84"></i>the crew remembers',
-    badgeCss: GREEN, title: 'THEY KEEP COUNT',
-    lede: 'Vale · Picklock · forty-one raids · Legend. Your thieves carry their history now — and the ones no cage ever gave back have a wall with their names on it.',
-    foot: 'rookie · blooded · seasoned · veteran · legend',
+    file: 'v04-4-crew', plate: P.collapse, seed: 51, titleCls: 'bone', size: 70,
+    bg: '162%', pos: '24% 90%',
+    blooms: [bloom(66, 40, 40, '255,120,80', 0.26), bloom(38, 74, 32, '201,160,240', 0.14)],
+    badge: '<i style="background:#c9a0f0;box-shadow:0 0 10px #c9a0f0"></i>the crew',
+    badgeCss: 'color:#e6d0ff;background:rgba(30,14,44,.66);border:1px solid rgba(201,160,240,.45)',
+    title: 'THEY STAY DEAD',
+    lede: 'Your thieves have names, and they count their own raids — Rookie to Legend. Leave one behind and a cage keeps them until somebody goes back. Nobody always does.',
+    foot: 'four in · however many out',
   },
 ];
 

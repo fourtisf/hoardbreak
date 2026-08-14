@@ -102,89 +102,107 @@ Only when there is something behind the door.
 
 ---
 
-## 7 · The update (v0.4)
+## 7 · Introducing the game (the four cards)
 
-Four cards ship with this update, in `apps/web/public/brand/v04/`. Each one is
-one beat, and each has its own post — an update is worth more than a single
-announcement, and a card with no words under it is a poster nobody read.
+Four cards ship in `apps/web/public/brand/v04/`. They are an **introduction**,
+not patch notes — most people who see them have never heard of this game, and a
+post that opens *"the wyrm wakes and leaves its bed"* is meaningless to someone
+who does not yet know there is a wyrm.
 
-Post them a day or two apart, in this order. The first is the announcement; the
-rest are the reasons to come back.
+So the set answers, in order: **what is it · why is it tense · what is new ·
+what does it cost me.** Post them two or three days apart.
 
 ---
 
-### 1 · `v04-1-heart` — the announcement
+### 1 · `v04-1-heart` — what it is
 
-The rule that changed how a run *ends*. Lead with it.
-
-> The wyrm wakes and leaves its bed.
+> A dragon sleeps on a pile of gold.
 >
-> The Heart of the hoard is lying there. Bare.
+> You have four thieves and one night. Every coin you take wakes it a little.
 >
-> Take it and everything you are carrying doubles. Then the mountain starts
-> coming down and you have twelve seconds.
+> Same lair for every player on earth. New one at 00:00 UTC.
 >
 > thedragonjob.com
 
-**Reply, if the post travels:**
+---
+
+### 2 · `v04-2-twelve` — why it is tense
+
+> There is no timer in the corner of the screen.
+>
+> The timer is the dragon, and stealing is what winds it.
+>
+> Coins, chests, a guard put down quietly — all of it. Nothing winds it faster
+> than greed.
+
+**Reply, with the number that makes it real:**
+
+> Take more than half the hoard and every guard stops chasing you and goes to
+> stand on the door.
+>
+> Past 60% your whole take pays double.
+>
+> Those two numbers are ten apart on purpose.
+
+---
+
+### 3 · `v04-3-vault` — what is new
+
+> It finally wakes up. It comes off the pile to hunt you.
+>
+> Which means the Heart of the hoard is lying there, unguarded, for the first
+> time all night.
+>
+> Take it: everything you are carrying doubles. Then the roof starts coming
+> down and you have twelve seconds.
+
+**Reply:**
 
 > A waking dragon used to mean run.
 >
-> Now it means the thing guarding the Heart is no longer sitting on it.
+> Now it means the thing guarding the prize just stood up off it.
 
 ---
 
-### 2 · `v04-2-twelve` — the collapse
+### 4 · `v04-4-crew` — what it costs
 
-The cost, stated as arithmetic. No adjectives.
-
-> Twelve seconds from the hoard to the door.
+> Your thieves have names. They count their own raids — Rookie, Blooded,
+> Seasoned, Veteran, Legend.
 >
-> The wyrm flies. You do not.
-
-**Alternate, if the first has already run:**
-
-> Everything you banked, doubled.
+> Leave one behind and a cage keeps them until somebody goes back for them.
 >
-> Everything you banked, buried.
->
-> Twelve seconds decides which.
+> Nobody always goes back.
 
----
-
-### 3 · `v04-3-vault` — the weekly
-
-> Every Sunday the whole world robs the same vault.
->
-> Two and a half times the hoard, and the entire cult standing on it.
->
-> Bring a crew that has seen a few nights.
-
-**The morning of, as a reply or its own post:**
-
-> The Grand Vault is open.
->
-> Same lair for every player on earth. Until 00:00 UTC.
-
----
-
-### 4 · `v04-4-crew` — the crew
-
-The one that is about people, not numbers. Use a real name from a real run.
-
-> Vale · Picklock · forty-one raids · Legend.
->
-> Your thieves keep count now.
->
-> The ones no cage ever gave back have a wall with their names on it.
-
-**The loss post, when it happens for real:**
+**The loss post, when it happens in a real run — use the real name:**
 
 > Rats survived forty-one raids.
 >
 > Rats is on the wall now.
 
 ---
+
+### The pinned thread
+
+One post per beat is the drip. This is the whole pitch in one place, for the
+profile pin.
+
+> 1/ A dragon sleeps on a hoard.
+> You have four thieves and one night.
+> Every coin you take wakes it.
+>
+> 2/ The lair is the same for every player on earth and it changes at 00:00 UTC.
+> One shot each. Whatever the night does, it does to everyone equally.
+>
+> 3/ Your thieves have names and they stay dead. The ones you leave behind sit
+> in a cage until somebody goes back.
+>
+> 4/ Take more than half the hoard and every guard leaves you alone and goes to
+> stand on the door. Past 60% your take pays double. Ten apart, on purpose.
+>
+> 5/ When it wakes it comes off the pile — and the Heart of the hoard is finally
+> unguarded. Take it and everything doubles. Then you have twelve seconds.
+>
+> 6/ thedragonjob.com
 
 ### The header and the bio
 
@@ -194,7 +212,7 @@ profile should look like the thing the timeline just showed.
 **Bio:**
 
 > Rob a sleeping dragon. One lair a day, the same for every player on earth.
-> Take the Heart and you have twelve seconds.
+> Every coin you take wakes it.
 
 ---
 
