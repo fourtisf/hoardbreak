@@ -216,6 +216,107 @@ profile should look like the thing the timeline just showed.
 
 ---
 
+## 8 · The token launch
+
+`$LOOT` is earned by playing: `depth × 3`, double that past 60% of the hoard,
+`+12` for a dead wyrm, `+1` per three guards. Top ten on the daily board split
+`100 · 70 · 50 · 40 · 30 · 25 · 20 · 15 · 10 · 10` at rollover. Runs are capped
+at **120 a day per wallet**, and a flagged run earns nothing.
+
+Those numbers are the whole pitch. They are real, they are in the game, and a
+reader can check every one of them tonight — which is more than most launches
+can say. Lead with them.
+
+### The extra never-write list, for these posts only
+
+Everything in the list at the top still applies. These are additional.
+
+1. **No price, ever.** No targets, no floors, no "still early", no charts, no
+   market cap. The account does not know where the price is going and saying so
+   anyway is how people lose money on your word.
+2. **No manufactured urgency.** No countdowns to "the last chance", no "you will
+   regret", no "before it runs". The daily reset is real urgency; nothing else
+   has to be invented.
+3. **No "utility" hand-waving.** Say the formula. If a thing is not built yet,
+   say *not built yet*.
+4. **No engagement farming.** No "like + RT for whitelist", no reply-to-enter.
+5. **Never post the address as an image only.** People retype from screenshots
+   and land on a fake. Text, every time, so it can be copied exactly.
+
+---
+
+### 1 · The launch
+
+Keep it flat. The excitement is the reader's job, not the copy's.
+
+> $LOOT is live.
+>
+> CA: `<paste the address>`
+>
+> It is earned by robbing a dragon, not by being early.
+>
+> thedragonjob.com
+
+### 2 · The address, immediately, as the first reply
+
+Post this within a minute of the launch and pin it. Fakes appear inside the
+hour, and this is the single post that protects people.
+
+> One address. This one.
+>
+> CA: `<paste the address>`
+>
+> Anything in your replies, your DMs or a screenshot is somebody robbing you.
+> The game is about that. The launch does not have to be.
+
+### 3 · What it actually pays
+
+> $LOOT is what a run pays out.
+>
+> Depth × 3. Double it if you take more than 60% of the hoard. Twelve more if
+> the wyrm dies. One for every three guards.
+>
+> A clean night at depth one pays five.
+
+### 4 · The cap, said as a feature — because it is
+
+> 120 $LOOT a day per wallet from runs. That is the ceiling and it is deliberate.
+>
+> A bot grinding all night earns what one person playing one good run earns.
+
+### 5 · The board
+
+> Top ten on the daily board at 00:00 UTC take 100, 70, 50, 40, 30, 25, 20, 15,
+> 10 and 10 on top.
+>
+> One lair. Everyone gets the same one. No entry fee.
+
+### 6 · The honest limits
+
+Post this too. A launch that names what is not finished is the one people trust.
+
+> What works today: the game, the daily board, the ledger that counts what you
+> earned.
+>
+> What does not, yet: claiming. It is an off-chain ledger until it is not.
+>
+> That is the whole state of it.
+
+---
+
+### Before there is a token
+
+Post this **now**, before launch, and pin it until launch day. It is the cheapest
+protection a project can buy.
+
+> There is no $LOOT token yet.
+>
+> When there is, the address goes on thedragonjob.com first, and here second.
+>
+> Anyone offering you one before that is selling you something else.
+
+---
+
 ## Reply-to-your-own-post
 
 A reply carries the detail the parent post earned. Do not restate the parent —
