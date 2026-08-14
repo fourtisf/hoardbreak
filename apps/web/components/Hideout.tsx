@@ -42,9 +42,24 @@ import {
 import { getMeta, mutate, replaceMeta, resetMeta, useLastRun, useMeta } from '@/lib/store';
 import { armRaid } from '@/lib/entry';
 import { toast } from '@/lib/toast';
-import { fetchBoard, type BoardState } from '@/lib/board';
+import { fetchBoard, fetchIntel, type BoardState, type IntelState } from '@/lib/board';
 import SpriteCanvas from './SpriteCanvas';
 import Toast from './Toast';
+
+/**
+ * How the whisper network reads a night's verdicts back to a player.
+ *
+ * Only the loud outcomes get a line — nobody plans a raid around how many crews
+ * had an ordinary night. Ordered by how much the intel changes the decision to
+ * go in: the wyrm being killable, and people taking the Heart, matter most.
+ */
+const INTEL_LABELS: { id: string; word: (n: number) => string }[] = [
+  { id: 'SLAYER', word: (n) => `${n} slew the wyrm` },
+  { id: 'HEARTTAKER', word: (n) => `${n} seized the Heart` },
+  { id: 'FED', word: (n) => `${n} fed it` },
+  { id: 'GHOST', word: (n) => `${n} went unseen` },
+  { id: 'STRIPPED', word: (n) => `${n} stripped it bare` },
+];
 
 /** THE HIDEOUT — recruit, gear up, read the board, then go rob a dragon. */
 export default function Hideout() {
@@ -57,10 +72,16 @@ export default function Hideout() {
   const unlocked = unlockedDepth(meta);
   // the real board, or an honest silence — never invented rivals
   const [board, setBoard] = useState<BoardState>({ k: 'loading' });
+  // the whisper network: what tonight's raiders did at this depth, if the board
+  // is reachable and anyone has been in yet
+  const [intel, setIntel] = useState<IntelState>({ k: 'loading' });
   useEffect(() => {
     let live = true;
     void fetchBoard(date, meta.depth, meta.pid).then((s) => {
       if (live) setBoard(s);
+    });
+    void fetchIntel(date, meta.depth).then((i) => {
+      if (live) setIntel(i);
     });
     return () => {
       live = false;
@@ -427,6 +448,45 @@ export default function Hideout() {
                 )}
               </div>
             </div>
+
+            {/* The rival — the next name up the board, and the exact gap to it.
+                The reason to open the game tomorrow when tonight went fine. */}
+            {board.k === 'ok' && board.standing.rival && (
+              <div className="panelBox rivalBox">
+                <div className="lbl" style={{ marginBottom: 4 }}>
+                  YOUR RIVAL TONIGHT
+                </div>
+                <div className="rivalName">
+                  {board.standing.rival.n}
+                  <span className="rivalScore"> · {fmt(board.standing.rival.s)}g</span>
+                </div>
+                <div className="rivalGap">
+                  {board.standing.me
+                    ? `${fmt(board.standing.rival.gap)}g ahead of you — take it back.`
+                    : `the mark to beat tonight — ${fmt(board.standing.rival.gap)}g.`}
+                </div>
+              </div>
+            )}
+
+            {/* The whisper network — anonymised intel on what tonight's raiders
+                did at this depth, so a player knows what they walk into. */}
+            {intel.k === 'ok' && (
+              <div className="panelBox intelBox">
+                <div className="lbl" style={{ marginBottom: 4 }}>
+                  WHISPERS FROM DEPTH {meta.depth}
+                </div>
+                <div className="intelLine">
+                  <b>{fmt(intel.intel.players)}</b> came back · avg <b>{fmt(intel.intel.avgLoot)}g</b> · best{' '}
+                  <b>{fmt(intel.intel.bestLoot)}g</b>
+                </div>
+                {(() => {
+                  const notes = INTEL_LABELS.filter((l) => (intel.intel.verdicts[l.id] ?? 0) > 0).map((l) =>
+                    l.word(intel.intel.verdicts[l.id] as number),
+                  );
+                  return notes.length ? <div className="intelNotes">{notes.join(' · ')}</div> : null;
+                })()}
+              </div>
+            )}
           </div>
         </div>
 

@@ -112,6 +112,13 @@ export function createApi(db: Db, now: () => number = Date.now) {
       return send(res, 200, { date, depth, ...standing });
     }
 
+    if (path === '/intel' && req.method === 'GET') {
+      const date = url.searchParams.get('date') ?? todayUTC(now());
+      const depth = Number(url.searchParams.get('depth') ?? '1');
+      if (!Number.isInteger(depth) || depth < 1 || depth > 99) return send(res, 400, { error: 'bad depth' });
+      return send(res, 200, db.intel(date, depth));
+    }
+
     if (path === '/board' && req.method === 'POST') {
       let body: unknown;
       try {

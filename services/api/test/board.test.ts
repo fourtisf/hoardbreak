@@ -210,6 +210,75 @@ describe('the door itself', () => {
   });
 });
 
+describe('the rival — the next name up the board', () => {
+  // three players, distinct scores, so the ladder is unambiguous
+  const seed = async (): Promise<void> => {
+    await post(claim({ pid: 'aaaaaaaa1111', name: 'Ava', loot: 1500 }));
+    await post(claim({ pid: 'bbbbbbbb2222', name: 'Bex', loot: 900 }));
+    await post(claim({ pid: 'cccccccc3333', name: 'Cyd', loot: 400 }));
+  };
+  type B = { rank?: number; rival?: { n: string; s: number; gap: number } };
+
+  it('hands a mid-board player whoever is one place above them', async () => {
+    await seed();
+    const b = (await (await get(`date=${DATE}&depth=1&pid=cccccccc3333`)).json()) as B;
+    expect(b.rank).toBe(3);
+    expect(b.rival).toEqual({ n: 'Bex', s: 900, gap: 500 });
+  });
+
+  it('points the second place at the leader', async () => {
+    await seed();
+    const b = (await (await get(`date=${DATE}&depth=1&pid=bbbbbbbb2222`)).json()) as B;
+    expect(b.rank).toBe(2);
+    expect(b.rival).toEqual({ n: 'Ava', s: 1500, gap: 600 });
+  });
+
+  it('gives the leader nobody to chase', async () => {
+    await seed();
+    const b = (await (await get(`date=${DATE}&depth=1&pid=aaaaaaaa1111`)).json()) as B;
+    expect(b.rank).toBe(1);
+    expect(b.rival).toBeUndefined();
+  });
+
+  it('gives a player with no score tonight the leader as their mark', async () => {
+    await seed();
+    const b = (await (await get(`date=${DATE}&depth=1&pid=dddddddd4444`)).json()) as B;
+    expect(b.rank).toBeUndefined();
+    expect(b.rival).toEqual({ n: 'Ava', s: 1500, gap: 1500 });
+  });
+});
+
+describe('the whisper network — what tonight’s raiders did', () => {
+  it('aggregates the posted scores into intel', async () => {
+    await post(claim({ pid: 'aaaaaaaa1111', name: 'Ava', loot: 1500, verdict: 'HEARTTAKER' }));
+    await post(claim({ pid: 'bbbbbbbb2222', name: 'Bex', loot: 900, verdict: 'CLEAN' }));
+    await post(claim({ pid: 'cccccccc3333', name: 'Cyd', loot: 500, verdict: 'CLEAN' }));
+
+    const i = (await (await fetch(`${base}/intel?date=${DATE}&depth=1`)).json()) as {
+      players: number;
+      avgLoot: number;
+      bestLoot: number;
+      verdicts: Record<string, number>;
+    };
+    expect(i.players).toBe(3);
+    expect(i.bestLoot).toBe(1500);
+    expect(i.avgLoot).toBe(Math.round((1500 + 900 + 500) / 3));
+    expect(i.verdicts).toEqual({ HEARTTAKER: 1, CLEAN: 2 });
+  });
+
+  it('reports an empty night as nobody, not an error', async () => {
+    const r = await fetch(`${base}/intel?date=${DATE}&depth=7`);
+    expect(r.status).toBe(200);
+    const i = (await r.json()) as { players: number; verdicts: Record<string, number> };
+    expect(i.players).toBe(0);
+    expect(i.verdicts).toEqual({});
+  });
+
+  it('refuses a nonsense depth', async () => {
+    expect((await fetch(`${base}/intel?date=${DATE}&depth=0`)).status).toBe(400);
+  });
+});
+
 describe('housekeeping', () => {
   it('drops nights nobody can submit to any more', async () => {
     await post(claim());

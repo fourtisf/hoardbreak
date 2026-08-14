@@ -94,6 +94,19 @@ border-radius:10px;padding:7px 11px;cursor:pointer;margin-bottom:7px}
 .rows .r b{color:var(--bone);font-weight:400;flex:1}
 .rows .r.you{color:var(--gold)}.rows .r.you b{color:var(--goldhi)}
 
+/* the rival — the next name up the board, given its own hot little card */
+.rivalBox{border-color:#5a3a52;background:#170f1a;margin-top:8px}
+.rivalBox .lbl{color:#c9a0f0}
+.rivalName{font-family:'Pirata One',serif;font-size:17px;color:#e6d0ff;letter-spacing:.02em}
+.rivalName .rivalScore{font-family:Consolas,monospace;font-size:13px;color:var(--goldhi)}
+.rivalGap{font-size:10.5px;font-style:italic;color:#b79fd0;margin-top:3px;line-height:1.4}
+/* the whisper network — anonymised intel, monospace because it is numbers */
+.intelBox{border-color:#274a5a;background:#0c1820;margin-top:8px}
+.intelBox .lbl{color:var(--blue)}
+.intelLine{font-family:Consolas,monospace;font-size:11px;color:var(--bone);line-height:1.7}
+.intelLine b{color:var(--blue)}
+.intelNotes{font-family:Consolas,monospace;font-size:10px;color:var(--dim);margin-top:3px;line-height:1.6}
+
 /* Three areas, not two: the HUD is split into what you read (`side`) and what
    you touch (`under`). On a desktop they are the top and bottom of one rail and
    the seam does not show; on a phone the grid puts them on opposite sides of

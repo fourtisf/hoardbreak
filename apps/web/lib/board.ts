@@ -19,14 +19,37 @@ import type { BoardRow } from '@dragonjob/shared';
 const API = process.env.NEXT_PUBLIC_API ?? '/api';
 const TIMEOUT = 6000;
 
+export interface Rival {
+  n: string;
+  s: number;
+  gap: number;
+}
+
 export interface Standing {
   date: string;
   depth: number;
   top: BoardRow[];
   me?: BoardRow;
   rank?: number;
+  /** the next name up the board — someone to chase */
+  rival?: Rival;
   players: number;
 }
+
+export interface Intel {
+  date: string;
+  depth: number;
+  players: number;
+  avgLoot: number;
+  bestLoot: number;
+  verdicts: Record<string, number>;
+}
+
+export type IntelState =
+  | { k: 'loading' }
+  | { k: 'ok'; intel: Intel }
+  | { k: 'empty' }
+  | { k: 'down' };
 
 export type BoardState =
   | { k: 'loading' }
@@ -54,6 +77,16 @@ export async function fetchBoard(date: string, depth: number, pid: string): Prom
     return { k: s.players > 0 ? 'ok' : 'empty', standing: s };
   } catch (e) {
     return { k: 'down', why: e instanceof Error ? e.message : 'unreachable' };
+  }
+}
+
+/** The whisper network — what tonight's raiders did at this depth. Optional like the board. */
+export async function fetchIntel(date: string, depth: number): Promise<IntelState> {
+  try {
+    const i = (await call(`/intel?date=${encodeURIComponent(date)}&depth=${depth}`)) as Intel;
+    return i.players > 0 ? { k: 'ok', intel: i } : { k: 'empty' };
+  } catch {
+    return { k: 'down' };
   }
 }
 
