@@ -76,11 +76,27 @@ gold foil, a gradient clipped to the glyphs over a letterpress shadow. Plates ar
 scaled with `image-rendering: pixelated`; a bilinear upscale turns crisp 24 px
 tiles to mush, and mush is the fastest way to make a game look cheap.
 
-Fonts: the banner sets the wordmark in **Pirata One** — the game's own display
-face — and body italics in **Gelasio**, which is metric-compatible with the
-Georgia the UI uses. Both must be installed locally; a headless browser will
-silently fall back to a generic serif otherwise, and the result looks like a
-different product. Verify with a measured width, not by eye.
+### The type
+
+The suite does **not** set its headlines in Pirata One. That face is the game's
+own and it is right in the UI, but it is blackletter: at a glance, at timeline
+size, `TWELVE SECONDS` read as texture rather than as words — which is a poster
+that failed at the only job a poster has.
+
+| Role | Face | Why |
+| --- | --- | --- |
+| Headlines, wordmark | **Cinzel** 700/900, wide tracking | The free cut of the inscriptional Roman film posters have used for decades. Same register of grand, and legible at a glance. |
+| Prose, ledes | **EB Garamond** italic | Carries a long line without shouting. |
+| Small caps, labels, the domain | **JetBrains Mono** 300 | Clean at 11–16px, where DejaVu goes muddy. |
+
+All three must be installed locally — a headless browser falls back to a generic
+serif *in silence*, and the result looks like somebody else's product. Verify by
+measuring text width against a deliberately bogus family, not by eye.
+
+Note the divergence this creates: the **site** still sets its wordmark in Pirata
+One (`apps/web/app/globals.css`). The seal carries the identity in both, so the
+two read as the same brand, but if the site ever moves to Cinzel these should
+move together.
 
 ## Editing
 

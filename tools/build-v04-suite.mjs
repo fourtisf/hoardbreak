@@ -49,18 +49,25 @@ body{background:#030705;overflow:hidden}
 .grain{position:absolute;inset:0;pointer-events:none;opacity:.2;mix-blend-mode:overlay}
 .dust i{position:absolute;border-radius:50%;background:rgba(255,226,172,.9);
   box-shadow:0 0 7px 2px rgba(255,206,128,.35);pointer-events:none}
-.pirata{font-family:'Pirata One'}
-.mono{font-family:'DejaVu Sans Mono',monospace}
-.serif{font-family:Gelasio,Georgia,serif;font-style:italic}
+/* The type system, rebuilt for legibility.
+   Pirata One is the game's display face and it is beautiful in the UI, but it is
+   blackletter: at a glance, on a timeline, "TWELVE SECONDS" read as texture
+   rather than as words. Cinzel is the free cut of the inscriptional Roman that
+   film posters have used for thirty years — it is the same register of grand,
+   and it can actually be read. EB Garamond carries the prose and JetBrains Mono
+   the small caps; both are a clear step up from the metric stand-ins. */
+.pirata{font-family:Cinzel;font-weight:900}
+.mono{font-family:'JetBrains Mono';font-weight:300}
+.serif{font-family:'EB Garamond',Georgia,serif;font-style:italic}
 .foil{background:linear-gradient(177deg,#fff8de 4%,#ffd75e 33%,#dfa728 63%,#fff2c2 90%);
   -webkit-background-clip:text;background-clip:text;color:transparent;
   filter:drop-shadow(0 3px 0 rgba(0,0,0,.6)) drop-shadow(0 12px 32px rgba(0,0,0,.9))
          drop-shadow(0 0 28px rgba(255,196,80,.3))}
 .bone{color:#f5ecd9;text-shadow:0 3px 0 rgba(0,0,0,.55),0 12px 30px rgba(0,0,0,.92)}
 .hair{height:1px;background:linear-gradient(90deg,#c08f2c,rgba(192,143,44,.05))}
-.dom{letter-spacing:.26em;color:#ffd75e;font-size:17px}
-.badge{display:inline-flex;align-items:center;gap:9px;border-radius:22px;padding:8px 17px;
-  font-size:13px;letter-spacing:.24em;text-transform:uppercase;backdrop-filter:blur(3px)}
+.dom{letter-spacing:.3em;color:#ffd75e;font-size:16px}
+.badge{display:inline-flex;align-items:center;gap:9px;border-radius:22px;padding:9px 18px;
+  font-size:12px;letter-spacing:.28em;text-transform:uppercase;backdrop-filter:blur(3px)}
 .badge i{width:7px;height:7px;border-radius:50%;display:block}
 `;
 
@@ -98,13 +105,13 @@ const card = (c) => `<style>${CHROME}
   background:linear-gradient(90deg,rgba(3,7,5,.95) 0%,rgba(3,7,5,.86) 38%,rgba(3,7,5,.4) 74%,transparent 100%)}
 #top{position:absolute;left:80px;right:80px;top:56px;display:flex;align-items:center;gap:19px}
 #top svg{width:72px;height:72px;filter:drop-shadow(0 10px 26px rgba(0,0,0,.92))}
-#wm{font-size:38px;letter-spacing:.05em;line-height:1}
-#tag{margin-left:auto;text-align:right;line-height:1.95;font-size:12px;letter-spacing:.28em;
+#wm{font-size:31px;letter-spacing:.19em;line-height:1;font-weight:700}
+#tag{margin-left:auto;text-align:right;line-height:2;font-size:11.5px;letter-spacing:.3em;
   text-transform:uppercase;color:#8fb3a1}
 #badge{position:absolute;left:80px;top:186px}
 #body{position:absolute;left:80px;width:690px;bottom:148px}
-#title{font-size:${c.size || 84}px;line-height:.95;letter-spacing:.035em}
-#lede{font-size:21.5px;line-height:1.58;margin-top:19px;color:#e9dece;
+#title{font-size:${c.size || 72}px;line-height:1.04;letter-spacing:.075em}
+#lede{font-size:23px;line-height:1.55;margin-top:22px;color:#e9dece;
   text-shadow:0 2px 18px rgba(0,0,0,.98)}
 #rule{margin-top:24px;width:190px}
 #foot{position:absolute;left:80px;right:80px;bottom:52px;display:flex;align-items:baseline;justify-content:space-between}
@@ -146,7 +153,7 @@ const GREEN = 'color:#bff5d6;background:rgba(10,40,24,.66);border:1px solid rgba
 
 const CARDS = [
   {
-    file: 'v04-1-heart', plate: P.heart, seed: 7, titleCls: 'foil', size: 88,
+    file: 'v04-1-heart', plate: P.heart, seed: 7, titleCls: 'foil', size: 74,
     blooms: [bloom(80, 26, 52, '255,190,90', 0.42), bloom(86, 22, 22, '255,150,60', 0.3)],
     badge: '<i style="background:#ff5a6e;box-shadow:0 0 10px #ff5a6e"></i>new in v0.4',
     badgeCss: RED, title: 'TAKE THE HEART',
@@ -154,7 +161,7 @@ const CARDS = [
     foot: 'new lair every day · 00:00 utc',
   },
   {
-    file: 'v04-2-twelve', plate: P.collapse, seed: 19, titleCls: 'bone', size: 86,
+    file: 'v04-2-twelve', plate: P.collapse, seed: 19, titleCls: 'bone', size: 72,
     blooms: [bloom(78, 24, 48, '255,120,80', 0.4), bloom(50, 60, 40, '255,80,80', 0.16)],
     badge: '<i style="background:#ff5a6e;box-shadow:0 0 10px #ff5a6e"></i>the collapse',
     badgeCss: RED, title: 'TWELVE&nbsp;SECONDS',
@@ -162,7 +169,7 @@ const CARDS = [
     foot: 'seize · run · extract',
   },
   {
-    file: 'v04-3-vault', plate: P.sleeping, seed: 33, titleCls: 'foil', size: 76,
+    file: 'v04-3-vault', plate: P.sleeping, seed: 33, titleCls: 'foil', size: 66,
     blooms: [bloom(84, 22, 58, '255,196,90', 0.5), bloom(88, 20, 24, '255,150,60', 0.34)],
     badge: '<i style="background:#ff9c3c;box-shadow:0 0 10px #ff9c3c"></i>every sunday',
     badgeCss: AMBER, title: 'THE GRAND VAULT',
@@ -170,7 +177,7 @@ const CARDS = [
     foot: 'sundays · 00:00 utc',
   },
   {
-    file: 'v04-4-crew', plate: P.sleeping, seed: 51, titleCls: 'bone', size: 84,
+    file: 'v04-4-crew', plate: P.sleeping, seed: 51, titleCls: 'bone', size: 70,
     blooms: [bloom(84, 22, 46, '255,190,90', 0.34), bloom(46, 74, 34, '120,220,150', 0.16)],
     badge: '<i style="background:#3ddc84;box-shadow:0 0 10px #3ddc84"></i>the crew remembers',
     badgeCss: GREEN, title: 'THEY KEEP COUNT',
@@ -186,13 +193,13 @@ const header = `<style>${CHROME}
   radial-gradient(44% 128% at 50% 50%,rgba(255,215,94,.12),transparent 70%),
   linear-gradient(180deg,rgba(3,7,5,.8) 0%,rgba(3,7,5,.2) 26%,rgba(3,7,5,.2) 62%,rgba(3,7,5,.9)),
   radial-gradient(124% 154% at 50% 50%,rgba(3,7,5,.06) 0%,rgba(3,7,5,.72) 66%,rgba(3,7,5,.97) 100%)}
-#lock{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:38px}
-#lock svg{width:184px;height:184px;flex:0 0 auto;
+#lock{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:32px}
+#lock svg{width:152px;height:152px;flex:0 0 auto;
   filter:drop-shadow(0 14px 40px rgba(0,0,0,.82)) drop-shadow(0 0 26px rgba(255,215,94,.2))}
-h1{font-size:70px;line-height:1;letter-spacing:.045em;white-space:nowrap}
-.v{font-size:29px;letter-spacing:.08em;color:#ffd75e;margin-left:17px;text-shadow:0 0 20px rgba(255,215,94,.55)}
+h1{font-size:41px;line-height:1;letter-spacing:.15em;white-space:nowrap;font-weight:900}
+.v{font-size:20px;letter-spacing:.12em;color:#ffd75e;margin-left:16px;text-shadow:0 0 20px rgba(255,215,94,.55)}
 .rule{width:100%;margin:16px 0 12px}
-.tag{font-size:18.5px;color:#ecdfcd;text-shadow:0 2px 14px rgba(0,0,0,.95)}
+.tag{font-size:17px;color:#ecdfcd;text-shadow:0 2px 14px rgba(0,0,0,.95)}
 .d{margin-top:14px}
 </style>
 <div class="stage">

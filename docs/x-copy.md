@@ -104,11 +104,18 @@ Only when there is something behind the door.
 
 ## 7 · The update (v0.4)
 
-An update post is still a rule stated plainly — it is just a rule that did not
-exist yesterday. Lead with the one that changes how a run *ends*, because that
-is the one a player feels. The rest are replies.
+Four cards ship with this update, in `apps/web/public/brand/v04/`. Each one is
+one beat, and each has its own post — an update is worth more than a single
+announcement, and a card with no words under it is a poster nobody read.
 
-**Parent** — the Heart:
+Post them a day or two apart, in this order. The first is the announcement; the
+rest are the reasons to come back.
+
+---
+
+### 1 · `v04-1-heart` — the announcement
+
+The rule that changed how a run *ends*. Lead with it.
 
 > The wyrm wakes and leaves its bed.
 >
@@ -119,41 +126,75 @@ is the one a player feels. The rest are replies.
 >
 > thedragonjob.com
 
-**Reply 1** — the crew remembers:
-
-> Your thieves keep count now.
->
-> Vale · Picklock · 41 raids · Legend.
->
-> The ones no cage ever gave back have a wall with their names on it.
-
-**Reply 2** — the weekly:
-
-> Every Sunday the whole world robs the same vault.
->
-> Two and a half times the hoard, and the entire cult standing on it.
-
-**Reply 3** — the board:
-
-> The board now names the one player above you, and the exact gap.
->
-> And what everyone else already found down there tonight.
-
-### Standalones cut from the same update
-
-Use these on their own days — an update is worth more than one post.
+**Reply, if the post travels:**
 
 > A waking dragon used to mean run.
 >
 > Now it means the thing guarding the Heart is no longer sitting on it.
 
+---
+
+### 2 · `v04-2-twelve` — the collapse
+
+The cost, stated as arithmetic. No adjectives.
+
 > Twelve seconds from the hoard to the door.
 >
 > The wyrm flies. You do not.
 
+**Alternate, if the first has already run:**
+
+> Everything you banked, doubled.
+>
+> Everything you banked, buried.
+>
+> Twelve seconds decides which.
+
+---
+
+### 3 · `v04-3-vault` — the weekly
+
+> Every Sunday the whole world robs the same vault.
+>
+> Two and a half times the hoard, and the entire cult standing on it.
+>
+> Bring a crew that has seen a few nights.
+
+**The morning of, as a reply or its own post:**
+
+> The Grand Vault is open.
+>
+> Same lair for every player on earth. Until 00:00 UTC.
+
+---
+
+### 4 · `v04-4-crew` — the crew
+
+The one that is about people, not numbers. Use a real name from a real run.
+
+> Vale · Picklock · forty-one raids · Legend.
+>
+> Your thieves keep count now.
+>
+> The ones no cage ever gave back have a wall with their names on it.
+
+**The loss post, when it happens for real:**
+
 > Rats survived forty-one raids.
 >
 > Rats is on the wall now.
+
+---
+
+### The header and the bio
+
+`v04-header-1500x500.png` goes up with the first post, not before it — the
+profile should look like the thing the timeline just showed.
+
+**Bio:**
+
+> Rob a sleeping dragon. One lair a day, the same for every player on earth.
+> Take the Heart and you have twelve seconds.
 
 ---
 
