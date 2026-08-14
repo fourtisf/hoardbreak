@@ -132,7 +132,13 @@ pm2 startup systemd -u root --hp /root    # run the line it prints back
 
 curl -sI http://127.0.0.1:3000 | head -1  # the site  — expect: HTTP/1.1 200 OK
 curl -s  http://127.0.0.1:3100/health     # the board — expect: {"ok":true,...}
+curl -s "http://127.0.0.1:3100/intel?depth=1"   # the whispers — expect: {"players":0,...} on a fresh box
 ```
+
+The board answers three doors: `/health`, `/board` (GET the standing, POST a
+score) and `/intel` (GET the night's aggregate — how many came back, average and
+best haul, and the verdicts they earned). nginx maps `/api/` to all of them, so
+adding `/intel` needed no nginx change.
 
 Two processes, on purpose. The game is written to work with the board
 unreachable, so a board that falls over must not take the site down with it.

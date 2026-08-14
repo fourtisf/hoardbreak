@@ -102,6 +102,61 @@ Only when there is something behind the door.
 
 ---
 
+## 7 · The update (v0.4)
+
+An update post is still a rule stated plainly — it is just a rule that did not
+exist yesterday. Lead with the one that changes how a run *ends*, because that
+is the one a player feels. The rest are replies.
+
+**Parent** — the Heart:
+
+> The wyrm wakes and leaves its bed.
+>
+> The Heart of the hoard is lying there. Bare.
+>
+> Take it and everything you are carrying doubles. Then the mountain starts
+> coming down and you have twelve seconds.
+>
+> thedragonjob.com
+
+**Reply 1** — the crew remembers:
+
+> Your thieves keep count now.
+>
+> Vale · Picklock · 41 raids · Legend.
+>
+> The ones no cage ever gave back have a wall with their names on it.
+
+**Reply 2** — the weekly:
+
+> Every Sunday the whole world robs the same vault.
+>
+> Two and a half times the hoard, and the entire cult standing on it.
+
+**Reply 3** — the board:
+
+> The board now names the one player above you, and the exact gap.
+>
+> And what everyone else already found down there tonight.
+
+### Standalones cut from the same update
+
+Use these on their own days — an update is worth more than one post.
+
+> A waking dragon used to mean run.
+>
+> Now it means the thing guarding the Heart is no longer sitting on it.
+
+> Twelve seconds from the hoard to the door.
+>
+> The wyrm flies. You do not.
+
+> Rats survived forty-one raids.
+>
+> Rats is on the wall now.
+
+---
+
 ## Reply-to-your-own-post
 
 A reply carries the detail the parent post earned. Do not restate the parent —
