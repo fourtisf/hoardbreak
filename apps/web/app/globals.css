@@ -277,7 +277,10 @@ opacity:0;transition:.25s;pointer-events:none;font-style:italic;white-space:nowr
 
 /* --- hideout footer --- */
 .footRow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
-.xlink{color:var(--dim);text-decoration:none;border-bottom:1px solid transparent;transition:color .12s,border-color .12s}
+.xlink{color:var(--dim);text-decoration:none;border-bottom:1px solid transparent;transition:color .12s,border-color .12s;white-space:nowrap}
+/* the paper plane sits on the same optical line as the 𝕏 beside it — a glyph
+   and an SVG do not share a baseline unless one is told to */
+.tgMark{vertical-align:-1px;margin-right:1px}
 .xlink:hover{color:var(--gold);border-bottom-color:var(--gold)}
 .xlink:focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:2px}
 .footRow .saved{color:var(--em)}

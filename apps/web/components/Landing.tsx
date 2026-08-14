@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import LairCanvas from './LairCanvas';
+import { SocialLinks } from './Social';
 
 /** The landing page, ported from the prototype — copy included. */
 export default function Landing() {
@@ -23,9 +24,7 @@ export default function Landing() {
         🜲 GATHER THE CREW
       </button>
       <div className="footRow">
-        <a className="ul xlink" href="https://x.com/TheDragonjob" target="_blank" rel="noopener noreferrer">
-          𝕏 @TheDragonjob
-        </a>
+        <SocialLinks sep={<span className="ul">·</span>} />
         <span className="ul">·</span>
         <span className="ul">a new lair every day at 00:00 UTC</span>
       </div>

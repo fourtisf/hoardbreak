@@ -44,6 +44,7 @@ import { armRaid } from '@/lib/entry';
 import { toast } from '@/lib/toast';
 import { fetchBoard, fetchIntel, type BoardState, type IntelState } from '@/lib/board';
 import SpriteCanvas from './SpriteCanvas';
+import { SocialLinks } from './Social';
 import Toast from './Toast';
 
 /**
@@ -523,9 +524,7 @@ export default function Hideout() {
             restore
           </button>
           <span className="ul">·</span>
-          <a className="ul xlink" href="https://x.com/TheDragonjob" target="_blank" rel="noopener noreferrer">
-            𝕏 @TheDragonjob
-          </a>
+          <SocialLinks sep={<span className="ul">·</span>} />
         </div>
 
         {/* The one thing a player came here to do. It is the last element in the

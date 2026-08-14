@@ -5,6 +5,7 @@ import { NAME_MAX, cleanName } from '@dragonjob/shared';
 import { getMeta, mutate } from '@/lib/store';
 import LairCanvas from './LairCanvas';
 import CaRow from './CaRow';
+import { TgLink, XLink } from './Social';
 
 /**
  * Invitation gate.
@@ -145,11 +146,7 @@ export default function Gate({ children }: { children: React.ReactNode }): JSX.E
           above the signature line and reads brighter than it, because for a
           visitor without a code this is the only thing on the page that helps. */}
       <div className="gateAsk">
-        No code?{' '}
-        <a className="xlink" href="https://x.com/TheDragonjob" target="_blank" rel="noopener noreferrer">
-          𝕏 @TheDragonjob
-        </a>{' '}
-        hands them out.
+        No code? <XLink /> and <TgLink /> hand them out.
       </div>
       <CaRow />
       <span className="sig">THEDRAGONJOB.COM</span>
