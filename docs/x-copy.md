@@ -366,21 +366,46 @@ Everything in the list at the top still applies. These are additional.
 5. **Never post the address as an image only.** People retype from screenshots
    and land on a fake. Text, every time, so it can be copied exactly.
 
-### 1 · The launch
+### 1 · The launch — two posts, pick one
 
-Keep it flat. The excitement is the reader's job, not the copy's.
+Keep it flat. The excitement is the reader's job, not the copy's. Both run
+five beats, and both end the same way: address, then code, then the door.
+
+The address goes above the code on purpose. Somebody skimming for the contract
+should hit it before anything else, and somebody who came to play reads on and
+finds the way in. Paste the real address as text — never as a screenshot.
+
+**A — the formula leads.** For a timeline that already knows the game.
 
 ```
-$DJOB is live — it is what a run pays out.
+$DJOB is live — the coin THE DRAGON JOB pays you for a run.
+
+Depth × 3, and double that past 60% of the hoard.
 
 CA: <paste the address>
-
-Earned by robbing a dragon, not by being early.
 
 Code: 1998
 
 thedragonjob.com
 ```
+
+**B — the game leads.** For a timeline that does not.
+
+```
+THE DRAGON JOB is live. So is $DJOB.
+
+You do not have to buy it — four thieves and one lair pay it out.
+
+CA: <paste the address>
+
+Code: 1998
+
+thedragonjob.com
+```
+
+Whichever you post, the other one keeps: run it two or three days later, when
+the first wave has landed and a second reading of the same fact reaches people
+who were not looking that hour.
 
 ### 2 · The address, immediately, as the first reply
 
