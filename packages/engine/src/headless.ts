@@ -28,6 +28,7 @@ export {
   addWake,
   extractReady,
   inZone,
+  heartPos,
   unitDmgMul,
   compassTarget,
   type CreateRunOptions,

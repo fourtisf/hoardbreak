@@ -12,6 +12,7 @@ import type { RunResult } from '@dragonjob/engine/headless';
 export type VerdictId =
   | 'FED'
   | 'SLAYER'
+  | 'HEARTTAKER'
   | 'GHOST'
   | 'WHISKER'
   | 'STRIPPED'
@@ -28,6 +29,7 @@ export interface Verdict {
 const V: Record<VerdictId, Verdict> = {
   FED: { id: 'FED', title: 'THE WYRM FEEDS', sub: '' },
   SLAYER: { id: 'SLAYER', title: 'WYRMSLAYER', sub: 'The mountain is quiet now.' },
+  HEARTTAKER: { id: 'HEARTTAKER', title: 'HEARTTAKER', sub: 'You tore the Heart from under a waking god and ran.' },
   GHOST: { id: 'GHOST', title: 'GHOST', sub: 'Not one of them ever knew you were there.' },
   WHISKER: { id: 'WHISKER', title: 'BY A WHISKER', sub: 'One more second and it would have had you.' },
   STRIPPED: { id: 'STRIPPED', title: 'THE HOARD IS YOURS', sub: 'You left it a bare stone floor.' },
@@ -39,6 +41,7 @@ const V: Record<VerdictId, Verdict> = {
 export function verdictFor(r: RunResult): Verdict {
   if (!r.success) return V.FED;
   if (r.slain) return V.SLAYER;
+  if (r.heartTaken) return V.HEARTTAKER;
   if (!r.everSpotted) return V.GHOST;
   if (r.wake >= 90) return V.WHISKER;
   if (r.stolenPct >= 90) return V.STRIPPED;

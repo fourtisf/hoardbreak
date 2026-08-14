@@ -58,6 +58,7 @@ export function shareText(input: ShareInput): string {
 
   // the part people actually reply to
   if (r.slain) lines.push('', '⚔ THE WYRM IS DEAD.');
+  else if (r.heartTaken) lines.push('', '💛 SEIZED THE HEART — and outran the collapse.');
   else if (!r.success) lines.push('', `☠ ${v.title} — nobody came back.`);
   else if (lostNames.length) lines.push('', `☠ Left behind: ${lostNames.join(', ')}`);
   else if (!r.everSpotted) lines.push('', '👻 Never seen. Not once.');

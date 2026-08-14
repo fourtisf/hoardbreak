@@ -12,6 +12,7 @@ import { createMeta, markPlayed } from '../src/meta.js';
 const run = (over: Partial<RunResult> = {}): RunResult => ({
   success: true,
   slain: false,
+  heartTaken: false,
   loot: 8140,
   stolenPct: 71,
   guardsSlain: 3,

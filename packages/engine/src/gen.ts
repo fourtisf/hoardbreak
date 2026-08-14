@@ -186,6 +186,7 @@ export function genLair(s: RunState): void {
     scd: 6,
     stir: TUNING.STIR_CD,
     stunT: 0,
+    enraged: false,
   };
 
   revealAround(s.revealed, 4 * T, 17 * T, s.mod.rev || TUNING.REVEAL_R_START);
@@ -217,5 +218,9 @@ export function maxLootFor(s: RunState): number {
   const bounties = (s.guards.length + 2) * TUNING.GUARD_BOUNTY;
   // Greedy Gauntlets only lift piles and the siphoned hoard.
   const greedy = (piles + s.hoard.pool0) * TUNING.GREED_MUL;
-  return Math.ceil(greedy + chests + bounties + TUNING.SLAY_BONUS + TUNING.SHRINE_OVERFLOW);
+  const base = greedy + chests + bounties + TUNING.SLAY_BONUS + TUNING.SHRINE_OVERFLOW;
+  // Seizing the Heart doubles whatever was banked, so the ceiling has to allow
+  // for the whole run's take being multiplied. Over-generous by design: this is
+  // a validation floor, not anti-cheat, and it must never reject an honest score.
+  return Math.ceil(base * TUNING.HEART_MUL);
 }

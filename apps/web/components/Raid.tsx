@@ -139,6 +139,16 @@ const hasKeys = (): boolean =>
     : !window.matchMedia('(pointer: coarse)').matches;
 
 function coachFor(s: RunState, inZoneCount: number, grade: Grade, keys: boolean): string {
+  // the roof is coming down: nothing else is the question any more
+  if (s.collapseT > 0)
+    return keys
+      ? '⛏ The roof is coming down — get everyone to the exit and press E'
+      : '⛏ The roof is coming down — get everyone to the exit and EXTRACT';
+  // the wyrm is up and its Heart lies bare: the fork the whole climax is about
+  if (s.heartState === 'exposed')
+    return keys
+      ? `🐉 It hunts you now — RUN for the exit, or SEIZE the Heart: ×${TUNING.HEART_MUL} loot and it chases you`
+      : `🐉 It hunts you now — RUN for the exit, or tap SEIZE: ×${TUNING.HEART_MUL} loot and it chases you`;
   if (s.dragon.awake) return huntLines(grade).hint;
   // the lockdown outranks everything short of the wyrm: the room you are in
   // stopped being the problem the moment they went to stand on the door
@@ -210,6 +220,7 @@ export default function Raid() {
   const stolenFill = useRef<HTMLElement>(null);
   const stolenHint = useRef<HTMLDivElement>(null);
   const extractBtn = useRef<HTMLButtonElement>(null);
+  const seizeBtn = useRef<HTMLButtonElement>(null);
   const hpBars = useRef(new Map<number, HTMLElement>());
 
   const inputRef = useRef<InputController | null>(null);
@@ -254,7 +265,7 @@ export default function Raid() {
   const runRef = useRef<RunState | null>(null);
   const readyRef = useRef<Readiness | null>(null);
   const pickedRef = useRef<number | null>(null);
-  const felt = useRef({ seen: false, stirs: false, woke: false });
+  const felt = useRef({ seen: false, stirs: false, woke: false, heart: false });
   // the per-frame coach line reads this rather than `keys` so it never touches
   // React state from inside the render loop
   const keysRef = useRef(true);
@@ -526,7 +537,10 @@ export default function Raid() {
       // a number to stare at; after, it is the single fact deciding fight or run.
       if (wyrmBox.current) wyrmBox.current.style.display = s.dragon.awake ? '' : 'none';
       // the three beats worth feeling through a phone, each fired once
-      if (s.dragon.awake && !felt.current.woke) {
+      if (s.heartState === 'taken' && !felt.current.heart) {
+        felt.current.heart = true;
+        buzz([40, 40, 40, 40, 40, 40, 240]);
+      } else if (s.dragon.awake && !felt.current.woke) {
         felt.current.woke = true;
         buzz([60, 50, 60, 50, 180]);
       } else if (s.wake >= 75 && !felt.current.stirs) {
@@ -581,6 +595,13 @@ export default function Raid() {
           );
         } else b.classList.add('hidden');
       }
+
+      // SEIZE is offered only while the Heart is bare — the moment of the fork.
+      // It vanishes the instant it is taken (the roof is falling; there is
+      // nothing left to decide) or the run ends.
+      const sb = seizeBtn.current;
+      if (sb) sb.classList.toggle('hidden', !(s.heartState === 'exposed' && !s.over));
+
       for (const u of s.units) {
         const bar = hpBars.current.get(u.tid);
         if (bar) bar.style.width = `${(100 * u.hp) / u.max}%`;
@@ -674,6 +695,10 @@ export default function Raid() {
 
   const doExtract = useCallback((): void => {
     inputRef.current?.push({ c: 'extract' });
+  }, []);
+
+  const doSeize = useCallback((): void => {
+    inputRef.current?.push({ c: 'seize' });
   }, []);
 
   const toggleCreep = useCallback((): void => {
@@ -841,6 +866,13 @@ export default function Raid() {
          * end of it. Splitting the markup is what lets one grid put them on
          * opposite sides of the game. */}
         <section id="under">
+          {/* The fork, offered only while the Heart is bare. Its own colour and
+             its place directly under the lair make it the loudest control on the
+             board for the few seconds it exists. */}
+          <button id="btnSeize" ref={seizeBtn} className="btn heart big hidden" onClick={doSeize}>
+            💛 SEIZE THE HEART ×{TUNING.HEART_MUL}
+          </button>
+
           <div id="itemBar">
             {ITEM_KEYS.map((k) => (
               <div

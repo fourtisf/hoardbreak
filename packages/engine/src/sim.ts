@@ -102,12 +102,81 @@ function wakeDragon(s: RunState): void {
   const D = s.dragon;
   if (D.awake) return;
   D.awake = true;
+  // the wyrm is off its bed now, so the core it slept on lies bare. The choice
+  // — run, or seize it — is offered by the host from this flag.
+  if (s.heartState === 'none') s.heartState = 'exposed';
   emit(s, 'WAKE_MILESTONE', 100);
   s.banner = { t1: 'THE WYRM WAKES', t2: s.wakeCall, l: TUNING.BANNER_WAKE, l0: TUNING.BANNER_WAKE };
   s.shake = 10;
-  feed(s, 'The mountain itself opens its eyes.', 'e');
+  feed(s, 'The mountain itself opens its eyes. The Heart of the hoard lies bare.', 'e');
   snd(s, 35, 1.2, 'sawtooth', 0.13, 30);
   revealAround(s.revealed, D.x, D.y, TUNING.REVEAL_R_WAKE);
+}
+
+/** Where the Heart sits: the centre of the wyrm's bed. No RNG — never touches parity. */
+export function heartPos(s: RunState): { x: number; y: number } {
+  const hh = s.hoard;
+  return { x: (hh.x0 + hh.x1 + 1) * 0.5 * T, y: (hh.y0 + hh.y1 + 1) * 0.5 * T };
+}
+
+/**
+ * Seize the Heart (v0.4).
+ *
+ * The banked loot is doubled — so the spike rewards how much you dared to
+ * siphon *before* grabbing it, not the grab itself — and the price is the wyrm
+ * enraged and a countdown to the roof coming down. Everything after this is a
+ * sprint for the door.
+ */
+function takeHeart(s: RunState): void {
+  if (s.heartState !== 'exposed' || s.over) return;
+  const before = Math.round(s.loot);
+  s.loot = before * TUNING.HEART_MUL;
+  const bonus = Math.round(s.loot) - before;
+  s.heartState = 'taken';
+  s.heartArmed = false;
+  s.dragon.enraged = true;
+  s.dragon.cd = Math.min(s.dragon.cd, 0.4);
+  s.collapseT = TUNING.COLLAPSE_TIME;
+  s.collapseAcc = TUNING.COLLAPSE_ROCK_CD;
+  emit(s, 'HEART', bonus);
+  const p = heartPos(s);
+  s.fx.push({ k: 'burst', x: p.x, y: p.y, l: 0.5, l0: 0.5 });
+  s.fx.push({ k: 'txt', x: p.x, y: p.y - 20, txt: `THE HEART · +${bonus}g`, c: '#ffd75e', s: 12, l: 1.4, l0: 1.4 });
+  s.banner = { t1: 'THE HEART IS OURS', t2: 'the roof comes down — RUN', l: TUNING.BANNER_HEART, l0: TUNING.BANNER_HEART };
+  feed(s, `The Heart tears loose. The hoard doubles. The mountain begins to fall.`, 'w');
+  s.shake = 12;
+  snd(s, 180, 0.3, 'triangle', 0.09, 120);
+  snd(s, 60, 0.9, 'sawtooth', 0.11, -30, 120);
+}
+
+/** A slab of ceiling comes down: telegraphed, then it lands and hurts. */
+function dropRock(s: RunState): void {
+  const alive = s.units;
+  if (!alive.length) return;
+  // aimed near a random living thief so the hazard follows the crew's flight
+  const u = alive[s.rngSim.int(0, alive.length - 1)] as Unit;
+  const x = u.x + s.rngSim.range(-T, T);
+  const y = u.y + s.rngSim.range(-T, T);
+  s.tele.push({ x, y, l: TUNING.COLLAPSE_ROCK_TELE });
+  s.timers.push({ k: 'rock', t: TUNING.COLLAPSE_ROCK_TELE, x, y });
+  snd(s, 90, 0.25, 'sawtooth', 0.05, -30);
+}
+
+/** The countdown hit zero. Whoever is on the exit gets out; the rest are buried. */
+function collapseNow(s: RunState): void {
+  if (s.over) return;
+  if (extractReady(s) > 0) {
+    feed(s, 'The roof falls. Those at the door make it into the night.', 'w');
+    endRun(s, true, false);
+    return;
+  }
+  for (const u of s.units) {
+    if (!u.rescued) loseThief(s, u);
+    else s.crewLost++;
+    feed(s, `${u.name} is buried with the wyrm's gold.`, 'e');
+  }
+  s.units.length = 0;
+  endRun(s, false);
 }
 
 /* ================= relics ================= */
@@ -794,9 +863,10 @@ function dragonStep(s: RunState, dt: number): void {
   cy /= alive.length;
   const dd = dist(D.x, D.y, cx, cy);
   if (dd > 10) {
-    // it flies — walls do not apply
-    D.x += ((cx - D.x) / dd) * TUNING.DRAGON_SPD * dt;
-    D.y += ((cy - D.y) / dd) * TUNING.DRAGON_SPD * dt;
+    // it flies — walls do not apply. Enraged by losing the Heart, it flies faster.
+    const spd = TUNING.DRAGON_SPD * (D.enraged ? TUNING.HEART_ENRAGE_SPD : 1);
+    D.x += ((cx - D.x) / dd) * spd * dt;
+    D.y += ((cy - D.y) / dd) * spd * dt;
   }
   revealAround(s.revealed, D.x, D.y, TUNING.REVEAL_R_DRAGON);
 
@@ -816,7 +886,7 @@ function dragonStep(s: RunState, dt: number): void {
 
   D.cd -= dt;
   if (D.cd <= 0) {
-    D.cd = TUNING.AWAKE_BREATH_CD;
+    D.cd = TUNING.AWAKE_BREATH_CD * (D.enraged ? TUNING.HEART_ENRAGE_BREATH : 1);
     const tx = cx;
     const ty = cy;
     s.tele.push({ x: tx, y: ty, l: TUNING.AWAKE_BREATH_TELE });
@@ -856,6 +926,16 @@ function runTimers(s: RunState, dt: number): void {
       if (!s.dragon.awake) landRoll(s, tm.x, tm.y);
     } else if (tm.k === 'tail') {
       if (!s.dragon.awake) sweepTail(s);
+    } else if (tm.k === 'rock') {
+      s.fx.push({ k: 'slam', x: tm.x, y: tm.y, l: 0.35, l0: 0.35 });
+      s.shake = Math.max(s.shake, 4);
+      for (const u of s.units) {
+        if (dist(u.x, u.y, tm.x, tm.y) < TUNING.COLLAPSE_ROCK_R * T) {
+          u.hp -= TUNING.COLLAPSE_ROCK_DMG;
+          s.fx.push({ k: 'txt', x: u.x, y: u.y - 16, txt: 'BURIED', c: '#ff9aa6', s: 9, l: 0.7, l0: 0.7 });
+        }
+      }
+      s.out.sounds.push({ f: 55, d: 0.3, type: 'sawtooth', v: 0.08, slide: -24 });
     } else {
       endRun(s, true, true);
       return;
@@ -945,6 +1025,7 @@ export function endRun(s: RunState, success: boolean, slain = false): void {
   s.result = {
     success,
     slain,
+    heartTaken: s.heartState === 'taken',
     loot: Math.round(s.loot),
     stolenPct,
     guardsSlain: s.guardsSlain,
@@ -1274,6 +1355,27 @@ function update(s: RunState, dt: number, input: InputFrame): void {
 
   for (const u of s.units) revealAround(s.revealed, u.x, u.y, s.mod.rev || TUNING.REVEAL_R);
 
+  /* the Heart: armed and someone reached it */
+  if (s.heartState === 'exposed' && s.heartArmed) {
+    const p = heartPos(s);
+    if (s.units.some((u) => dist(u.x, u.y, p.x, p.y) <= TUNING.HEART_GRAB_R * T)) takeHeart(s);
+  }
+
+  /* the collapse countdown, once the Heart is gone */
+  if (s.collapseT > 0) {
+    s.collapseT -= dt;
+    s.collapseAcc -= dt;
+    if (s.collapseAcc <= 0) {
+      s.collapseAcc += TUNING.COLLAPSE_ROCK_CD;
+      dropRock(s);
+    }
+    if (s.collapseT <= 0) {
+      s.collapseT = 0;
+      collapseNow(s);
+      return;
+    }
+  }
+
   /* heartbeat tension */
   if (s.wake >= TUNING.HEARTBEAT_WAKE && !s.dragon.awake) {
     s.heartT -= dt;
@@ -1340,6 +1442,30 @@ function applyCommand(s: RunState, c: RunCommand): void {
     useItem(s, c.k);
   } else if (c.c === 'extract') {
     if (extractReady(s) > 0) endRun(s, true, false);
+  } else if (c.c === 'seize') {
+    // only a bare Heart can be taken, and only once
+    if (s.heartState !== 'exposed') return;
+    const p = heartPos(s);
+    // already standing on it? take it now. Otherwise arm it and send the crew —
+    // the next thief to reach it grabs it, checked each tick.
+    if (s.units.some((u) => dist(u.x, u.y, p.x, p.y) <= TUNING.HEART_GRAB_R * T)) {
+      takeHeart(s);
+      return;
+    }
+    s.heartArmed = true;
+    const gx = (p.x / T) | 0;
+    const gy = (p.y / T) | 0;
+    s.cmd = { x: gx, y: gy };
+    s.cmdOnly = null;
+    s.cmdT = TUNING.CMD_MARKER_TIME;
+    for (const u of s.units) {
+      u.ord = null;
+      u.path = null;
+      u.ptile = -1;
+    }
+    s.banner = { t1: 'GO FOR THE HEART', t2: 'reach the bare core of the hoard', l: TUNING.BANNER_HEART, l0: TUNING.BANNER_HEART };
+    feed(s, 'The crew breaks for the Heart.', 'w');
+    snd(s, 520, 0.06, 'square', 0.05);
   }
 }
 
@@ -1393,7 +1519,7 @@ export function createRun(opts: CreateRunOptions): RunState {
     relicOffers: [],
     // replaced by genLair
     hoard: { x0: 0, y0: 0, x1: 0, y1: 0, pool: 0, pool0: 1 },
-    dragon: { x: 0, y: 0, px: 0, py: 0, hp: 1, max: 1, awake: false, cd: 0, scd: 0, stir: 0, stunT: 0 },
+    dragon: { x: 0, y: 0, px: 0, py: 0, hp: 1, max: 1, awake: false, cd: 0, scd: 0, stir: 0, stunT: 0, enraged: false },
     t: 0,
     ticks: 0,
     loot: 0,
@@ -1416,6 +1542,10 @@ export function createRun(opts: CreateRunOptions): RunState {
     everSpotted: false,
     sealed: false,
     deepTold: false,
+    heartState: 'none',
+    heartArmed: false,
+    collapseT: 0,
+    collapseAcc: 0,
     gidNext: 1,
     fx: [],
     tele: [],

@@ -467,6 +467,41 @@ export function createRenderer(canvas: HTMLCanvasElement, opts: RendererOptions 
         C.fillText('DEEP GOLD', s.dragon.x, s.dragon.y + r + 9);
         C.textAlign = 'left';
       }
+
+      /* the Heart, laid bare the moment the wyrm leaves its bed.
+         A pulsing gem at the core of the hoard with its own word — the second
+         half of the fork the wake banner opens: run, or come and take this. */
+      if (s.heartState === 'exposed') {
+        const hx = (hh.x0 + hh.x1 + 1) * 0.5 * T;
+        const hy = (hh.y0 + hh.y1 + 1) * 0.5 * T;
+        const beat = calm ? 0.6 : 0.5 + 0.5 * Math.abs(Math.sin(t * 3.4));
+        const gr = C.createRadialGradient(hx, hy, 2, hx, hy, 26);
+        gr.addColorStop(0, `rgba(255,120,140,${0.5 + 0.3 * beat})`);
+        gr.addColorStop(1, 'rgba(255,90,110,0)');
+        C.fillStyle = gr;
+        C.beginPath();
+        C.arc(hx, hy, 26, 0, 7);
+        C.fill();
+        // the gem itself
+        const rr = 6 + 2 * beat;
+        C.fillStyle = '#ff5a6e';
+        C.beginPath();
+        C.moveTo(hx, hy - rr);
+        C.lineTo(hx + rr, hy);
+        C.lineTo(hx, hy + rr);
+        C.lineTo(hx - rr, hy);
+        C.closePath();
+        C.fill();
+        C.fillStyle = '#fff0b8';
+        C.beginPath();
+        C.arc(hx - 1.5, hy - 1.5, 1.6, 0, 7);
+        C.fill();
+        C.font = 'bold 9px Consolas,monospace';
+        C.textAlign = 'center';
+        C.fillStyle = `rgba(255,215,94,${0.7 + 0.3 * beat})`;
+        C.fillText('THE HEART', hx, hy - 14);
+        C.textAlign = 'left';
+      }
     }
 
     for (const p of s.piles) {
@@ -779,6 +814,26 @@ export function createRenderer(canvas: HTMLCanvasElement, opts: RendererOptions 
       const pulse = calm ? 0 : 0.03 * Math.sin(t * 4);
       C.fillStyle = 'rgba(255,60,60,' + (0.05 + 0.05 * vv + pulse) + ')';
       C.fillRect(0, 0, sw, sh);
+    }
+
+    /* the collapse: a red pulse tightening as the seconds run out, and the
+       count itself, big, because it is now the only number that matters */
+    if (s.collapseT > 0) {
+      const frac = s.collapseT / TUNING.COLLAPSE_TIME;
+      const urg = 1 - frac;
+      const pulse = calm ? 0 : 0.05 * Math.abs(Math.sin(t * (5 + urg * 6)));
+      C.fillStyle = 'rgba(255,50,60,' + (0.08 + 0.14 * urg + pulse) + ')';
+      C.fillRect(0, 0, sw, sh);
+      const secs = Math.max(0, Math.ceil(s.collapseT));
+      const cs = Math.min(1, sw / 560);
+      C.textAlign = 'center';
+      C.font = `bold ${Math.round(15 * cs)}px Consolas,monospace`;
+      C.fillStyle = 'rgba(255,154,166,.95)';
+      C.fillText('THE ROOF IS COMING DOWN', sw / 2, 44);
+      C.font = `${Math.round(46 * cs)}px "Pirata One",Georgia,serif`;
+      C.fillStyle = secs <= 4 ? '#ff5a6e' : '#ffd75e';
+      C.fillText(`${secs}`, sw / 2, 44 + 44 * cs);
+      C.textAlign = 'left';
     }
 
     /* top strip. Skipped once the view is a window rather than the whole lair:

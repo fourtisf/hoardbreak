@@ -310,6 +310,22 @@ export const TUNING = {
   SLAY_BONUS: 2000,
   SLAY_END_DELAY: 1.4,
 
+  /* the heart of the hoard (v0.4) — the wake climax.
+   * When the wyrm wakes it leaves its bed to hunt, and the coiled core it was
+   * sleeping on lies bare. Taking it is a real fork: RUN with what you have, or
+   * SEIZE the Heart — the loot you have banked is doubled, but the wyrm enrages
+   * and the roof starts coming down. The daily's greed curve gets a spike at the
+   * very end instead of the run just fizzling into a walk to the door. */
+  HEART_MUL: 2,              // banked loot is multiplied by this when seized
+  HEART_GRAB_R: 1.2,         // tiles — a thief this close to the bare Heart takes it
+  HEART_ENRAGE_SPD: 1.35,    // the enraged wyrm flies this much faster
+  HEART_ENRAGE_BREATH: 0.6,  // …and its breath cooldown is this fraction of normal
+  COLLAPSE_TIME: 12,         // s to reach the exit once the Heart is gone
+  COLLAPSE_ROCK_CD: 1.1,     // s between falling-rock hazards during the collapse
+  COLLAPSE_ROCK_TELE: 0.5,   // s of warning before a rock lands
+  COLLAPSE_ROCK_DMG: 45,
+  COLLAPSE_ROCK_R: 1.6,      // tiles
+
   /* loot */
   PILE_MIN: 40,
   PILE_MAX: 90,
@@ -381,6 +397,7 @@ export const TUNING = {
   BANNER_WAKE: 3,
   BANNER_SEAL: 2.8,
   BANNER_RESCUE: 2.6,
+  BANNER_HEART: 3,
 } as const;
 
 /* ---------------- lair layout (fixed anchors) ---------------- */

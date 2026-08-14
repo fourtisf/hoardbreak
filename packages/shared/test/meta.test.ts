@@ -51,6 +51,7 @@ function result(p: Partial<RunResult> = {}): RunResult {
   return {
     success: true,
     slain: false,
+    heartTaken: false,
     loot: 0,
     stolenPct: 0,
     guardsSlain: 0,

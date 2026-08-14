@@ -101,6 +101,8 @@ export interface Dragon {
   /** seconds until it next shifts on its bed or sweeps its tail (v0.3) */
   stir: number;
   stunT: number;
+  /** the Heart is gone and the wyrm is furious — faster, and breathes more (v0.4) */
+  enraged: boolean;
 }
 
 export interface Pile {
@@ -238,6 +240,8 @@ export type Timer =
   | { k: 'roll'; t: number; x: number; y: number }
   /** its tail comes round across the whole pile */
   | { k: 'tail'; t: number }
+  /** a slab of the ceiling comes down during the collapse (v0.4) */
+  | { k: 'rock'; t: number; x: number; y: number }
   | { k: 'endSlain'; t: number };
 
 /* ---------------- event log (handoff §6) ---------------- */
@@ -254,7 +258,9 @@ export type EventCode =
   | 'WAKE_MILESTONE'
   | 'EXTRACT'
   /** v0.3 — which relic was taken; value is the index into RELIC_KEYS */
-  | 'RELIC';
+  | 'RELIC'
+  /** v0.4 — the Heart of the hoard was seized; value is the loot it added */
+  | 'HEART';
 
 /** `[t in ms, code, value]` — compact on purpose, it ships with every run. */
 export type RunEvent = [number, EventCode, number];
@@ -267,7 +273,9 @@ export type RunCommand =
   | { c: 'item'; k: ItemKey }
   /** Release a posted thief back to the crew. */
   | { c: 'recall'; tid: number }
-  | { c: 'extract' };
+  | { c: 'extract' }
+  /** Go for the bare Heart of the hoard (only once the wyrm is awake). */
+  | { c: 'seize' };
 
 /** One tick of player intent. This is the unit of a Phase 4 replay log. */
 export interface InputFrame {
@@ -297,6 +305,8 @@ export type CrewOp =
 export interface RunResult {
   success: boolean;
   slain: boolean;
+  /** the crew seized the Heart of the hoard on the way out (v0.4) */
+  heartTaken: boolean;
   loot: number;
   stolenPct: number;
   guardsSlain: number;
@@ -390,6 +400,20 @@ export interface RunState {
   sealed: boolean;
   /** whether the "you are digging under the wyrm" line has been said once */
   deepTold: boolean;
+  /**
+   * The Heart of the hoard (v0.4).
+   *
+   *  - `none`    while the wyrm sleeps on it — untouchable.
+   *  - `exposed` the moment it wakes and leaves its bed. Now it can be taken.
+   *  - `taken`   seized: loot doubled, wyrm enraged, the roof coming down.
+   */
+  heartState: 'none' | 'exposed' | 'taken';
+  /** the player pressed SEIZE — the next thief to reach the Heart takes it */
+  heartArmed: boolean;
+  /** seconds left before the lair collapses, once the Heart is gone; 0 = inactive */
+  collapseT: number;
+  /** cadence accumulator for falling rock during the collapse */
+  collapseAcc: number;
   /** next guard id to hand out */
   gidNext: number;
 
